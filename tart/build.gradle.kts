@@ -46,6 +46,8 @@ dependencies {
 
   compileOnly(Dependencies.Build.AndroidXAnnotation)
 
+  implementation(Dependencies.Curtains)
+
   testImplementation(Dependencies.JUnit)
   testImplementation(Dependencies.Mockito)
   testImplementation(Dependencies.Robolectric)
