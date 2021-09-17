@@ -18,8 +18,7 @@ Add the `tart` dependency to your library or app's `build.gradle` file:
 
 ```gradle
 dependencies {
-  implementation 'com.squareup.tart:tart:1.0
-  '
+  implementation 'com.squareup.tart:tart:1.0'
 }
 ```
 
