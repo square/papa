@@ -117,9 +117,15 @@ object Perfs {
       val firstPost = appStartData.elapsedSinceStart()
       appStartData = appStartData.copy(firstPostElapsedUptimeMillis = firstPost)
     }
-    val processInfoAfterFirstPost = ActivityManager.RunningAppProcessInfo()
-    ActivityManager.getMyMemoryState(processInfoAfterFirstPost)
 
+      val processInfoAfterFirstPost = ActivityManager.RunningAppProcessInfo()
+    try {
+      ActivityManager.getMyMemoryState(processInfoAfterFirstPost)
+    } catch (ignored: Throwable) {
+      // This should never happen, but IPCs like to occasionally fail.
+    }
+
+    // TODO Ideally we'd do all startup pref reads from a background thread.
     // Some Android implementations perform a disk read when loading shared prefs async.
     val oldPolicy = StrictMode.allowThreadDiskReads()
     val prefs = try {
