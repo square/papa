@@ -1,0 +1,297 @@
+public final class tart/internal/FrozenFrameOnTouchDetector {
+	public static final field INSTANCE Ltart/internal/FrozenFrameOnTouchDetector;
+	public final fun install (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class tart/internal/RealTouchMetrics : tart/legacy/TouchMetrics {
+	public fun <init> ()V
+	public fun getLastTouchUpEvent ()Lkotlin/Pair;
+	public final fun install ()V
+	public fun setLastTouchUpEvent (Lkotlin/Pair;)V
+	public final fun uninstall ()V
+}
+
+public final class tart/legacy/ActivityEvent {
+	public fun <init> (Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun copy (Ljava/lang/String;J)Ltart/legacy/ActivityEvent;
+	public static synthetic fun copy$default (Ltart/legacy/ActivityEvent;Ljava/lang/String;JILjava/lang/Object;)Ltart/legacy/ActivityEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActivityName ()Ljava/lang/String;
+	public final fun getElapsedUptimeMillis ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/ActivityOnCreateEvent {
+	public fun <init> (Ljava/lang/String;ZJLandroid/content/Intent;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun component3 ()J
+	public final fun component4 ()Landroid/content/Intent;
+	public final fun copy (Ljava/lang/String;ZJLandroid/content/Intent;)Ltart/legacy/ActivityOnCreateEvent;
+	public static synthetic fun copy$default (Ltart/legacy/ActivityOnCreateEvent;Ljava/lang/String;ZJLandroid/content/Intent;ILjava/lang/Object;)Ltart/legacy/ActivityOnCreateEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActivityName ()Ljava/lang/String;
+	public final fun getElapsedUptimeMillis ()J
+	public final fun getIntent ()Landroid/content/Intent;
+	public final fun getRestoredState ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/ActivityTouchEvent {
+	public fun <init> (Ljava/lang/String;JJFF)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()F
+	public final fun component5 ()F
+	public final fun copy (Ljava/lang/String;JJFF)Ltart/legacy/ActivityTouchEvent;
+	public static synthetic fun copy$default (Ltart/legacy/ActivityTouchEvent;Ljava/lang/String;JJFFILjava/lang/Object;)Ltart/legacy/ActivityTouchEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActivityName ()Ljava/lang/String;
+	public final fun getElapsedUptimeMillis ()J
+	public final fun getEventSentElapsedMillis ()J
+	public final fun getRawX ()F
+	public final fun getRawY ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/AppLifecycleState : java/lang/Enum {
+	public static final field PAUSED Ltart/legacy/AppLifecycleState;
+	public static final field RESUMED Ltart/legacy/AppLifecycleState;
+	public static fun valueOf (Ljava/lang/String;)Ltart/legacy/AppLifecycleState;
+	public static fun values ()[Ltart/legacy/AppLifecycleState;
+}
+
+public abstract class tart/legacy/AppStart {
+}
+
+public final class tart/legacy/AppStart$AppStartData : tart/legacy/AppStart {
+	public fun <init> (JJLjava/lang/Long;JJIIIILjava/lang/String;Ltart/legacy/AppLifecycleState;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ltart/legacy/AppUpdateData;Ljava/lang/Long;Ljava/lang/Long;Ltart/legacy/ComponentInstantiatedEvent;Ltart/legacy/ActivityOnCreateEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityTouchEvent;Ljava/lang/Long;Ljava/util/Map;)V
+	public synthetic fun <init> (JJLjava/lang/Long;JJIIIILjava/lang/String;Ltart/legacy/AppLifecycleState;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ltart/legacy/AppUpdateData;Ljava/lang/Long;Ljava/lang/Long;Ltart/legacy/ComponentInstantiatedEvent;Ltart/legacy/ActivityOnCreateEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityTouchEvent;Ljava/lang/Long;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component10 ()Ljava/lang/String;
+	public final fun component11 ()Ltart/legacy/AppLifecycleState;
+	public final fun component12 ()Ljava/lang/Long;
+	public final fun component13 ()Ljava/lang/Long;
+	public final fun component14 ()Ljava/util/List;
+	public final fun component15 ()Ljava/lang/Long;
+	public final fun component16 ()Ljava/lang/Long;
+	public final fun component17 ()Ljava/lang/Long;
+	public final fun component18 ()Ltart/legacy/AppUpdateData;
+	public final fun component19 ()Ljava/lang/Long;
+	public final fun component2 ()J
+	public final fun component20 ()Ljava/lang/Long;
+	public final fun component21 ()Ltart/legacy/ComponentInstantiatedEvent;
+	public final fun component22 ()Ltart/legacy/ActivityOnCreateEvent;
+	public final fun component23 ()Ltart/legacy/ActivityEvent;
+	public final fun component24 ()Ltart/legacy/ActivityEvent;
+	public final fun component25 ()Ltart/legacy/ActivityEvent;
+	public final fun component26 ()Ltart/legacy/ActivityEvent;
+	public final fun component27 ()Ltart/legacy/ActivityEvent;
+	public final fun component28 ()Ltart/legacy/ActivityEvent;
+	public final fun component29 ()Ltart/legacy/ActivityEvent;
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component30 ()Ltart/legacy/ActivityTouchEvent;
+	public final fun component31 ()Ljava/lang/Long;
+	public final fun component32 ()Ljava/util/Map;
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun component8 ()I
+	public final fun component9 ()I
+	public final fun copy (JJLjava/lang/Long;JJIIIILjava/lang/String;Ltart/legacy/AppLifecycleState;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ltart/legacy/AppUpdateData;Ljava/lang/Long;Ljava/lang/Long;Ltart/legacy/ComponentInstantiatedEvent;Ltart/legacy/ActivityOnCreateEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityTouchEvent;Ljava/lang/Long;Ljava/util/Map;)Ltart/legacy/AppStart$AppStartData;
+	public static synthetic fun copy$default (Ltart/legacy/AppStart$AppStartData;JJLjava/lang/Long;JJIIIILjava/lang/String;Ltart/legacy/AppLifecycleState;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Ltart/legacy/AppUpdateData;Ljava/lang/Long;Ljava/lang/Long;Ltart/legacy/ComponentInstantiatedEvent;Ltart/legacy/ActivityOnCreateEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityEvent;Ltart/legacy/ActivityTouchEvent;Ljava/lang/Long;Ljava/util/Map;ILjava/lang/Object;)Ltart/legacy/AppStart$AppStartData;
+	public final fun elapsedSinceStart ()J
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppTasks ()Ljava/util/List;
+	public final fun getAppUpdateData ()Ltart/legacy/AppUpdateData;
+	public final fun getApplicationInstantiatedElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getApplicationOnCreateDurationMillis ()Ljava/lang/Long;
+	public final fun getClassLoaderInstantiatedElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getCustomFirstEvents ()Ljava/util/Map;
+	public final fun getFirstActivityOnCreate ()Ltart/legacy/ActivityOnCreateEvent;
+	public final fun getFirstActivityOnResume ()Ltart/legacy/ActivityEvent;
+	public final fun getFirstActivityOnStart ()Ltart/legacy/ActivityEvent;
+	public final fun getFirstAppClassLoadElapsedUptimeMillis ()J
+	public final fun getFirstComponentInstantiated ()Ltart/legacy/ComponentInstantiatedEvent;
+	public final fun getFirstDraw ()Ltart/legacy/ActivityEvent;
+	public final fun getFirstFrameAfterFullyDrawnElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getFirstGlobalLayout ()Ltart/legacy/ActivityEvent;
+	public final fun getFirstIdleAfterFirstDraw ()Ltart/legacy/ActivityEvent;
+	public final fun getFirstIdleElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getFirstPostAfterFirstDraw ()Ltart/legacy/ActivityEvent;
+	public final fun getFirstPostAtFrontElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getFirstPostElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getFirstPreDraw ()Ltart/legacy/ActivityEvent;
+	public final fun getFirstTouchEvent ()Ltart/legacy/ActivityTouchEvent;
+	public final fun getHandleBindApplicationElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getImportance ()I
+	public final fun getImportanceAfterFirstPost ()I
+	public final fun getImportanceReasonCode ()I
+	public final fun getImportanceReasonPid ()I
+	public final fun getLastAppAliveElapsedTimeMillis ()Ljava/lang/Long;
+	public final fun getLastAppLifecycleState ()Ltart/legacy/AppLifecycleState;
+	public final fun getLastAppLifecycleStateChangedElapsedTimeMillis ()Ljava/lang/Long;
+	public final fun getPerfsInitElapsedUptimeMillis ()J
+	public final fun getProcessStartRealtimeMillis ()J
+	public final fun getProcessStartUptimeMillis ()J
+	public final fun getStartImportanceReasonComponent ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/AppStart$NoAppStartData : tart/legacy/AppStart {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Ltart/legacy/AppStart$NoAppStartData;
+	public static synthetic fun copy$default (Ltart/legacy/AppStart$NoAppStartData;Ljava/lang/String;ILjava/lang/Object;)Ltart/legacy/AppStart$NoAppStartData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/AppTask {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;)Ltart/legacy/AppTask;
+	public static synthetic fun copy$default (Ltart/legacy/AppTask;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)Ltart/legacy/AppTask;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBaseIntent ()Ljava/lang/String;
+	public final fun getElapsedSinceLastActiveRealtimeMillis ()Ljava/lang/Long;
+	public final fun getNumActivities ()Ljava/lang/Integer;
+	public final fun getTopActivity ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/AppUpdateData {
+	public fun <init> (Ltart/legacy/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;)V
+	public final fun component1 ()Ltart/legacy/AppUpdateStartStatus;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/lang/Boolean;
+	public final fun component7 ()Ljava/lang/Boolean;
+	public final fun component8 ()Ljava/lang/Boolean;
+	public final fun component9 ()Ljava/lang/Long;
+	public final fun copy (Ltart/legacy/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;)Ltart/legacy/AppUpdateData;
+	public static synthetic fun copy$default (Ltart/legacy/AppUpdateData;Ltart/legacy/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;ILjava/lang/Object;)Ltart/legacy/AppUpdateData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllInstalledVersionCodes ()Ljava/util/List;
+	public final fun getAllInstalledVersionNames ()Ljava/util/List;
+	public final fun getCrashedInLastProcess ()Ljava/lang/Boolean;
+	public final fun getElapsedRealtimeSinceCrash ()Ljava/lang/Long;
+	public final fun getFirstInstallTimeMillis ()J
+	public final fun getLastUpdateTimeMillis ()J
+	public final fun getRebootedSinceLastStart ()Ljava/lang/Boolean;
+	public final fun getStatus ()Ltart/legacy/AppUpdateStartStatus;
+	public final fun getUpdatedOsSinceLastStart ()Ljava/lang/Boolean;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/AppUpdateStartStatus : java/lang/Enum {
+	public static final field FIRST_START_AFTER_FRESH_INSTALL Ltart/legacy/AppUpdateStartStatus;
+	public static final field FIRST_START_AFTER_UPGRADE Ltart/legacy/AppUpdateStartStatus;
+	public static final field NORMAL_START Ltart/legacy/AppUpdateStartStatus;
+	public static fun valueOf (Ljava/lang/String;)Ltart/legacy/AppUpdateStartStatus;
+	public static fun values ()[Ltart/legacy/AppUpdateStartStatus;
+}
+
+public final class tart/legacy/AppWarmStart {
+	public fun <init> (Ltart/legacy/AppWarmStart$Temperature;JJ)V
+	public final fun component1 ()Ltart/legacy/AppWarmStart$Temperature;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun copy (Ltart/legacy/AppWarmStart$Temperature;JJ)Ltart/legacy/AppWarmStart;
+	public static synthetic fun copy$default (Ltart/legacy/AppWarmStart;Ltart/legacy/AppWarmStart$Temperature;JJILjava/lang/Object;)Ltart/legacy/AppWarmStart;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackgroundElapsedUptimeMillis ()J
+	public final fun getResumeToNextFrameElapsedUptimeMillis ()J
+	public final fun getTemperature ()Ltart/legacy/AppWarmStart$Temperature;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/AppWarmStart$Temperature : java/lang/Enum {
+	public static final field CREATED_NO_STATE Ltart/legacy/AppWarmStart$Temperature;
+	public static final field CREATED_WITH_STATE Ltart/legacy/AppWarmStart$Temperature;
+	public static final field RESUMED Ltart/legacy/AppWarmStart$Temperature;
+	public static fun valueOf (Ljava/lang/String;)Ltart/legacy/AppWarmStart$Temperature;
+	public static fun values ()[Ltart/legacy/AppWarmStart$Temperature;
+}
+
+public final class tart/legacy/ApplicationOnCreate {
+	public static final field AFTER_APP_ON_CREATE Ljava/lang/String;
+	public static final field AFTER_INJECT Ljava/lang/String;
+	public static final field AFTER_ON_AUTHENTICATED Ljava/lang/String;
+	public static final field AFTER_ON_ENTER_SCOPE Ljava/lang/String;
+	public static final field BEFORE_APP_ON_CREATE Ljava/lang/String;
+	public static final field BEFORE_ON_AUTHENTICATED Ljava/lang/String;
+	public static final field BEFORE_ON_ENTER_SCOPE Ljava/lang/String;
+	public static final field INSTANCE Ltart/legacy/ApplicationOnCreate;
+}
+
+public final class tart/legacy/ComponentInstantiatedEvent {
+	public fun <init> (Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun copy (Ljava/lang/String;J)Ltart/legacy/ComponentInstantiatedEvent;
+	public static synthetic fun copy$default (Ltart/legacy/ComponentInstantiatedEvent;Ljava/lang/String;JILjava/lang/Object;)Ltart/legacy/ComponentInstantiatedEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComponentName ()Ljava/lang/String;
+	public final fun getElapsedUptimeMillis ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/FrozenFrameOnTouch {
+	public static final field Companion Ltart/legacy/FrozenFrameOnTouch$Companion;
+	public static final field FROZEN_FRAME_THRESHOLD I
+	public fun <init> (Ljava/lang/String;IJJLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;IJJLjava/lang/String;)Ltart/legacy/FrozenFrameOnTouch;
+	public static synthetic fun copy$default (Ltart/legacy/FrozenFrameOnTouch;Ljava/lang/String;IJJLjava/lang/String;ILjava/lang/Object;)Ltart/legacy/FrozenFrameOnTouch;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActivityName ()Ljava/lang/String;
+	public final fun getFrameElapsedUptimeMillis ()J
+	public final fun getHandledElapsedUptimeMillis ()J
+	public final fun getPressedView ()Ljava/lang/String;
+	public final fun getRepeatTouchDownCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/FrozenFrameOnTouch$Companion {
+}
+
+public final class tart/legacy/Perfs {
+	public static final field INSTANCE Ltart/legacy/Perfs;
+	public static final fun customFirstEvent (Ljava/lang/String;)V
+	public static final fun customFirstEvent (Ljava/lang/String;Ljava/lang/Object;)V
+	public static synthetic fun customFirstEvent$default (Ljava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)V
+	public final fun getAppStart ()Ltart/legacy/AppStart;
+	public final fun getAppWarmStartListener ()Lkotlin/jvm/functions/Function1;
+	public final fun reportFullyDrawn ()V
+	public final fun setAppWarmStartListener (Lkotlin/jvm/functions/Function1;)V
+}
+
+public abstract interface class tart/legacy/TouchMetrics {
+	public abstract fun getLastTouchUpEvent ()Lkotlin/Pair;
+}
+

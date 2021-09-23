@@ -15,7 +15,7 @@ android {
   }
 
   defaultConfig {
-    minSdkVersion(14)
+    minSdkVersion(21)
     targetSdkVersion(30)
     versionCode = 1
     versionName = "1.0"
@@ -47,6 +47,7 @@ dependencies {
   compileOnly(Dependencies.Build.AndroidXAnnotation)
 
   implementation(Dependencies.Curtains)
+  implementation(Dependencies.AndroidXCore)
 
   testImplementation(Dependencies.JUnit)
   testImplementation(Dependencies.Mockito)

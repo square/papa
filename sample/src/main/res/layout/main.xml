@@ -9,30 +9,4 @@
     tools:ignore="HardcodedText"
     >
 
-  <Button
-      android:id="@+id/show_dialog"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginBottom="16dp"
-      android:text="Show Dialog"
-      style="@style/Widget.AppCompat.Button.Borderless"
-      />
-
-  <Button
-      android:id="@+id/show_toast"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginBottom="16dp"
-      android:text="Show Toast"
-      style="@style/Widget.AppCompat.Button.Borderless"
-      />
-
-  <Spinner
-      android:id="@+id/spinner"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
-
-  <EditText
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
 </LinearLayout>
