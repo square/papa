@@ -8,6 +8,8 @@ import android.os.Looper
 import android.os.SystemClock
 import tart.legacy.AppStart.AppStartData
 import tart.legacy.AppUpdateData
+import tart.legacy.AppUpdateData.ErrorRetrievingAppUpdateData
+import tart.legacy.AppUpdateData.RealAppUpdateData
 import tart.legacy.AppUpdateStartStatus
 import java.util.concurrent.Executors
 import kotlin.math.abs
@@ -16,11 +18,8 @@ import kotlin.math.abs
  * Detects when the app starts after first install, an update, or a crash.
  */
 internal class AppUpdateDetector private constructor(
-  private val application: Application,
-  private val appStartUpdateCallback: ((AppStartData) -> AppStartData) -> Unit
+  private val application: Application
 ) {
-
-  private val handler = Handler(Looper.getMainLooper())
 
   /**
    * Note: initialization here isn't normally a blocking operation, it just starts an async load.
@@ -38,7 +37,7 @@ internal class AppUpdateDetector private constructor(
    * This is called from a background thread because shared preferences reads are blocking
    * until loaded.
    */
-  private fun readAndUpdate() {
+  private fun readAndUpdate(): (AppStartData) -> AppStartData {
     val packageManager = application.packageManager
     val packageName = application.packageName
     // API 30 limits package visibility when calling getPackageInfo, but the specific usage here
@@ -176,8 +175,7 @@ internal class AppUpdateDetector private constructor(
     val allVersionCodes = allVersionCodesString.split(", ")
       .map { it.toInt() }
 
-    handler.post {
-      appStartUpdateCallback { appStartData ->
+      return { appStartData ->
         val elapsedRealtimeSinceCrash = if (crashedInLastProcess == true &&
           rebootedSinceLastStart == false
         ) {
@@ -186,7 +184,7 @@ internal class AppUpdateDetector private constructor(
           null
         }
         appStartData.copy(
-          appUpdateData = AppUpdateData(
+          appUpdateData = RealAppUpdateData(
             status = status,
             firstInstallTimeMillis = appPackageInfo.firstInstallTime,
             lastUpdateTimeMillis = appPackageInfo.lastUpdateTime,
@@ -199,7 +197,6 @@ internal class AppUpdateDetector private constructor(
           )
         )
       }
-    }
   }
 
   private fun onAppCrashing() {
@@ -228,13 +225,28 @@ internal class AppUpdateDetector private constructor(
     fun Application.trackAppUpgrade(
       block: ((AppStartData) -> AppStartData) -> Unit
     ) {
-      val detector = AppUpdateDetector(this, block)
+      val detector = AppUpdateDetector(this)
       val executorService = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable).apply {
           name = "app-upgrade-detector"
         }
       }
-      executorService.execute { detector.readAndUpdate() }
+      val handler = Handler(Looper.getMainLooper())
+
+      executorService.execute {
+        try {
+          val transform = detector.readAndUpdate()
+          handler.post {
+            block(transform)
+          }
+        } catch (throwable: Throwable) {
+          handler.post {
+            block { appStartData ->
+              appStartData.copy(appUpdateData = ErrorRetrievingAppUpdateData(throwable))
+            }
+          }
+        }
+      }
       val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
       Thread.setDefaultUncaughtExceptionHandler { thread, exception ->
         detector.onAppCrashing()

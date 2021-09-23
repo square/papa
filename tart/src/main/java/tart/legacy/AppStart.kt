@@ -1,5 +1,6 @@
 package tart.legacy
 import android.os.SystemClock
+import tart.legacy.AppUpdateData.NoAppUpdateDataYet
 
 /**
  * A cold start refers to an app's starting from scratch: the system's process has not, until this
@@ -100,7 +101,7 @@ sealed class AppStart {
     /**
      * Details on successive app updates.
      */
-    val appUpdateData: AppUpdateData? = null,
+    val appUpdateData: AppUpdateData = NoAppUpdateDataYet,
     /**
      * Elapsed time (since process fork) when the main thread runs the first app posted message.
      * This should help us (in)validate the hypothesis that the first post runs right after
