@@ -15,7 +15,7 @@ import tart.legacy.AppStart.AppStartData
 import tart.internal.AppUpdateDetector.Companion.trackAppUpgrade
 import tart.internal.MyProcess
 import tart.internal.MyProcess.MyProcessData
-import tart.internal.MyProcess.NoMyProcessData
+import tart.internal.MyProcess.ErrorRetrievingMyProcessData
 import tart.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLifecycle
 import tart.internal.enforceMainThread
 import tart.internal.isOnMainThread
@@ -82,8 +82,10 @@ object Perfs {
       return
     }
     val myProcessInfo = when (val myProcessInfo = MyProcess.findMyProcessInfo(context)) {
-      is NoMyProcessData -> {
-        notInitializedReason = "Error retrieving process info: ${myProcessInfo.reason}"
+      is ErrorRetrievingMyProcessData -> {
+        notInitializedReason = "Error retrieving process info, " +
+          "${myProcessInfo.throwable::class.java.simpleName}: " +
+          "${myProcessInfo.throwable.message}"
         return
       }
       is MyProcessData -> {
@@ -136,13 +138,14 @@ object Perfs {
           System.currentTimeMillis() - lastTime
         }
       }
-    val lastAppAliveElapsedTimeMillis = prefs.getLong(LAST_ALIVE_CURRENT_MILLIS, -1).let { lastTime ->
-      if (lastTime == -1L) {
-        null
-      } else {
-        System.currentTimeMillis() - lastTime
+    val lastAppAliveElapsedTimeMillis =
+      prefs.getLong(LAST_ALIVE_CURRENT_MILLIS, -1).let { lastTime ->
+        if (lastTime == -1L) {
+          null
+        } else {
+          System.currentTimeMillis() - lastTime
+        }
       }
-    }
     val processInfo = myProcessInfo.info
     appStartData = AppStartData(
       processStartRealtimeMillis = myProcessInfo.processStartRealtimeMillis,
@@ -204,7 +207,8 @@ object Perfs {
           // starts.
           if (afterFirstPost) {
             val resumedUptimeMillis = SystemClock.uptimeMillis()
-            val backgroundElapsedUptimeMillis = resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
+            val backgroundElapsedUptimeMillis =
+              resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
 
             Choreographer.getInstance().postFrameCallback {
               handler.postAtFrontOfQueue {

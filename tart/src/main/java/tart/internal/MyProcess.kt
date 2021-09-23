@@ -8,11 +8,11 @@ import android.os.SystemClock
 import tart.legacy.AppTask
 import tart.internal.MyProcess.Companion.findMyProcessInfo
 import tart.internal.MyProcess.MyProcessData
-import tart.internal.MyProcess.NoMyProcessData
+import tart.internal.MyProcess.ErrorRetrievingMyProcessData
 
 /**
  * [findMyProcessInfo] captures and returns information about the current process as
- * [MyProcessData] or [NoMyProcessData] if there was an error.
+ * [MyProcessData] or [ErrorRetrievingMyProcessData] if there was an error.
  */
 internal sealed class MyProcess {
   class MyProcessData(
@@ -21,7 +21,7 @@ internal sealed class MyProcess {
     val appTasks: List<AppTask>
   ) : MyProcess()
 
-  class NoMyProcessData(val reason: String) : MyProcess()
+  class ErrorRetrievingMyProcessData(val throwable: Throwable) : MyProcess()
 
   companion object {
     @Suppress("TooGenericExceptionCaught")
@@ -43,27 +43,21 @@ internal sealed class MyProcess {
               }
             }
             val processIds = runningProcesses.map { it.pid }
-            return NoMyProcessData(
+            return ErrorRetrievingMyProcessData(RuntimeException(
               "ActivityManager.getRunningAppProcesses() returned $processIds, " +
-                "no process matching myPid() $myPid"
+                "no process matching myPid() $myPid")
             )
-          } ?: NoMyProcessData("ActivityManager.getRunningAppProcesses() returned null")
+          } ?: ErrorRetrievingMyProcessData(RuntimeException("ActivityManager.getRunningAppProcesses() returned null"))
         } catch (exception: SecurityException) {
           // This is a known possible error for isolated processes.
           // https://github.com/square/leakcanary/issues/948
-          return NoMyProcessData(
-            "SecurityException calling ActivityManager.getRunningAppProcesses(): " +
-              exception.message
-          )
+          return ErrorRetrievingMyProcessData(exception)
         }
       } catch (throwable: Throwable) {
         // This should never happen, but we're touching risky APIs very early in the app lifecycle
         // prior to even having crash reporting set up (which is also why we don't report the
         // stacktrace).
-        return NoMyProcessData(
-          "Unexpected ${throwable::class.java.simpleName} in " +
-            "MyProcessInfoOrError.findMyProcessInfo() : ${throwable.message}"
-        )
+        return ErrorRetrievingMyProcessData(throwable)
       }
     }
 
