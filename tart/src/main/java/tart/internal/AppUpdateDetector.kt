@@ -38,8 +38,6 @@ internal class AppUpdateDetector private constructor(
    * This is called from a background thread because shared preferences reads are blocking
    * until loaded.
    */
-  // TODO Figure out versionCode deprecation
-  @Suppress("DEPRECATION")
   private fun readAndUpdate() {
     val packageManager = application.packageManager
     val packageName = application.packageName
@@ -62,7 +60,16 @@ internal class AppUpdateDetector private constructor(
     val crashedInLastProcess: Boolean?
     val lastProcessCrashElapsedRealtime: Long?
 
-    if (!preferences.contains(VERSION_CODE_KEY)) {
+    // This was null once when deploying from AS on a API 21 emulator.
+    val versionName = appPackageInfo.versionName ?: "null"
+    val longVersionCode = if (Build.VERSION.SDK_INT >= 28) {
+      appPackageInfo.longVersionCode
+    } else {
+      appPackageInfo.versionCode.toLong()
+    }
+    val longVersionCodeString = longVersionCode.toString()
+
+    if (!preferences.contains(VERSION_NAME_KEY)) {
       status = if (appPackageInfo.firstInstallTime != appPackageInfo.lastUpdateTime) {
         crashedInLastProcess = null
         updatedOsSinceLastStart = null
@@ -76,22 +83,24 @@ internal class AppUpdateDetector private constructor(
         rebootedSinceLastStart = false
         AppUpdateStartStatus.FIRST_START_AFTER_FRESH_INSTALL
       }
-      // TODO Figure out why it was null.
-      allVersionNamesString = appPackageInfo.versionName ?: "why was this null in AS??"
-      allVersionCodesString = appPackageInfo.versionCode.toString()
+      allVersionNamesString = versionName
+      allVersionCodesString = longVersionCodeString
       lastProcessCrashElapsedRealtime = null
     } else {
-      val previousVersionCode =
+      val previousLongVersionCode = if (preferences.contains(LONG_VERSION_CODE_KEY)) {
+        preferences.getLong(LONG_VERSION_CODE_KEY, -1)
+      } else {
         preferences.getInt(VERSION_CODE_KEY, -1)
+      }
       allVersionNamesString =
-        preferences.getString(ALL_VERSION_NAMES_KEY, appPackageInfo.versionName)!!
+        preferences.getString(ALL_VERSION_NAMES_KEY, versionName)!!
       allVersionCodesString =
-        preferences.getString(ALL_VERSION_CODES_KEY, appPackageInfo.versionCode.toString())!!
+        preferences.getString(ALL_VERSION_CODES_KEY, longVersionCodeString)!!
 
-      if (previousVersionCode != appPackageInfo.versionCode) {
+      if (previousLongVersionCode != longVersionCode) {
         status = AppUpdateStartStatus.FIRST_START_AFTER_UPGRADE
-        allVersionNamesString = appPackageInfo.versionName + ", " + allVersionNamesString
-        allVersionCodesString = appPackageInfo.versionCode.toString() + ", " + allVersionCodesString
+        allVersionNamesString = "$versionName, $allVersionNamesString"
+        allVersionCodesString = "$longVersionCodeString, $allVersionCodesString"
       } else {
         status = AppUpdateStartStatus.NORMAL_START
       }
@@ -153,8 +162,8 @@ internal class AppUpdateDetector private constructor(
     }
 
     preferences.edit()
-      .putInt(VERSION_CODE_KEY, appPackageInfo.versionCode)
-      .putString(VERSION_NAME_KEY, appPackageInfo.versionName)
+      .putLong(LONG_VERSION_CODE_KEY, longVersionCode)
+      .putString(VERSION_NAME_KEY, versionName)
       .putString(ALL_VERSION_NAMES_KEY, allVersionNamesString)
       .putString(ALL_VERSION_CODES_KEY, allVersionCodesString)
       .putLong(ELAPSED_REALTIME_KEY, currentElapsedRealtime)
@@ -203,6 +212,7 @@ internal class AppUpdateDetector private constructor(
     // Note: avoid renaming these constants otherwise the update data will be post.
     private const val PREF_NAME = "AppUpgradeDetector"
     private const val VERSION_CODE_KEY = "app_version_code"
+    private const val LONG_VERSION_CODE_KEY = "app_long_version_code"
     private const val VERSION_NAME_KEY = "app_version_name"
     private const val ALL_VERSION_NAMES_KEY = "app_all_version_names"
     private const val ALL_VERSION_CODES_KEY = "app_all_version_codes"
