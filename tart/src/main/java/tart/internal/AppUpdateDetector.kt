@@ -23,11 +23,16 @@ internal class AppUpdateDetector private constructor(
   private val handler = Handler(Looper.getMainLooper())
 
   /**
-   * Note: initialization here isn't a blocking operation, it starts an async load.
+   * Note: initialization here isn't normally a blocking operation, it just starts an async load.
    * The first read will be blocking until the shared preferences are loaded in memory, which is
    * why [readAndUpdate] is called from a background thread.
+   *
+   * However some versions of Android trigger strict mode IO on shared pref retrieval, hence why
+   * this is a lazy.
    */
-  private val preferences = application.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+  private val preferences by lazy {
+    application.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+  }
 
   /**
    * This is called from a background thread because shared preferences reads are blocking
