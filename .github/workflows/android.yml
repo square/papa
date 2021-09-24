@@ -35,11 +35,6 @@ jobs:
           - 26
           - 29
           - 30
-        include:
-          - arch: x86
-            api-level: 16
-          - arch: x86
-            api-level: 19
 
     steps:
       - uses: actions/checkout@v2
