@@ -12,6 +12,7 @@
   <uses-sdk tools:overrideLibrary="android_libs.ub_uiautomator" />
 
   <application>
+    <activity android:name="tart.test.utilities.TestActivity" />
   </application>
 </manifest>
 

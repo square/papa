@@ -3,17 +3,40 @@ package com.squareup.tart.sample
 import android.app.Application
 import android.os.Handler
 import android.os.Looper
+import tart.AppLaunch
+import tart.PreLaunchState.ACTIVITY_WAS_STOPPED
+import tart.PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
+import tart.PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
+import tart.PreLaunchState.NO_PROCESS
+import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
+import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
+import tart.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
 import tart.legacy.Perfs
 
 class ExampleApplication : Application() {
   override fun onCreate() {
     super.onCreate()
+
     Handler(Looper.getMainLooper()).postDelayed({
       println("App start:\n${Perfs.appStart}")
     }, 6000)
 
     Perfs.appWarmStartListener = { appWarmStart ->
       println("Warm start:\n$appWarmStart")
+    }
+
+    AppLaunch.onAppLaunchListeners += { appLaunch ->
+      val startType = when (appLaunch.preLaunchState) {
+        NO_PROCESS -> "cold start"
+        NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL -> "cold start"
+        NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE -> "cold start"
+        PROCESS_WAS_LAUNCHING_IN_BACKGROUND -> "warm start"
+        NO_ACTIVITY_NO_SAVED_STATE -> "warm start"
+        NO_ACTIVITY_BUT_SAVED_STATE -> "warm start"
+        ACTIVITY_WAS_STOPPED -> "hot start"
+      }
+      val durationMillis = appLaunch.duration.uptimeMillis
+      println("$startType launch: $durationMillis ms")
     }
   }
 }

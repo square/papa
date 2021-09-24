@@ -7,7 +7,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import tart.legacy.AppStart.AppStartData
-import tart.legacy.AppUpdateData
 import tart.legacy.AppUpdateData.ErrorRetrievingAppUpdateData
 import tart.legacy.AppUpdateData.RealAppUpdateData
 import tart.legacy.AppUpdateStartStatus
@@ -61,6 +60,8 @@ internal class AppUpdateDetector private constructor(
 
     // This was null once when deploying from AS on a API 21 emulator.
     val versionName = appPackageInfo.versionName ?: "null"
+
+    @Suppress("DEPRECATION")
     val longVersionCode = if (Build.VERSION.SDK_INT >= 28) {
       appPackageInfo.longVersionCode
     } else {
@@ -175,28 +176,28 @@ internal class AppUpdateDetector private constructor(
     val allVersionCodes = allVersionCodesString.split(", ")
       .map { it.toInt() }
 
-      return { appStartData ->
-        val elapsedRealtimeSinceCrash = if (crashedInLastProcess == true &&
-          rebootedSinceLastStart == false
-        ) {
-          appStartData.processStartRealtimeMillis - lastProcessCrashElapsedRealtime!!
-        } else {
-          null
-        }
-        appStartData.copy(
-          appUpdateData = RealAppUpdateData(
-            status = status,
-            firstInstallTimeMillis = appPackageInfo.firstInstallTime,
-            lastUpdateTimeMillis = appPackageInfo.lastUpdateTime,
-            allInstalledVersionNames = allVersionNames,
-            allInstalledVersionCodes = allVersionCodes,
-            updatedOsSinceLastStart = updatedOsSinceLastStart,
-            rebootedSinceLastStart = rebootedSinceLastStart,
-            crashedInLastProcess = crashedInLastProcess,
-            elapsedRealtimeSinceCrash = elapsedRealtimeSinceCrash
-          )
-        )
+    return { appStartData ->
+      val elapsedRealtimeSinceCrash = if (crashedInLastProcess == true &&
+        rebootedSinceLastStart == false
+      ) {
+        appStartData.processStartRealtimeMillis - lastProcessCrashElapsedRealtime!!
+      } else {
+        null
       }
+      appStartData.copy(
+        appUpdateData = RealAppUpdateData(
+          status = status,
+          firstInstallTimeMillis = appPackageInfo.firstInstallTime,
+          lastUpdateTimeMillis = appPackageInfo.lastUpdateTime,
+          allInstalledVersionNames = allVersionNames,
+          allInstalledVersionCodes = allVersionCodes,
+          updatedOsSinceLastStart = updatedOsSinceLastStart,
+          rebootedSinceLastStart = rebootedSinceLastStart,
+          crashedInLastProcess = crashedInLastProcess,
+          elapsedRealtimeSinceCrash = elapsedRealtimeSinceCrash
+        )
+      )
+    }
   }
 
   private fun onAppCrashing() {

@@ -1,13 +1,10 @@
 package tart.internal
 
 import android.app.Activity
-import android.os.Handler
-import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
 import android.view.ViewTreeObserver
-import android.view.ViewTreeObserver.OnDrawListener
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.view.ViewTreeObserver.OnPreDrawListener
 import android.view.Window
@@ -31,15 +28,6 @@ internal fun Activity.onNextGlobalLayout(callback: () -> Unit) {
  */
 internal fun Activity.onNextPreDraw(callback: () -> Unit) {
   val wrapper = OnPreDrawListenerWrapper()
-  ViewTreeObservers.installListener(window, wrapper, callback)
-}
-
-/**
- * Calls back exactly once, when the next draw happens for [this] activity's
- * [android.view.Window].
- */
-internal fun Activity.onNextDraw(callback: () -> Unit) {
-  val wrapper = OnDrawListenerWrapper()
   ViewTreeObservers.installListener(window, wrapper, callback)
 }
 
@@ -67,7 +55,8 @@ private interface ViewTreeObserverListenerWrapper<T> {
   )
 }
 
-private class OnGlobalLayoutListenerWrapper : ViewTreeObserverListenerWrapper<OnGlobalLayoutListener> {
+private class OnGlobalLayoutListenerWrapper :
+  ViewTreeObserverListenerWrapper<OnGlobalLayoutListener> {
   override fun wrap(callback: () -> Unit): OnGlobalLayoutListener {
     return OnGlobalLayoutListener {
       callback()
@@ -112,36 +101,7 @@ private class OnPreDrawListenerWrapper : ViewTreeObserverListenerWrapper<OnPreDr
   }
 }
 
-private class OnDrawListenerWrapper : ViewTreeObserverListenerWrapper<OnDrawListener> {
-  override fun wrap(callback: () -> Unit): OnDrawListener {
-    return OnDrawListener {
-      callback()
-    }
-  }
-
-  override fun addListener(
-    viewTreeObserver: ViewTreeObserver,
-    listener: OnDrawListener
-  ) {
-    viewTreeObserver.addOnDrawListener(listener)
-  }
-
-  override fun removeListener(
-    viewTreeObserver: ViewTreeObserver,
-    listener: OnDrawListener
-  ) {
-    // Cannot remove onDrawListener from onDraw.
-    ViewTreeObservers.handler.post {
-      if (viewTreeObserver.isAlive) {
-        viewTreeObserver.removeOnDrawListener(listener)
-      }
-    }
-  }
-}
-
 private object ViewTreeObservers {
-
-  val handler = Handler(Looper.getMainLooper())
 
   fun <T : Any> installListener(
     window: Window,

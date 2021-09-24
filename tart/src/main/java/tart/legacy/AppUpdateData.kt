@@ -2,7 +2,7 @@ package tart.legacy
 
 sealed class AppUpdateData {
 
-  object NoAppUpdateDataYet: AppUpdateData()
+  object NoAppUpdateDataYet : AppUpdateData()
 
   data class ErrorRetrievingAppUpdateData(val throwable: Throwable) : AppUpdateData()
 
@@ -74,5 +74,4 @@ sealed class AppUpdateData {
      */
     val elapsedRealtimeSinceCrash: Long?
   ) : AppUpdateData()
-
 }

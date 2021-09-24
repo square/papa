@@ -1,3 +1,45 @@
+public final class tart/AppLaunch {
+	public static final field Companion Ltart/AppLaunch$Companion;
+	public fun <init> (Ltart/PreLaunchState;Ltart/CpuDuration;Ltart/CpuDuration;)V
+	public final fun getDuration ()Ltart/CpuDuration;
+	public final fun getEnd ()Ltart/CpuDuration;
+	public final fun getPreLaunchState ()Ltart/PreLaunchState;
+	public final fun getStart ()Ltart/CpuDuration;
+	public final fun isSlowLaunch ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/AppLaunch$Companion {
+	public final fun getOnAppLaunchListeners ()Ljava/util/List;
+}
+
+public final class tart/CpuDuration {
+	public static final field Companion Ltart/CpuDuration$Companion;
+	public fun <init> (JJ)V
+	public final fun getRealtimeDriftMillis ()J
+	public final fun getRealtimeMillis ()J
+	public final fun getUptimeMillis ()J
+	public final fun minus (Ltart/CpuDuration;)Ltart/CpuDuration;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/CpuDuration$Companion {
+	public final fun now ()Ltart/CpuDuration;
+}
+
+public final class tart/PreLaunchState : java/lang/Enum {
+	public static final field ACTIVITY_WAS_STOPPED Ltart/PreLaunchState;
+	public static final field NO_ACTIVITY_BUT_SAVED_STATE Ltart/PreLaunchState;
+	public static final field NO_ACTIVITY_NO_SAVED_STATE Ltart/PreLaunchState;
+	public static final field NO_PROCESS Ltart/PreLaunchState;
+	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL Ltart/PreLaunchState;
+	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE Ltart/PreLaunchState;
+	public static final field PROCESS_WAS_LAUNCHING_IN_BACKGROUND Ltart/PreLaunchState;
+	public final fun getSlowThresholdMillis ()J
+	public static fun valueOf (Ljava/lang/String;)Ltart/PreLaunchState;
+	public static fun values ()[Ltart/PreLaunchState;
+}
+
 public final class tart/internal/FrozenFrameOnTouchDetector {
 	public static final field INSTANCE Ltart/internal/FrozenFrameOnTouchDetector;
 	public final fun install (Lkotlin/jvm/functions/Function1;)V
@@ -174,7 +216,25 @@ public final class tart/legacy/AppTask {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class tart/legacy/AppUpdateData {
+public abstract class tart/legacy/AppUpdateData {
+}
+
+public final class tart/legacy/AppUpdateData$ErrorRetrievingAppUpdateData : tart/legacy/AppUpdateData {
+	public fun <init> (Ljava/lang/Throwable;)V
+	public final fun component1 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/Throwable;)Ltart/legacy/AppUpdateData$ErrorRetrievingAppUpdateData;
+	public static synthetic fun copy$default (Ltart/legacy/AppUpdateData$ErrorRetrievingAppUpdateData;Ljava/lang/Throwable;ILjava/lang/Object;)Ltart/legacy/AppUpdateData$ErrorRetrievingAppUpdateData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getThrowable ()Ljava/lang/Throwable;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class tart/legacy/AppUpdateData$NoAppUpdateDataYet : tart/legacy/AppUpdateData {
+	public static final field INSTANCE Ltart/legacy/AppUpdateData$NoAppUpdateDataYet;
+}
+
+public final class tart/legacy/AppUpdateData$RealAppUpdateData : tart/legacy/AppUpdateData {
 	public fun <init> (Ltart/legacy/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;)V
 	public final fun component1 ()Ltart/legacy/AppUpdateStartStatus;
 	public final fun component2 ()J
@@ -185,8 +245,8 @@ public final class tart/legacy/AppUpdateData {
 	public final fun component7 ()Ljava/lang/Boolean;
 	public final fun component8 ()Ljava/lang/Boolean;
 	public final fun component9 ()Ljava/lang/Long;
-	public final fun copy (Ltart/legacy/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;)Ltart/legacy/AppUpdateData;
-	public static synthetic fun copy$default (Ltart/legacy/AppUpdateData;Ltart/legacy/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;ILjava/lang/Object;)Ltart/legacy/AppUpdateData;
+	public final fun copy (Ltart/legacy/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;)Ltart/legacy/AppUpdateData$RealAppUpdateData;
+	public static synthetic fun copy$default (Ltart/legacy/AppUpdateData$RealAppUpdateData;Ltart/legacy/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;ILjava/lang/Object;)Ltart/legacy/AppUpdateData$RealAppUpdateData;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAllInstalledVersionCodes ()Ljava/util/List;
 	public final fun getAllInstalledVersionNames ()Ljava/util/List;
@@ -228,6 +288,7 @@ public final class tart/legacy/AppWarmStart$Temperature : java/lang/Enum {
 	public static final field CREATED_NO_STATE Ltart/legacy/AppWarmStart$Temperature;
 	public static final field CREATED_WITH_STATE Ltart/legacy/AppWarmStart$Temperature;
 	public static final field RESUMED Ltart/legacy/AppWarmStart$Temperature;
+	public static final field STARTED Ltart/legacy/AppWarmStart$Temperature;
 	public static fun valueOf (Ljava/lang/String;)Ltart/legacy/AppWarmStart$Temperature;
 	public static fun values ()[Ltart/legacy/AppWarmStart$Temperature;
 }

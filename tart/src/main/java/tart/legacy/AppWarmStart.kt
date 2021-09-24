@@ -36,6 +36,11 @@ data class AppWarmStart(
     CREATED_WITH_STATE,
 
     /**
+     * Warm start: the activity was started and then resumed
+     */
+    STARTED,
+
+    /**
      * A hot start: the activity was resumed.
      */
     RESUMED

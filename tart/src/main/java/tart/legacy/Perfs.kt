@@ -1,25 +1,43 @@
 package tart.legacy
 
 import android.app.ActivityManager
+import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.Process
 import android.os.StrictMode
 import android.os.SystemClock
 import android.view.Choreographer
-import tart.legacy.AppLifecycleState.PAUSED
-import tart.legacy.AppLifecycleState.RESUMED
-import tart.legacy.AppStart.AppStartData
+import android.view.FrameMetrics
+import curtains.onNextDraw
+import tart.AppLaunch
+import tart.CpuDuration
+import tart.PreLaunchState
 import tart.internal.AppUpdateDetector.Companion.trackAppUpgrade
+import tart.internal.CurrentFrameMetricsListener.Companion.onNextFrameMetrics
 import tart.internal.MyProcess
-import tart.internal.MyProcess.MyProcessData
 import tart.internal.MyProcess.ErrorRetrievingMyProcessData
+import tart.internal.MyProcess.MyProcessData
 import tart.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLifecycle
 import tart.internal.enforceMainThread
 import tart.internal.isOnMainThread
+import tart.internal.postAtFrontOfQueueAsync
+import tart.legacy.AppLifecycleState.PAUSED
+import tart.legacy.AppLifecycleState.RESUMED
+import tart.legacy.AppStart.AppStartData
 import tart.legacy.AppStart.NoAppStartData
+import tart.legacy.AppUpdateData.RealAppUpdateData
+import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_FRESH_INSTALL
+import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_UPGRADE
+import tart.legacy.AppUpdateStartStatus.NORMAL_START
+import tart.legacy.AppWarmStart.Temperature
+import tart.legacy.AppWarmStart.Temperature.CREATED_NO_STATE
+import tart.legacy.AppWarmStart.Temperature.CREATED_WITH_STATE
+import tart.legacy.AppWarmStart.Temperature.STARTED
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
@@ -39,7 +57,7 @@ object Perfs {
   @Volatile
   private lateinit var appStartData: AppStartData
 
-  private val classInitUptimeMillis: Long = SystemClock.uptimeMillis()
+  private val classInit = CpuDuration.now()
 
   internal var classLoaderInstantiatedUptimeMillis: Long? = null
   internal var applicationInstantiatedUptimeMillis: Long? = null
@@ -47,10 +65,44 @@ object Perfs {
 
   private var reportedFullDrawn = false
 
+  private val bindApplicationStart: CpuDuration
+    get() = if (Build.VERSION.SDK_INT >= 24) {
+      val reportedStart =
+        CpuDuration(Process.getStartUptimeMillis(), Process.getStartElapsedRealtime())
+
+      val firstPostAtFrontElapsedUptimeMillis =
+        appStartData.firstPostAtFrontElapsedUptimeMillis
+      if (firstPostAtFrontElapsedUptimeMillis != null) {
+        val firstPostAtFrontUptimeMillis =
+          firstPostAtFrontElapsedUptimeMillis - appStartData.processStartUptimeMillis
+        if (firstPostAtFrontUptimeMillis - reportedStart.uptimeMillis < 60_000) {
+          reportedStart
+        } else {
+          // Reported process start to first post at front is greater than 1 min. That's
+          // no good, let's fallback to class init as starting point.
+          // https://dev.to/pyricau/android-vitals-when-did-my-app-start-24p4
+          classInit
+        }
+      } else {
+        // Should not happen: first post at front hasn't run yet
+        reportedStart
+      }
+    } else {
+      classInit
+    }
+
   /**
    * Can be set to listen to app warm starts.
    */
   var appWarmStartListener: ((AppWarmStart) -> Unit)? = null
+
+  internal val appLaunchListeners = CopyOnWriteArrayList<(AppLaunch) -> Unit>()
+
+  private val appLaunchListener: (AppLaunch) -> Unit = { appLaunch ->
+    for (listener in appLaunchListeners) {
+      listener(appLaunch)
+    }
+  }
 
   internal fun firstClassLoaded() {
     // Prior to Android P, PerfsAppStartListener is the first loaded class
@@ -96,11 +148,12 @@ object Perfs {
     notInitializedReason = ""
     val application: Application = context
 
-    val elapsedSinceProcessStartMillis =
+    val elapsedSinceProcessStartRealtimeMillis =
       SystemClock.elapsedRealtime() - myProcessInfo.processStartRealtimeMillis
     // We rely on SystemClock.uptimeMillis() for performance related metrics.
     // See https://dev.to/pyricau/android-vitals-what-time-is-it-2oih
-    val processStartUptimeMillis = SystemClock.uptimeMillis() - elapsedSinceProcessStartMillis
+    val processStartUptimeMillis =
+      SystemClock.uptimeMillis() - elapsedSinceProcessStartRealtimeMillis
 
     // "handleBindApplication" because Process.setStartTimes is called from
     // ActivityThread.handleBindApplication
@@ -118,7 +171,7 @@ object Perfs {
       appStartData = appStartData.copy(firstPostElapsedUptimeMillis = firstPost)
     }
 
-      val processInfoAfterFirstPost = ActivityManager.RunningAppProcessInfo()
+    val processInfoAfterFirstPost = ActivityManager.RunningAppProcessInfo()
     try {
       ActivityManager.getMyMemoryState(processInfoAfterFirstPost)
     } catch (ignored: Throwable) {
@@ -157,7 +210,7 @@ object Perfs {
       processStartRealtimeMillis = myProcessInfo.processStartRealtimeMillis,
       processStartUptimeMillis = processStartUptimeMillis,
       handleBindApplicationElapsedUptimeMillis = handleBindApplicationElapsedUptimeMillis,
-      firstAppClassLoadElapsedUptimeMillis = classInitUptimeMillis - processStartUptimeMillis,
+      firstAppClassLoadElapsedUptimeMillis = classInit.uptimeMillis - processStartUptimeMillis,
       perfsInitElapsedUptimeMillis = initCalledUptimeMillis - processStartUptimeMillis,
       importance = processInfo.importance,
       importanceAfterFirstPost = processInfoAfterFirstPost.importance,
@@ -197,7 +250,7 @@ object Perfs {
       { updateAppStartData ->
         appStartData = updateAppStartData(appStartData)
       },
-      { state, temperature ->
+      { state, activity, temperature, start ->
         // Note: we only start tracking app lifecycle state after the first resume. If the app has
         // never been resumed, the last state will stay null.
         prefs.edit()
@@ -208,18 +261,62 @@ object Perfs {
 
         if (state == PAUSED) {
           enteredBackgroundForWarmStartUptimeMillis = SystemClock.uptimeMillis()
-        } else {
-          // A change of state before the first post indicates a cold start. This tracks warm and hot
-          // starts.
-          if (afterFirstPost) {
-            val resumedUptimeMillis = SystemClock.uptimeMillis()
-            val backgroundElapsedUptimeMillis =
-              resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
+        } else if (temperature != Temperature.RESUMED) {
+          // We skipped RESUMED because going from pause to resume isn't considered a launch
+          val resumedAfterFirstPost = afterFirstPost
+          val resumedUptimeMillis = start.uptimeMillis
+          val backgroundElapsedUptimeMillis =
+            resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
+          activity.window.onNextDraw {
+            val recordLaunchEnd: (CpuDuration) -> Unit = { launchEnd ->
+              val resumeToNextFrameElapsedUptimeMillis =
+                launchEnd.uptimeMillis - resumedUptimeMillis
 
-            Choreographer.getInstance().postFrameCallback {
-              handler.postAtFrontOfQueue {
-                val resumeToNextFrameElapsedUptimeMillis =
-                  SystemClock.uptimeMillis() - resumedUptimeMillis
+                (appStart as? AppStartData)?.let { appStartData ->
+                  if (resumedAfterFirstPost) {
+                    val launchState = when (temperature) {
+                      CREATED_NO_STATE -> PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
+                      CREATED_WITH_STATE -> PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
+                      STARTED -> PreLaunchState.ACTIVITY_WAS_STOPPED
+                      Temperature.RESUMED -> error("resumed is skipped")
+                    }
+                    appLaunchListener(AppLaunch(launchState, start, launchEnd))
+                  } else {
+                    if (appStartData.importance == IMPORTANCE_FOREGROUND) {
+                      val preLaunchState = when (val updateData = appStartData.appUpdateData) {
+                        is RealAppUpdateData -> {
+                          when (updateData.status) {
+                            FIRST_START_AFTER_FRESH_INSTALL -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
+                            FIRST_START_AFTER_UPGRADE -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
+                            NORMAL_START -> PreLaunchState.NO_PROCESS
+                          }
+                        }
+                        else -> PreLaunchState.NO_PROCESS
+                      }
+                      appLaunchListener(
+                        AppLaunch(
+                          preLaunchState,
+                          bindApplicationStart,
+                          launchEnd
+                        )
+                      )
+                    } else {
+                      // TODO this will yield much smaller time than perceived by users
+                      // unless we had a way to know when the system changed its mind.
+                      appLaunchListener(
+                        AppLaunch(
+                          PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND,
+                          start,
+                          launchEnd
+                        )
+                      )
+                    }
+                  }
+                }
+
+              // A change of state before the first post indicates a cold start. This tracks warm
+              // and hot starts.
+              if (resumedAfterFirstPost) {
                 appWarmStartListener?.let { listener ->
                   listener(
                     AppWarmStart(
@@ -231,6 +328,28 @@ object Perfs {
                 }
               }
             }
+
+            if (Build.VERSION.SDK_INT >= 26) {
+              activity.window.onNextFrameMetrics { frameMetrics ->
+                val intendedVsync = frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)
+                // TOTAL_DURATION is the duration from the intended vsync
+                // time, not the actual vsync time.
+                val frameDuration = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION)
+                val bufferSwapUptimeMillis = (intendedVsync + frameDuration) / 1_000_000L
+                val realtimeDriftMillis = CpuDuration.now().realtimeDriftMillis
+                val bufferSwapRealtimeMillis = bufferSwapUptimeMillis + realtimeDriftMillis
+                val launchEnd = CpuDuration(bufferSwapUptimeMillis, bufferSwapRealtimeMillis)
+                // back to main thread, frame metrics callback is on a background thread.
+                handler.post {
+                  recordLaunchEnd(launchEnd)
+                }
+              }
+            } else {
+              handler.postAtFrontOfQueueAsync {
+                val launchEnd = CpuDuration.now()
+                recordLaunchEnd(launchEnd)
+              }
+            }
           }
         }
       }
@@ -239,7 +358,7 @@ object Perfs {
     application.trackAppUpgrade { updateAppStartData ->
       appStartData = updateAppStartData(appStartData)
     }
-    handler.postAtFrontOfQueue {
+    handler.postAtFrontOfQueueAsync {
       val firstPostAtFront = appStartData.elapsedSinceStart()
       appStartData = appStartData.copy(firstPostAtFrontElapsedUptimeMillis = firstPostAtFront)
     }

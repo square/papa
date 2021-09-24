@@ -2,6 +2,8 @@
 
 _Tracing Action Response Times!_
 
+**This library is not stable for usage beyond Square, the APIs and internals might change anytime.**
+
 Tart... ?
 
 ## Table of contents
@@ -10,6 +12,7 @@ Tart... ?
 * [FAQ](#faq)
 * [License](#license)
 
+_We still need a logo!_
 ![logo_512.png](assets/logo_512.png)
 
 ## Usage
@@ -18,11 +21,36 @@ Add the `tart` dependency to your library or app's `build.gradle` file:
 
 ```gradle
 dependencies {
-  implementation 'com.squareup.tart:tart:1.0'
+  implementation 'com.squareup.tart:tart:0.1'
 }
 ```
 
-Then.. ?
+Then add a new `AppLaunch.onAppLaunchListeners`. See `AppLaunch` javadoc for details.
+
+```kotlin
+import android.app.Application
+import tart.AppLaunch
+import tart.PreLaunchState
+
+class ExampleApplication : Application() {
+  override fun onCreate() {
+    super.onCreate()
+    AppLaunch.onAppLaunchListeners += { appLaunch ->
+      val startType = when (appLaunch.preLaunchState) {
+        PreLaunchState.NO_PROCESS -> "cold start"
+        PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL -> "cold start"
+        PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE -> "cold start"
+        PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND -> "warm start"
+        PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE -> "warm start"
+        PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE -> "warm start"
+        PreLaunchState.ACTIVITY_WAS_STOPPED -> "hot start"
+      }
+      val durationMillis = appLaunch.duration.uptimeMillis
+      println("$startType launch: $durationMillis ms")
+    }
+  }
+}
+```
 
 ## FAQ
 

@@ -50,7 +50,7 @@ object FrozenFrameOnTouchDetector {
                 // to sending multiple FrozenFrameOnTouch events for a single frozen frame occurrence.
                 // So here we post to a handler before reporting, which ensures that all events are consumed
                 // only one event is sent and repeatTouchDownCount is accurate.
-                handler.postAtFrontOfQueue {
+                handler.postAtFrontOfQueueAsync {
                   // By posting at the front of the queue we make sure that this message happens right
                   // after the frame, so we get full time the frame took.
                   val endOfFrameTime = SystemClock.uptimeMillis()
