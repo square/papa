@@ -91,7 +91,7 @@ enum class PreLaunchState(val slowThresholdMillis: Long) {
   NO_PROCESS(SLOW_COLD_LAUNCH_THRESHOLD_MILLIS),
 
   /**
-   * Same as [NO_PROCESS] but this was either the first launch ever or app data was cleared,
+   * Same as [NO_PROCESS] but this was either the first launch ever,
    * which might trigger first launch additional work.
    */
   NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL(SLOW_COLD_LAUNCH_THRESHOLD_MILLIS),

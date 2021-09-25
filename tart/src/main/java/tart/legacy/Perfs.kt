@@ -267,6 +267,8 @@ object Perfs {
           val resumedUptimeMillis = start.uptimeMillis
           val backgroundElapsedUptimeMillis =
             resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
+          // TODO Use pre draw here instead.
+          // Also we can figure out the estimated time for the frame rendering pre FrameMetrics.
           activity.window.onNextDraw {
             val recordLaunchEnd: (CpuDuration) -> Unit = { launchEnd ->
               val resumeToNextFrameElapsedUptimeMillis =

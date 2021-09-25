@@ -69,6 +69,8 @@ internal class AppUpdateDetector private constructor(
     }
     val longVersionCodeString = longVersionCode.toString()
 
+    // TODO We should also consider the clear data case here, where preferences are cleared
+    // but it's not an app upgrade.
     if (!preferences.contains(VERSION_NAME_KEY)) {
       status = if (appPackageInfo.firstInstallTime != appPackageInfo.lastUpdateTime) {
         crashedInLastProcess = null
