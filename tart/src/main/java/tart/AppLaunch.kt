@@ -1,6 +1,7 @@
 package tart
 
 import tart.legacy.Perfs
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 /**
  * Usage:
@@ -43,7 +44,7 @@ class AppLaunch(
    * be reported as "bad behavior".
    */
   val isSlowLaunch: Boolean
-    get() = duration.uptimeMillis >= preLaunchState.slowThresholdMillis
+    get() = duration.uptime(MILLISECONDS) >= preLaunchState.slowThresholdMillis
 
   override fun toString(): String {
     return "AppLaunch(" +

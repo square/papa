@@ -15,15 +15,19 @@ public final class tart/AppLaunch$Companion {
 
 public final class tart/CpuDuration {
 	public static final field Companion Ltart/CpuDuration$Companion;
-	public fun <init> (JJ)V
-	public final fun getRealtimeDriftMillis ()J
-	public final fun getRealtimeMillis ()J
-	public final fun getUptimeMillis ()J
+	public fun <init> (Ljava/util/concurrent/TimeUnit;JJ)V
+	public final fun getUnit ()Ljava/util/concurrent/TimeUnit;
 	public final fun minus (Ltart/CpuDuration;)Ltart/CpuDuration;
+	public final fun realtime (Ljava/util/concurrent/TimeUnit;)J
 	public fun toString ()Ljava/lang/String;
+	public final fun uptime (Ljava/util/concurrent/TimeUnit;)J
 }
 
 public final class tart/CpuDuration$Companion {
+	public final fun deriveRealtimeFromUptime (Ljava/util/concurrent/TimeUnit;JJ)Ltart/CpuDuration;
+	public static synthetic fun deriveRealtimeFromUptime$default (Ltart/CpuDuration$Companion;Ljava/util/concurrent/TimeUnit;JJILjava/lang/Object;)Ltart/CpuDuration;
+	public final fun deriveUptimeFromRealtime (Ljava/util/concurrent/TimeUnit;JJ)Ltart/CpuDuration;
+	public static synthetic fun deriveUptimeFromRealtime$default (Ltart/CpuDuration$Companion;Ljava/util/concurrent/TimeUnit;JJILjava/lang/Object;)Ltart/CpuDuration;
 	public final fun now ()Ltart/CpuDuration;
 }
 
