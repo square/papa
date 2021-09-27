@@ -105,7 +105,7 @@ enum class PreLaunchState(val slowThresholdMillis: Long) {
 
   /**
    * This is the coldest type of "warm start". The process was not started with
-   * a FOREGROUND important yet the launched activity was created, started and resumed
+   * a FOREGROUND importance yet the launched activity was created, started and resumed
    * before our first post ran. This means that while the process while starting, the
    * system decided to launch the activity.
    */
