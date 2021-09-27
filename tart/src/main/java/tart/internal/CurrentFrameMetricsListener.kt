@@ -4,23 +4,34 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.view.FrameMetrics
+import android.view.FrameMetrics.INTENDED_VSYNC_TIMESTAMP
 import android.view.Window
 import android.view.Window.OnFrameMetricsAvailableListener
 import androidx.annotation.RequiresApi
 import kotlin.LazyThreadSafetyMode.NONE
 
 /**
- * Copied from https://github.com/square/curtains to remove the requirement
- * to pass frameTimeNanos. We'll assume we always get called back because we're
- * always only consuming the next frame so there isn't any data waiting to be consumed.
+ * Copied from https://github.com/square/curtains
+ *
+ * There's a bug in S where you might be called with the previous frame.
+ *
+ * Work around: use System.nanoTime() as your 'now' and as long as frame finish
+ * is after that 'now' then you're looking at the right frame (thx @jrek for the tip)
+ *
+ * This impl is also different in that it always eventually calls back, and it's up to the consumer
+ * to handle potentially missed metrics. Otherwise it's a weird API if you don't always get called
+ * back.
  *
  * See https://cs.android.com/android/_/android/platform/frameworks/base/+/92b71e564fd6eab47ffb7f050163d80a9b3d3afe:libs/hwui/jni/android_graphics_HardwareRendererObserver.cpp;l=69-85;drc=master
  */
-@RequiresApi(24)
+@RequiresApi(26)
 internal class CurrentFrameMetricsListener(
   private val callback: (FrameMetrics) -> Unit
 ) : OnFrameMetricsAvailableListener {
 
+  private val listenerCreationNanos = System.nanoTime()
+
+  @Volatile
   private var removed = false
 
   override fun onFrameMetricsAvailable(
@@ -28,9 +39,24 @@ internal class CurrentFrameMetricsListener(
     frameMetrics: FrameMetrics,
     dropCountSinceLastInvocation: Int
   ) {
-    // TODO We should consider having a listener forever and checking that the metrics
-    // has a start before the ondraw and an end (before render thread) after the ondraw.
-    // Maybe by summing up from start until DRAW_DURATION.
+    if (removed) {
+      return
+    }
+    val drawEndNanos =
+      frameMetrics.getMetric(INTENDED_VSYNC_TIMESTAMP) +
+        frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION) +
+        frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION) +
+        frameMetrics.getMetric(FrameMetrics.INPUT_HANDLING_DURATION) +
+        frameMetrics.getMetric(FrameMetrics.ANIMATION_DURATION) +
+        frameMetrics.getMetric(FrameMetrics.LAYOUT_MEASURE_DURATION) +
+        frameMetrics.getMetric(FrameMetrics.DRAW_DURATION)
+
+    // Bug in Android S, we can be called with data from a previous frame. So if drawing for that
+    // frame finished before we set the listener, we definitely need to wait for another frame.
+    if (drawEndNanos < listenerCreationNanos) {
+      return
+    }
+
     if (!removed) {
       removed = true
       // We're on the frame metrics threads, the listener is stored in a non thread
@@ -39,6 +65,7 @@ internal class CurrentFrameMetricsListener(
         window.removeOnFrameMetricsAvailableListener(this)
       }
     }
+
     callback(frameMetrics)
   }
 
@@ -46,25 +73,17 @@ internal class CurrentFrameMetricsListener(
     private val mainThreadHandler by lazy(NONE) {
       Handler(Looper.getMainLooper())
     }
-
-    private val frameMetricsHandler by lazy {
-      val thread = HandlerThread("frame_metrics_tart")
-      thread.start()
-      Handler(thread.looper)
-    }
-
-    /**
-     * Note: don't make this a public API, there's a bug in S where you might
-     * be called with the previous frame
-     * (doesn't matter for us as there's no previous frame on launch)
-     *
-     * One work around could be to use System.nanoTime() as your 'now' and as long as frame finish
-     * is after that 'now' then you're looking at the right frame (thx @jrek for the tip)
-     */
-    @RequiresApi(24)
-    fun Window.onNextFrameMetrics(onNextFrameMetrics: (FrameMetrics) -> Unit) {
-      val frameMetricsListener = CurrentFrameMetricsListener(onNextFrameMetrics)
-      addOnFrameMetricsAvailableListener(frameMetricsListener, frameMetricsHandler)
-    }
   }
+}
+
+private val frameMetricsHandler by lazy {
+  val thread = HandlerThread("frame_metrics_tart")
+  thread.start()
+  Handler(thread.looper)
+}
+
+@RequiresApi(26)
+internal fun Window.onNextFrameMetrics(onNextFrameMetrics: (FrameMetrics) -> Unit) {
+  val frameMetricsListener = CurrentFrameMetricsListener(onNextFrameMetrics)
+  addOnFrameMetricsAvailableListener(frameMetricsListener, frameMetricsHandler)
 }

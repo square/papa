@@ -12,18 +12,19 @@ import android.os.StrictMode
 import android.os.SystemClock
 import android.view.Choreographer
 import android.view.FrameMetrics
-import curtains.onNextDraw
 import tart.AppLaunch
 import tart.CpuDuration
 import tart.PreLaunchState
 import tart.internal.AppUpdateDetector.Companion.trackAppUpgrade
-import tart.internal.CurrentFrameMetricsListener.Companion.onNextFrameMetrics
 import tart.internal.MyProcess
 import tart.internal.MyProcess.ErrorRetrievingMyProcessData
 import tart.internal.MyProcess.MyProcessData
 import tart.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLifecycle
 import tart.internal.enforceMainThread
 import tart.internal.isOnMainThread
+import tart.internal.lastFrameTimeNanos
+import tart.internal.onNextFrameMetrics
+import tart.internal.onNextPreDraw
 import tart.internal.postAtFrontOfQueueAsync
 import tart.legacy.AppLifecycleState.PAUSED
 import tart.legacy.AppLifecycleState.RESUMED
@@ -158,7 +159,7 @@ object Perfs {
     // "handleBindApplication" because Process.setStartTimes is called from
     // ActivityThread.handleBindApplication
     val handleBindApplicationElapsedUptimeMillis = if (Build.VERSION.SDK_INT >= 24) {
-      android.os.Process.getStartUptimeMillis() - processStartUptimeMillis
+      Process.getStartUptimeMillis() - processStartUptimeMillis
     } else {
       null
     }
@@ -267,9 +268,8 @@ object Perfs {
           val resumedUptimeMillis = start.uptimeMillis
           val backgroundElapsedUptimeMillis =
             resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
-          // TODO Use pre draw here instead.
-          // Also we can figure out the estimated time for the frame rendering pre FrameMetrics.
-          activity.window.onNextDraw {
+          activity.onNextPreDraw {
+            val frameTimeNanos = Choreographer.getInstance().lastFrameTimeNanos
             val recordLaunchEnd: (CpuDuration) -> Unit = { launchEnd ->
               val resumeToNextFrameElapsedUptimeMillis =
                 launchEnd.uptimeMillis - resumedUptimeMillis
@@ -332,7 +332,17 @@ object Perfs {
             }
 
             if (Build.VERSION.SDK_INT >= 26) {
+              lateinit var launchEndIfMissedFrameMetrics: CpuDuration
+              handler.postAtFrontOfQueueAsync {
+                launchEndIfMissedFrameMetrics = CpuDuration.now()
+              }
               activity.window.onNextFrameMetrics { frameMetrics ->
+                if (frameMetrics.getMetric(FrameMetrics.VSYNC_TIMESTAMP) != frameTimeNanos) {
+                  handler.post {
+                    recordLaunchEnd(launchEndIfMissedFrameMetrics)
+                  }
+                  return@onNextFrameMetrics
+                }
                 val intendedVsync = frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)
                 // TOTAL_DURATION is the duration from the intended vsync
                 // time, not the actual vsync time.
