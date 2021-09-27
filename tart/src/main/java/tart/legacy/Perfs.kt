@@ -39,6 +39,8 @@ import tart.legacy.AppWarmStart.Temperature.CREATED_NO_STATE
 import tart.legacy.AppWarmStart.Temperature.CREATED_WITH_STATE
 import tart.legacy.AppWarmStart.Temperature.STARTED
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.NANOSECONDS
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
@@ -68,15 +70,14 @@ object Perfs {
 
   private val bindApplicationStart: CpuDuration
     get() = if (Build.VERSION.SDK_INT >= 24) {
-      val reportedStart =
-        CpuDuration(Process.getStartUptimeMillis(), Process.getStartElapsedRealtime())
+      val reportedStart = CpuDuration(MILLISECONDS, Process.getStartUptimeMillis(), Process.getStartElapsedRealtime())
 
       val firstPostAtFrontElapsedUptimeMillis =
         appStartData.firstPostAtFrontElapsedUptimeMillis
       if (firstPostAtFrontElapsedUptimeMillis != null) {
         val firstPostAtFrontUptimeMillis =
           firstPostAtFrontElapsedUptimeMillis - appStartData.processStartUptimeMillis
-        if (firstPostAtFrontUptimeMillis - reportedStart.uptimeMillis < 60_000) {
+        if (firstPostAtFrontUptimeMillis - reportedStart.uptime(MILLISECONDS) < 60_000) {
           reportedStart
         } else {
           // Reported process start to first post at front is greater than 1 min. That's
@@ -211,7 +212,7 @@ object Perfs {
       processStartRealtimeMillis = myProcessInfo.processStartRealtimeMillis,
       processStartUptimeMillis = processStartUptimeMillis,
       handleBindApplicationElapsedUptimeMillis = handleBindApplicationElapsedUptimeMillis,
-      firstAppClassLoadElapsedUptimeMillis = classInit.uptimeMillis - processStartUptimeMillis,
+      firstAppClassLoadElapsedUptimeMillis = classInit.uptime(MILLISECONDS) - processStartUptimeMillis,
       perfsInitElapsedUptimeMillis = initCalledUptimeMillis - processStartUptimeMillis,
       importance = processInfo.importance,
       importanceAfterFirstPost = processInfoAfterFirstPost.importance,
@@ -265,14 +266,14 @@ object Perfs {
         } else if (temperature != Temperature.RESUMED) {
           // We skipped RESUMED because going from pause to resume isn't considered a launch
           val resumedAfterFirstPost = afterFirstPost
-          val resumedUptimeMillis = start.uptimeMillis
+          val resumedUptimeMillis = start.uptime(MILLISECONDS)
           val backgroundElapsedUptimeMillis =
             resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
           activity.onNextPreDraw {
             val frameTimeNanos = Choreographer.getInstance().lastFrameTimeNanos
             val recordLaunchEnd: (CpuDuration) -> Unit = { launchEnd ->
               val resumeToNextFrameElapsedUptimeMillis =
-                launchEnd.uptimeMillis - resumedUptimeMillis
+                launchEnd.uptime(MILLISECONDS) - resumedUptimeMillis
 
                 (appStart as? AppStartData)?.let { appStartData ->
                   if (resumedAfterFirstPost) {
@@ -347,10 +348,8 @@ object Perfs {
                 // TOTAL_DURATION is the duration from the intended vsync
                 // time, not the actual vsync time.
                 val frameDuration = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION)
-                val bufferSwapUptimeMillis = (intendedVsync + frameDuration) / 1_000_000L
-                val realtimeDriftMillis = CpuDuration.now().realtimeDriftMillis
-                val bufferSwapRealtimeMillis = bufferSwapUptimeMillis + realtimeDriftMillis
-                val launchEnd = CpuDuration(bufferSwapUptimeMillis, bufferSwapRealtimeMillis)
+                val bufferSwapUptimeNanos = intendedVsync + frameDuration
+                val launchEnd = CpuDuration.deriveRealtimeFromUptime(NANOSECONDS, bufferSwapUptimeNanos)
                 // back to main thread, frame metrics callback is on a background thread.
                 handler.post {
                   recordLaunchEnd(launchEnd)
