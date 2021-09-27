@@ -60,8 +60,15 @@ dependencies {
   androidTestImplementation(Dependencies.InstrumentationTests.Rules)
   androidTestImplementation(Dependencies.InstrumentationTests.Runner)
   androidTestImplementation(Dependencies.InstrumentationTests.UiAutomator)
-  androidTestImplementation(Dependencies.Truth)
   androidTestImplementation(Dependencies.AppCompat)
+  androidTestImplementation(Dependencies.Radiography)
+  // Radiography depends on a more recent version of the std lib.
+  androidTestImplementation(Dependencies.Build.KotlinStbLib) {
+    version {
+      strictly(Versions.KotlinCompiler)
+    }
+  }
+  androidTestImplementation(Dependencies.Truth)
 
   androidTestUtil(Dependencies.InstrumentationTests.Orchestrator)
 }

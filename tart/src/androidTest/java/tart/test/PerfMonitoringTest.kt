@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Button
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.UiController
@@ -14,14 +15,22 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.squareup.tart.test.R
+import curtains.TouchEventInterceptor
+import curtains.touchEventInterceptors
 import org.hamcrest.Matcher
 import org.junit.Test
+import radiography.Radiography
+import radiography.ScannableView.AndroidView
+import radiography.ViewStateRenderer
+import radiography.ViewStateRenderers.DefaultsIncludingPii
 import tart.internal.FrozenFrameOnTouchDetector
 import tart.legacy.ActivityEvent
 import tart.legacy.AppStart.AppStartData
 import tart.legacy.FrozenFrameOnTouch
 import tart.legacy.Perfs
 import tart.test.utilities.TestActivity
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicReference
@@ -102,26 +111,48 @@ class PerfMonitoringTest {
     assertThat(appStart.customFirstEvents["Croissant"]?.second).isEqualTo("Pain au chocolat")
   }
 
+  // Note: this test adds a lot of debugging info which helped figure out flakes.
   private fun frozenFrames() {
     val waitForFrozenFrame = reportFrozenFrame()
+
+    val onTouchEventViewHierarchies = CopyOnWriteArrayList<String>()
 
     ActivityScenario.launch(TestActivity::class.java).use { scenario ->
 
       scenario.onActivity { activity ->
-        AlertDialog.Builder(activity)
+        val dialog = AlertDialog.Builder(activity)
+          // The standard dialog buttons are in a scrollview.
+          // Scrollable containers delay the pressed state, making the test flaky.
+          .setView(Button(activity).apply {
+            id = R.id.dialog_view
           // The tap is late (late, latte) and it leads to frozen frames (frozen, frappé coffee)
-          .setPositiveButton("Better latte than frappé", null)
+            text = "Better latte than frappé"
+          })
           .show()
+
+          dialog.window!!.touchEventInterceptors += TouchEventInterceptor { motionEvent, dispatch ->
+          dispatch(motionEvent).apply {
+            onTouchEventViewHierarchies += "############\n" +
+              "Touch event was $motionEvent\n" +
+              Radiography.scan(viewStateRenderers = DefaultsIncludingPii + ViewStateRenderer { view ->
+              if (view is AndroidView) {
+                append("pressed:${view.view.isPressed}")
+              }
+            })
+          }
+        }
       }
 
-      val (buttonX, buttonY) = findDialogButtonCoordinates(android.R.id.button1)
+      val (buttonX, buttonY) = findDialogButtonCoordinates(R.id.dialog_view)
 
       sendTapAtTime(SystemClock.uptimeMillis() - 2000, buttonX, buttonY)
 
       val frozenFrameOnTouch = waitForFrozenFrame()
 
-      assertThat(frozenFrameOnTouch.pressedView).contains("android:id/button1")
       assertThat(frozenFrameOnTouch.handledElapsedUptimeMillis).isAtLeast(2000)
+      assertWithMessage("Result: $frozenFrameOnTouch\n" +
+        "Touch Events:\n$onTouchEventViewHierarchies").that(frozenFrameOnTouch.pressedView)
+        .contains("id/dialog_view")
     }
   }
 
