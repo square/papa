@@ -36,6 +36,7 @@ public final class tart/PreLaunchState : java/lang/Enum {
 	public static final field NO_ACTIVITY_BUT_SAVED_STATE Ltart/PreLaunchState;
 	public static final field NO_ACTIVITY_NO_SAVED_STATE Ltart/PreLaunchState;
 	public static final field NO_PROCESS Ltart/PreLaunchState;
+	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA Ltart/PreLaunchState;
 	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL Ltart/PreLaunchState;
 	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE Ltart/PreLaunchState;
 	public static final field PROCESS_WAS_LAUNCHING_IN_BACKGROUND Ltart/PreLaunchState;
@@ -266,6 +267,7 @@ public final class tart/legacy/AppUpdateData$RealAppUpdateData : tart/legacy/App
 }
 
 public final class tart/legacy/AppUpdateStartStatus : java/lang/Enum {
+	public static final field FIRST_START_AFTER_CLEAR_DATA Ltart/legacy/AppUpdateStartStatus;
 	public static final field FIRST_START_AFTER_FRESH_INSTALL Ltart/legacy/AppUpdateStartStatus;
 	public static final field FIRST_START_AFTER_UPGRADE Ltart/legacy/AppUpdateStartStatus;
 	public static final field NORMAL_START Ltart/legacy/AppUpdateStartStatus;

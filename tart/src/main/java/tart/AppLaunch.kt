@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
  *     NO_PROCESS -> "cold start"
  *     NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL -> "cold start"
  *     NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE -> "cold start"
+ *     NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA -> "cold start"
  *     PROCESS_WAS_LAUNCHING_IN_BACKGROUND -> "warm start"
  *     NO_ACTIVITY_NO_SAVED_STATE -> "warm start"
  *     NO_ACTIVITY_BUT_SAVED_STATE -> "warm start"
@@ -92,16 +93,24 @@ enum class PreLaunchState(val slowThresholdMillis: Long) {
   NO_PROCESS(SLOW_COLD_LAUNCH_THRESHOLD_MILLIS),
 
   /**
-   * Same as [NO_PROCESS] but this was either the first launch ever,
+   * Same as [NO_PROCESS] but this was the first launch ever,
    * which might trigger first launch additional work.
    */
   NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL(SLOW_COLD_LAUNCH_THRESHOLD_MILLIS),
 
   /**
    * Same as [NO_PROCESS] but this was the first launch after the app was upgraded, which might
-   * trigger additional migration work.
+   * trigger additional migration work. Note that if the upgrade if the first upgrade
+   * that introduces this library, the value will be [NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA]
+   * instead.
    */
   NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE(SLOW_COLD_LAUNCH_THRESHOLD_MILLIS),
+
+  /**
+   * Same as [NO_PROCESS] but this was either the first launch after a clear data, or
+   * this was the first launch after the upgrade that introduced this library.
+   */
+  NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA(SLOW_COLD_LAUNCH_THRESHOLD_MILLIS),
 
   /**
    * This is the coldest type of "warm start". The process was not started with
