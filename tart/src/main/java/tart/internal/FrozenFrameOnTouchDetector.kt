@@ -8,12 +8,12 @@ import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import tart.internal.FrozenFrameOnTouchDetector.install
 import curtains.Curtains
 import curtains.OnRootViewAddedListener
 import curtains.TouchEventInterceptor
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
+import tart.internal.FrozenFrameOnTouchDetector.install
 import tart.legacy.FrozenFrameOnTouch
 
 /**
@@ -50,6 +50,7 @@ object FrozenFrameOnTouchDetector {
                 // to sending multiple FrozenFrameOnTouch events for a single frozen frame occurrence.
                 // So here we post to a handler before reporting, which ensures that all events are consumed
                 // only one event is sent and repeatTouchDownCount is accurate.
+                // TODO this is the old way to measure frame end.
                 handler.postAtFrontOfQueueAsync {
                   // By posting at the front of the queue we make sure that this message happens right
                   // after the frame, so we get full time the frame took.
@@ -84,6 +85,10 @@ object FrozenFrameOnTouchDetector {
           // If ACTION_UP happens before the waiting is done, then the view is show as pressed for a bit.
           // When the main thread is blocked, we expect ACTION_DOWN and ACTION_UP to be handled one
           // after the other so checking for a pressed view after either event should work.
+          // If ACTION_DOWN is enqueued for a while but then the main thread unblocks, ACTION_DOWN
+          // is processed and ACTION_UP enqueued, then ACTION_UP will be processed in the next
+          // event batch which will happen after Handler().postAtFrontOfQueueAsync() runs which
+          // means the touched view isn't in pressed state yet.
           val action = motionEvent.action
           if ((action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP) &&
             touchDownWaitingRender != null &&
