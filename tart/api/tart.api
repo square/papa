@@ -44,19 +44,6 @@ public final class tart/PreLaunchState : java/lang/Enum {
 	public static fun values ()[Ltart/PreLaunchState;
 }
 
-public final class tart/internal/FrozenFrameOnTouchDetector {
-	public static final field INSTANCE Ltart/internal/FrozenFrameOnTouchDetector;
-	public final fun install (Lkotlin/jvm/functions/Function1;)V
-}
-
-public final class tart/internal/RealTouchMetrics : tart/legacy/TouchMetrics {
-	public fun <init> ()V
-	public fun getLastTouchUpEvent ()Lkotlin/Pair;
-	public final fun install ()V
-	public fun setLastTouchUpEvent (Lkotlin/Pair;)V
-	public final fun uninstall ()V
-}
-
 public final class tart/legacy/ActivityEvent {
 	public fun <init> (Ljava/lang/String;J)V
 	public final fun component1 ()Ljava/lang/String;
@@ -345,6 +332,11 @@ public final class tart/legacy/FrozenFrameOnTouch {
 public final class tart/legacy/FrozenFrameOnTouch$Companion {
 }
 
+public final class tart/legacy/FrozenFrameOnTouchDetector {
+	public static final field INSTANCE Ltart/legacy/FrozenFrameOnTouchDetector;
+	public final fun install (Lkotlin/jvm/functions/Function1;)V
+}
+
 public final class tart/legacy/Perfs {
 	public static final field INSTANCE Ltart/legacy/Perfs;
 	public static final fun customFirstEvent (Ljava/lang/String;)V
@@ -354,6 +346,14 @@ public final class tart/legacy/Perfs {
 	public final fun getAppWarmStartListener ()Lkotlin/jvm/functions/Function1;
 	public final fun reportFullyDrawn ()V
 	public final fun setAppWarmStartListener (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class tart/legacy/RealTouchMetrics : tart/legacy/TouchMetrics {
+	public fun <init> ()V
+	public fun getLastTouchUpEvent ()Lkotlin/Pair;
+	public final fun install ()V
+	public fun setLastTouchUpEvent (Lkotlin/Pair;)V
+	public final fun uninstall ()V
 }
 
 public abstract interface class tart/legacy/TouchMetrics {

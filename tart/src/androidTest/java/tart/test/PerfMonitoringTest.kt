@@ -24,7 +24,7 @@ import radiography.Radiography
 import radiography.ScannableView.AndroidView
 import radiography.ViewStateRenderer
 import radiography.ViewStateRenderers.DefaultsIncludingPii
-import tart.internal.FrozenFrameOnTouchDetector
+import tart.legacy.FrozenFrameOnTouchDetector
 import tart.legacy.ActivityEvent
 import tart.legacy.AppStart.AppStartData
 import tart.legacy.FrozenFrameOnTouch

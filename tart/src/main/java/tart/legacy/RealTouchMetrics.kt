@@ -1,4 +1,4 @@
-package tart.internal
+package tart.legacy
 
 import android.os.Handler
 import android.os.Looper
@@ -9,7 +9,6 @@ import curtains.OnRootViewAddedListener
 import curtains.TouchEventInterceptor
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
-import tart.legacy.TouchMetrics
 
 class RealTouchMetrics : TouchMetrics {
 

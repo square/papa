@@ -1,4 +1,4 @@
-package tart.internal
+package tart.legacy
 
 import android.content.res.Resources.NotFoundException
 import android.os.Handler
@@ -13,8 +13,8 @@ import curtains.OnRootViewAddedListener
 import curtains.TouchEventInterceptor
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
-import tart.internal.FrozenFrameOnTouchDetector.install
-import tart.legacy.FrozenFrameOnTouch
+import tart.internal.postAtFrontOfQueueAsync
+import tart.legacy.FrozenFrameOnTouchDetector.install
 
 /**
  * Detects when the interval of time between when a touch event is issued and the next frame is
