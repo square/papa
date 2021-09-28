@@ -37,28 +37,14 @@ import java.util.concurrent.atomic.AtomicReference
 
 class PerfMonitoringTest {
 
-  /**
-   * By design [Perfs] is hooked deeply into Android internals and is made to execute and init
-   * exactly once per process, whereas we typically run several instrumentation tests per process.
-   * Unless or until we use Orchestrator, we have to write these tests as a series of steps that
-   * build on top of each other.
-   */
-  @Test
-  fun allTestExecutingSeriallyInOneProcess() {
-    initialAppStart()
-    firstActivity()
-    customEvents()
-    frozenFrames()
-  }
-
-  private fun initialAppStart() {
+  @Test fun initialAppStart() {
     assertThat(appStart.processStartUptimeMillis)
       .isLessThan(SystemClock.uptimeMillis())
     assertThat(appStart.firstAppClassLoadElapsedUptimeMillis).isGreaterThan(0)
     assertThat(appStart.firstComponentInstantiated).isNull()
   }
 
-  private fun firstActivity() {
+  @Test fun firstActivity() {
     ActivityScenario.launch(TestActivity::class.java).use {
       // Our activity isn't actually first when testing, oh well.
       val firstActivity = "androidx.test.core.app.InstrumentationActivityInvoker\$BootstrapActivity"
@@ -97,7 +83,7 @@ class PerfMonitoringTest {
     }
   }
 
-  private fun customEvents() {
+  @Test fun customEvents() {
     runOnMainSync {
       Perfs.customFirstEvent(eventName = "Kouign-amann")
       SystemClock.sleep(500)
@@ -112,7 +98,7 @@ class PerfMonitoringTest {
   }
 
   // Note: this test adds a lot of debugging info which helped figure out flakes.
-  private fun frozenFrames() {
+  @Test fun frozenFrames() {
     val waitForFrozenFrame = reportFrozenFrame()
 
     val onTouchEventViewHierarchies = CopyOnWriteArrayList<String>()
@@ -125,20 +111,20 @@ class PerfMonitoringTest {
           // Scrollable containers delay the pressed state, making the test flaky.
           .setView(Button(activity).apply {
             id = R.id.dialog_view
-          // The tap is late (late, latte) and it leads to frozen frames (frozen, frappé coffee)
+            // The tap is late (late, latte) and it leads to frozen frames (frozen, frappé coffee)
             text = "Better latte than frappé"
           })
           .show()
 
-          dialog.window!!.touchEventInterceptors += TouchEventInterceptor { motionEvent, dispatch ->
+        dialog.window!!.touchEventInterceptors += TouchEventInterceptor { motionEvent, dispatch ->
           dispatch(motionEvent).apply {
             onTouchEventViewHierarchies += "############\n" +
               "Touch event was $motionEvent\n" +
               Radiography.scan(viewStateRenderers = DefaultsIncludingPii + ViewStateRenderer { view ->
-              if (view is AndroidView) {
-                append("pressed:${view.view.isPressed}")
-              }
-            })
+                if (view is AndroidView) {
+                  append("pressed:${view.view.isPressed}")
+                }
+              })
           }
         }
       }
@@ -150,8 +136,10 @@ class PerfMonitoringTest {
       val frozenFrameOnTouch = waitForFrozenFrame()
 
       assertThat(frozenFrameOnTouch.handledElapsedUptimeMillis).isAtLeast(2000)
-      assertWithMessage("Result: $frozenFrameOnTouch\n" +
-        "Touch Events:\n$onTouchEventViewHierarchies").that(frozenFrameOnTouch.pressedView)
+      assertWithMessage(
+        "Result: $frozenFrameOnTouch\n" +
+          "Touch Events:\n$onTouchEventViewHierarchies"
+      ).that(frozenFrameOnTouch.pressedView)
         .contains("id/dialog_view")
     }
   }
