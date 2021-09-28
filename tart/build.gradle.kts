@@ -19,7 +19,7 @@ android {
     targetSdkVersion(30)
     versionCode = 1
     versionName = "1.0"
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunner = "tart.test.utilities.TartTestInstrumentationRunner"
   }
 
   buildFeatures {

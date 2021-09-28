@@ -352,13 +352,16 @@ public final class tart/legacy/Perfs {
 
 public final class tart/legacy/RealTouchMetrics : tart/legacy/TouchMetrics {
 	public fun <init> ()V
+	public fun getLastBackKeyEvent ()Lkotlin/Pair;
 	public fun getLastTouchUpEvent ()Lkotlin/Pair;
 	public final fun install ()V
+	public fun setLastBackKeyEvent (Lkotlin/Pair;)V
 	public fun setLastTouchUpEvent (Lkotlin/Pair;)V
 	public final fun uninstall ()V
 }
 
 public abstract interface class tart/legacy/TouchMetrics {
+	public abstract fun getLastBackKeyEvent ()Lkotlin/Pair;
 	public abstract fun getLastTouchUpEvent ()Lkotlin/Pair;
 }
 
