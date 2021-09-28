@@ -4,7 +4,6 @@ import android.content.res.Resources.NotFoundException
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.view.Choreographer
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -43,38 +42,29 @@ object FrozenFrameOnTouchDetector {
             } else {
               val handledTime = SystemClock.uptimeMillis()
               touchDownWaitingRender = MotionEvent.obtain(motionEvent)
-
-              Choreographer.getInstance().postFrameCallback {
-                // When there's a large batch of touch events in the queue, the choreographer frame will
-                // execute after a few events are consumed but before they're all consumed, which could lead
-                // to sending multiple FrozenFrameOnTouch events for a single frozen frame occurrence.
-                // So here we post to a handler before reporting, which ensures that all events are consumed
-                // only one event is sent and repeatTouchDownCount is accurate.
-                // TODO this is the old way to measure frame end.
-                handler.postAtFrontOfQueueAsync {
-                  // By posting at the front of the queue we make sure that this message happens right
-                  // after the frame, so we get full time the frame took.
-                  val endOfFrameTime = SystemClock.uptimeMillis()
-                  val localTouchDownWaitingRender = touchDownWaitingRender!!
-                  val sentTime = localTouchDownWaitingRender.eventTime
-                  if (endOfFrameTime - sentTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
-                    val sentToReceive = handledTime - sentTime
-                    val receiveToFrame = endOfFrameTime - handledTime
-                    listener(
-                      FrozenFrameOnTouch(
-                        activityName = windowTitle,
-                        repeatTouchDownCount = repeatTouchDownCount,
-                        handledElapsedUptimeMillis = sentToReceive,
-                        frameElapsedUptimeMillis = receiveToFrame,
-                        pressedView = pressedViewName
-                      )
+              handler.postAtFrontOfQueueAsync {
+                // By posting at the front of the queue we make sure that this message happens right
+                // after the frame, so we get full time the frame took.
+                val endOfFrameTime = SystemClock.uptimeMillis()
+                val localTouchDownWaitingRender = touchDownWaitingRender!!
+                val sentTime = localTouchDownWaitingRender.eventTime
+                if (endOfFrameTime - sentTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
+                  val sentToReceive = handledTime - sentTime
+                  val receiveToFrame = endOfFrameTime - handledTime
+                  listener(
+                    FrozenFrameOnTouch(
+                      activityName = windowTitle,
+                      repeatTouchDownCount = repeatTouchDownCount,
+                      handledElapsedUptimeMillis = sentToReceive,
+                      frameElapsedUptimeMillis = receiveToFrame,
+                      pressedView = pressedViewName
                     )
-                  }
-                  localTouchDownWaitingRender.recycle()
-                  touchDownWaitingRender = null
-                  repeatTouchDownCount = 0
-                  pressedViewName = null
+                  )
                 }
+                localTouchDownWaitingRender.recycle()
+                touchDownWaitingRender = null
+                repeatTouchDownCount = 0
+                pressedViewName = null
               }
             }
           }
