@@ -37,19 +37,22 @@ class ExampleApplication : Application() {
     super.onCreate()
     AppLaunch.onAppLaunchListeners += { appLaunch ->
       val startType = when (appLaunch.preLaunchState) {
-        PreLaunchState.NO_PROCESS -> "cold start"
-        PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL -> "cold start"
-        PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE -> "cold start"
-        PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND -> "warm start"
-        PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE -> "warm start"
-        PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE -> "warm start"
-        PreLaunchState.ACTIVITY_WAS_STOPPED -> "hot start"
+        NO_PROCESS -> "cold start"
+        NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL -> "cold start"
+        NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE -> "cold start"
+        NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA -> "cold start"
+        PROCESS_WAS_LAUNCHING_IN_BACKGROUND -> "warm start"
+        NO_ACTIVITY_NO_SAVED_STATE -> "warm start"
+        NO_ACTIVITY_BUT_SAVED_STATE -> "warm start"
+        ACTIVITY_WAS_STOPPED -> "hot start"
       }
-      val durationMillis = appLaunch.duration.uptimeMillis
+      val durationMillis = appLaunch.duration.uptime(MILLISECONDS)
       println("$startType launch: $durationMillis ms")
     }
   }
 }
+
+
 ```
 
 ## FAQ
