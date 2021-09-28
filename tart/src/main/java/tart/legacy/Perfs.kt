@@ -31,6 +31,7 @@ import tart.legacy.AppLifecycleState.RESUMED
 import tart.legacy.AppStart.AppStartData
 import tart.legacy.AppStart.NoAppStartData
 import tart.legacy.AppUpdateData.RealAppUpdateData
+import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_CLEAR_DATA
 import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_FRESH_INSTALL
 import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_UPGRADE
 import tart.legacy.AppUpdateStartStatus.NORMAL_START
@@ -289,6 +290,7 @@ object Perfs {
                       val preLaunchState = when (val updateData = appStartData.appUpdateData) {
                         is RealAppUpdateData -> {
                           when (updateData.status) {
+                            FIRST_START_AFTER_CLEAR_DATA -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
                             FIRST_START_AFTER_FRESH_INSTALL -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
                             FIRST_START_AFTER_UPGRADE -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
                             NORMAL_START -> PreLaunchState.NO_PROCESS

@@ -69,16 +69,14 @@ internal class AppUpdateDetector private constructor(
     }
     val longVersionCodeString = longVersionCode.toString()
 
-    // TODO We should also consider the clear data case here, where preferences are cleared
-    // but it's not an app upgrade.
     if (!preferences.contains(VERSION_NAME_KEY)) {
       status = if (appPackageInfo.firstInstallTime != appPackageInfo.lastUpdateTime) {
         crashedInLastProcess = null
         updatedOsSinceLastStart = null
         rebootedSinceLastStart = null
-        // This is an upgrade from a version that didn't have AppUpgradeDetector.
-        // Since there is no file, it's also the first launch of this upgrade.
-        AppUpdateStartStatus.FIRST_START_AFTER_UPGRADE
+        // Note: we can't find our file, and this isn't the first install. So this is either
+        // a clear data, or it's the first upgrade since this library was integrated.
+        AppUpdateStartStatus.FIRST_START_AFTER_CLEAR_DATA
       } else {
         crashedInLastProcess = false
         updatedOsSinceLastStart = false
