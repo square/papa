@@ -23,12 +23,11 @@ internal fun Activity.onNextGlobalLayout(callback: () -> Unit) {
 }
 
 /**
- * Calls back exactly once, when the next pre draw happens for [this] activity's
- * [android.view.Window].
+ * Calls back exactly once, when the next pre draw happens for [this] window.
  */
-internal fun Activity.onNextPreDraw(callback: () -> Unit) {
+internal fun Window.onNextPreDraw(callback: () -> Unit) {
   val wrapper = OnPreDrawListenerWrapper()
-  ViewTreeObservers.installListener(window, wrapper, callback)
+  ViewTreeObservers.installListener(this, wrapper, callback)
 }
 
 internal fun Activity.onNextTouchEvent(callback: (MotionEvent) -> Unit) {

@@ -12,6 +12,7 @@ import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
 import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
 import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
 import tart.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
+import tart.legacy.FrozenFrameOnTouchDetector
 import tart.legacy.Perfs
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
@@ -40,6 +41,10 @@ class ExampleApplication : Application() {
       }
       val durationMillis = appLaunch.duration.uptime(MILLISECONDS)
       println("$startType launch: $durationMillis ms")
+    }
+
+    FrozenFrameOnTouchDetector.install { frozenFrameOnTouch ->
+      println(frozenFrameOnTouch)
     }
   }
 }

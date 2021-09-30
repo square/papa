@@ -11,7 +11,6 @@ import android.os.Process
 import android.os.StrictMode
 import android.os.SystemClock
 import android.view.Choreographer
-import android.view.FrameMetrics
 import tart.AppLaunch
 import tart.CpuDuration
 import tart.PreLaunchState
@@ -23,7 +22,6 @@ import tart.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLife
 import tart.internal.enforceMainThread
 import tart.internal.isOnMainThread
 import tart.internal.lastFrameTimeNanos
-import tart.internal.onNextFrameMetrics
 import tart.internal.onNextPreDraw
 import tart.internal.postAtFrontOfQueueAsync
 import tart.legacy.AppLifecycleState.PAUSED
@@ -39,9 +37,9 @@ import tart.legacy.AppWarmStart.Temperature
 import tart.legacy.AppWarmStart.Temperature.CREATED_NO_STATE
 import tart.legacy.AppWarmStart.Temperature.CREATED_WITH_STATE
 import tart.legacy.AppWarmStart.Temperature.STARTED
+import tart.onCurrentFrameDisplayed
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeUnit.NANOSECONDS
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
@@ -270,54 +268,54 @@ object Perfs {
           val resumedUptimeMillis = start.uptime(MILLISECONDS)
           val backgroundElapsedUptimeMillis =
             resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
-          activity.onNextPreDraw {
+          activity.window.onNextPreDraw {
             val frameTimeNanos = Choreographer.getInstance().lastFrameTimeNanos
-            val recordLaunchEnd: (CpuDuration) -> Unit = { launchEnd ->
+            activity.window.onCurrentFrameDisplayed(frameTimeNanos) { launchEnd ->
               val resumeToNextFrameElapsedUptimeMillis =
                 launchEnd.uptime(MILLISECONDS) - resumedUptimeMillis
 
-                (appStart as? AppStartData)?.let { appStartData ->
-                  if (resumedAfterFirstPost) {
-                    val launchState = when (temperature) {
-                      CREATED_NO_STATE -> PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
-                      CREATED_WITH_STATE -> PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
-                      STARTED -> PreLaunchState.ACTIVITY_WAS_STOPPED
-                      Temperature.RESUMED -> error("resumed is skipped")
-                    }
-                    appLaunchListener(AppLaunch(launchState, start, launchEnd))
-                  } else {
-                    if (appStartData.importance == IMPORTANCE_FOREGROUND) {
-                      val preLaunchState = when (val updateData = appStartData.appUpdateData) {
-                        is RealAppUpdateData -> {
-                          when (updateData.status) {
-                            FIRST_START_AFTER_CLEAR_DATA -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
-                            FIRST_START_AFTER_FRESH_INSTALL -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
-                            FIRST_START_AFTER_UPGRADE -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
-                            NORMAL_START -> PreLaunchState.NO_PROCESS
-                          }
+              (appStart as? AppStartData)?.let { appStartData ->
+                if (resumedAfterFirstPost) {
+                  val launchState = when (temperature) {
+                    CREATED_NO_STATE -> PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
+                    CREATED_WITH_STATE -> PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
+                    STARTED -> PreLaunchState.ACTIVITY_WAS_STOPPED
+                    Temperature.RESUMED -> error("resumed is skipped")
+                  }
+                  appLaunchListener(AppLaunch(launchState, start, launchEnd))
+                } else {
+                  if (appStartData.importance == IMPORTANCE_FOREGROUND) {
+                    val preLaunchState = when (val updateData = appStartData.appUpdateData) {
+                      is RealAppUpdateData -> {
+                        when (updateData.status) {
+                          FIRST_START_AFTER_CLEAR_DATA -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
+                          FIRST_START_AFTER_FRESH_INSTALL -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
+                          FIRST_START_AFTER_UPGRADE -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
+                          NORMAL_START -> PreLaunchState.NO_PROCESS
                         }
-                        else -> PreLaunchState.NO_PROCESS
                       }
-                      appLaunchListener(
-                        AppLaunch(
-                          preLaunchState,
-                          bindApplicationStart,
-                          launchEnd
-                        )
-                      )
-                    } else {
-                      // TODO this will yield much smaller time than perceived by users
-                      // unless we had a way to know when the system changed its mind.
-                      appLaunchListener(
-                        AppLaunch(
-                          PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND,
-                          start,
-                          launchEnd
-                        )
-                      )
+                      else -> PreLaunchState.NO_PROCESS
                     }
+                    appLaunchListener(
+                      AppLaunch(
+                        preLaunchState,
+                        bindApplicationStart,
+                        launchEnd
+                      )
+                    )
+                  } else {
+                    // TODO this will yield much smaller time than perceived by users
+                    // unless we had a way to know when the system changed its mind.
+                    appLaunchListener(
+                      AppLaunch(
+                        PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND,
+                        start,
+                        launchEnd
+                      )
+                    )
                   }
                 }
+              }
 
               // A change of state before the first post indicates a cold start. This tracks warm
               // and hot starts.
@@ -331,36 +329,6 @@ object Perfs {
                     )
                   )
                 }
-              }
-            }
-
-            if (Build.VERSION.SDK_INT >= 26) {
-              lateinit var launchEndIfMissedFrameMetrics: CpuDuration
-              handler.postAtFrontOfQueueAsync {
-                launchEndIfMissedFrameMetrics = CpuDuration.now()
-              }
-              activity.window.onNextFrameMetrics { frameMetrics ->
-                if (frameMetrics.getMetric(FrameMetrics.VSYNC_TIMESTAMP) != frameTimeNanos) {
-                  handler.post {
-                    recordLaunchEnd(launchEndIfMissedFrameMetrics)
-                  }
-                  return@onNextFrameMetrics
-                }
-                val intendedVsync = frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)
-                // TOTAL_DURATION is the duration from the intended vsync
-                // time, not the actual vsync time.
-                val frameDuration = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION)
-                val bufferSwapUptimeNanos = intendedVsync + frameDuration
-                val launchEnd = CpuDuration.deriveRealtimeFromUptime(NANOSECONDS, bufferSwapUptimeNanos)
-                // back to main thread, frame metrics callback is on a background thread.
-                handler.post {
-                  recordLaunchEnd(launchEnd)
-                }
-              }
-            } else {
-              handler.postAtFrontOfQueueAsync {
-                val launchEnd = CpuDuration.now()
-                recordLaunchEnd(launchEnd)
               }
             }
           }

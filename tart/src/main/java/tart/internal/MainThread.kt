@@ -6,7 +6,7 @@ import android.os.Looper
  * Returns true if the current thread is the main thread, false otherwise.
  */
 internal fun isOnMainThread(): Boolean {
-  return Thread.currentThread() == Looper.getMainLooper().thread
+  return Thread.currentThread() === Looper.getMainLooper().thread
 }
 
 /**
