@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+Version 0.3
+-------------
+
+_2021-9-30_
+
+* Legacy FrozenFrameOnTouchDetector only reports cases where the input has a delay on delivery, rather than looking at total duration from input to frame. This is so that we don't do extra work on every touch down, i.e. previous released would traverse the view hierarchy looking for a pressed view on every touch down when really we just want it for frozen cases.
+* New APIs: `isChoreographerDoingFrame()` and ` Window.onCurrentFrameDisplayed()`.
+
 Version 0.2
 -------------
 
