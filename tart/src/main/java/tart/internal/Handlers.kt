@@ -2,6 +2,7 @@ package tart.internal
 
 import android.os.Build
 import android.os.Handler
+import android.os.Looper
 import android.os.Message
 
 // Thx @chet and @jreck
@@ -12,4 +13,8 @@ internal fun Handler.postAtFrontOfQueueAsync(callback: () -> Unit) {
       isAsynchronous = true
     }
   })
+}
+
+internal val mainHandler by lazy {
+  Handler(Looper.getMainLooper())
 }

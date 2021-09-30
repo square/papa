@@ -1,8 +1,6 @@
 package tart.legacy
 
 import android.content.res.Resources.NotFoundException
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
@@ -12,8 +10,10 @@ import curtains.OnRootViewAddedListener
 import curtains.TouchEventInterceptor
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
-import tart.internal.postAtFrontOfQueueAsync
+import curtains.windowAttachCount
 import tart.legacy.FrozenFrameOnTouchDetector.install
+import tart.onNextFrameDisplayed
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 /**
  * Detects when the interval of time between when a touch event is issued and the next frame is
@@ -26,71 +26,72 @@ import tart.legacy.FrozenFrameOnTouchDetector.install
 object FrozenFrameOnTouchDetector {
 
   fun install(listener: ((FrozenFrameOnTouch) -> Unit)) {
-    val handler = Handler(Looper.getMainLooper())
+    var touchDownWaitingRender: MotionEvent? = null
+    var repeatTouchDownCount = 0
+    var pressedViewName: String? = null
+
     Curtains.onRootViewsChangedListeners += OnRootViewAddedListener { view ->
       view.phoneWindow?.let { window ->
-        var touchDownWaitingRender: MotionEvent? = null
-        var repeatTouchDownCount = 0
-        var pressedViewName: String? = null
-
-        val windowTitle = window.attributes.title.toString().substringAfter("/")
-
-        window.touchEventInterceptors += TouchEventInterceptor { motionEvent, dispatch ->
-          if (motionEvent.action == MotionEvent.ACTION_DOWN) {
-            if (touchDownWaitingRender != null) {
-              repeatTouchDownCount++
-            } else {
-              val handledTime = SystemClock.uptimeMillis()
-              touchDownWaitingRender = MotionEvent.obtain(motionEvent)
-              handler.postAtFrontOfQueueAsync {
-                // By posting at the front of the queue we make sure that this message happens right
-                // after the frame, so we get full time the frame took.
-                val endOfFrameTime = SystemClock.uptimeMillis()
-                val localTouchDownWaitingRender = touchDownWaitingRender!!
-                val sentTime = localTouchDownWaitingRender.eventTime
-                if (endOfFrameTime - sentTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
-                  val sentToReceive = handledTime - sentTime
-                  val receiveToFrame = endOfFrameTime - handledTime
-                  listener(
-                    FrozenFrameOnTouch(
-                      activityName = windowTitle,
-                      repeatTouchDownCount = repeatTouchDownCount,
-                      handledElapsedUptimeMillis = sentToReceive,
-                      frameElapsedUptimeMillis = receiveToFrame,
-                      pressedView = pressedViewName
+        if (view.windowAttachCount == 0) {
+          window.touchEventInterceptors += TouchEventInterceptor { motionEvent, dispatch ->
+            if (motionEvent.action == MotionEvent.ACTION_DOWN) {
+              if (touchDownWaitingRender != null) {
+                repeatTouchDownCount++
+              } else {
+                val handledTime = SystemClock.uptimeMillis()
+                if (handledTime - motionEvent.eventTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
+                  val windowTitle = window.attributes.title.toString().substringAfter("/")
+                  touchDownWaitingRender = MotionEvent.obtain(motionEvent)
+                  window.onNextFrameDisplayed { frameDisplayed ->
+                    val localTouchDownWaitingRender = touchDownWaitingRender!!
+                    val sentTime = localTouchDownWaitingRender.eventTime
+                    val sentToReceive = handledTime - sentTime
+                    val receiveToFrame = frameDisplayed.uptime(MILLISECONDS) - handledTime
+                    listener(
+                      FrozenFrameOnTouch(
+                        activityName = windowTitle,
+                        repeatTouchDownCount = repeatTouchDownCount,
+                        handledElapsedUptimeMillis = sentToReceive,
+                        frameElapsedUptimeMillis = receiveToFrame,
+                        pressedView = pressedViewName
+                      )
                     )
-                  )
+                    localTouchDownWaitingRender.recycle()
+                    touchDownWaitingRender = null
+                    repeatTouchDownCount = 0
+                    pressedViewName = null
+                  }
                 }
-                localTouchDownWaitingRender.recycle()
-                touchDownWaitingRender = null
-                repeatTouchDownCount = 0
-                pressedViewName = null
               }
             }
-          }
-          val dispatchState = dispatch(motionEvent)
+            val dispatchState = dispatch(motionEvent)
 
-          // Clickable views become pressed when they receive ACTION_DOWN, unless they're in a scrollable
-          // container, in which case Android waits a bit in case it's a scroll motion rather than a tap.
-          // If ACTION_UP happens before the waiting is done, then the view is show as pressed for a bit.
-          // When the main thread is blocked, we expect ACTION_DOWN and ACTION_UP to be handled one
-          // after the other so checking for a pressed view after either event should work.
-          // If ACTION_DOWN is enqueued for a while but then the main thread unblocks, ACTION_DOWN
-          // is processed and ACTION_UP enqueued, then ACTION_UP will be processed in the next
-          // event batch which will happen after Handler().postAtFrontOfQueueAsync() runs which
-          // means the touched view isn't in pressed state yet.
-          val action = motionEvent.action
-          if ((action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP) &&
-            touchDownWaitingRender != null &&
-            pressedViewName == null &&
-            repeatTouchDownCount == 0
-          ) {
-            val pressedView = (window.decorView as? ViewGroup)?.findPressedView()
-            if (pressedView != null) {
-              pressedViewName = "${pressedView::class.java.name} ${pressedView.idResourceName()}"
+            // Clickable views become pressed when they receive ACTION_DOWN, unless they're in a
+            // scrollable container, in which case Android waits 100ms (ViewConfiguration#TAP_TIMEOUT)
+            // before setting it to pressed in case it's a scroll motion rather than a tap. If
+            // ACTION_UP happens before the waiting is done, then the view is set pressed when
+            // ACTION_UP is processed.
+            // When the main thread is blocked, we expect ACTION_DOWN and ACTION_UP to be handled one
+            // after the other so checking for a pressed view after either event should work.
+            val action = motionEvent.action
+
+            val processedFrozenDown =
+              (touchDownWaitingRender != null &&
+                action == MotionEvent.ACTION_DOWN &&
+                repeatTouchDownCount == 0)
+
+            val processedUpForFrozenDown = touchDownWaitingRender != null &&
+              action == MotionEvent.ACTION_UP &&
+              motionEvent.downTime == touchDownWaitingRender!!.eventTime
+
+            if (processedFrozenDown || processedUpForFrozenDown) {
+              val pressedView = (window.decorView as? ViewGroup)?.findPressedView()
+              if (pressedView != null) {
+                pressedViewName = "${pressedView::class.java.name} ${pressedView.idResourceName()}"
+              }
             }
+            dispatchState
           }
-          dispatchState
         }
       }
     }

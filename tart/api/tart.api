@@ -31,6 +31,11 @@ public final class tart/CpuDuration$Companion {
 	public final fun now ()Ltart/CpuDuration;
 }
 
+public final class tart/FramesKt {
+	public static final fun isChoreographerDoingFrame ()Z
+	public static final fun onCurrentFrameDisplayed (Landroid/view/Window;JLkotlin/jvm/functions/Function1;)V
+}
+
 public final class tart/PreLaunchState : java/lang/Enum {
 	public static final field ACTIVITY_WAS_STOPPED Ltart/PreLaunchState;
 	public static final field NO_ACTIVITY_BUT_SAVED_STATE Ltart/PreLaunchState;

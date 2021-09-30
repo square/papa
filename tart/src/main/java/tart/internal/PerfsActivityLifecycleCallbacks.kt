@@ -98,7 +98,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
       }
     }
     if (!firstPreDraw) {
-      activity.onNextPreDraw {
+      activity.window.onNextPreDraw {
         if (!firstPreDraw) {
           firstPreDraw = true
           updateAppStart(activity.javaClass.name) { appStart, activityEvent ->
