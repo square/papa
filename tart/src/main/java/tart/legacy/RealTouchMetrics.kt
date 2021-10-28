@@ -6,6 +6,8 @@ import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.KeyEvent.KEYCODE_BACK
 import android.view.MotionEvent
+import androidx.tracing.Trace
+import androidx.tracing.trace
 import curtains.Curtains
 import curtains.KeyEventInterceptor
 import curtains.OnRootViewAddedListener
@@ -36,12 +38,16 @@ class RealTouchMetrics : TouchMetrics {
               lastTouchUpEvent = touchUpCopy
             }
           }
-          val dispatchState = dispatch(motionEvent)
+          val dispatchState = trace(MotionEvent.actionToString(motionEvent.action)) {
+            dispatch(motionEvent)
+          }
           // Android posts onClick callbacks when it receives the up event. So here we leverage
           // afterTouchEvent at which point the onClick has been posted, and by posting then we ensure
           // we're clearing the event right after the onclick is handled.
           if (isActionUp) {
+            Trace.beginAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
             handler.post {
+              Trace.endAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
               lastTouchUpEvent?.first?.recycle()
               lastTouchUpEvent = null
             }
@@ -53,12 +59,16 @@ class RealTouchMetrics : TouchMetrics {
             keyEvent.action == KeyEvent.ACTION_UP &&
             !keyEvent.isCanceled
 
-          if (isBackPressed) {
+          val dispatchState = if (isBackPressed) {
             val now = SystemClock.uptimeMillis()
             lastBackKeyEvent = keyEvent.eventTime to now
+            trace("back pressed") {
+              dispatch(keyEvent)
+            }
+          } else {
+            dispatch(keyEvent)
           }
 
-          val dispatchState = dispatch(keyEvent)
           lastBackKeyEvent = null
 
           dispatchState
@@ -73,5 +83,10 @@ class RealTouchMetrics : TouchMetrics {
 
   fun uninstall() {
     Curtains.onRootViewsChangedListeners -= listener
+  }
+
+  private companion object {
+    private const val ON_CLICK_QUEUED_NAME = "View OnClick queued"
+    private const val ON_CLICK_QUEUED_COOKIE = 0x7331BEAF
   }
 }

@@ -26,6 +26,7 @@ object Dependencies {
   const val Robolectric = "org.robolectric:robolectric:4.3.1"
   const val Truth = "com.google.truth:truth:1.0.1"
   const val AndroidXCore = "androidx.core:core:1.6.0"
+  const val AndroidXTracing = "androidx.tracing:tracing-ktx:1.0.0"
   const val Radiography = "com.squareup.radiography:radiography:2.4.1"
 
   object InstrumentationTests {
