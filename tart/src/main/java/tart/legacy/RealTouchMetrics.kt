@@ -35,6 +35,7 @@ class RealTouchMetrics : TouchMetrics {
           if (isActionUp) {
             val touchUpCopy = MotionEvent.obtain(motionEvent) to SystemClock.uptimeMillis()
             handler.post {
+              Trace.endAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
               lastTouchUpEvent = touchUpCopy
             }
           }
@@ -47,7 +48,6 @@ class RealTouchMetrics : TouchMetrics {
           if (isActionUp) {
             Trace.beginAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
             handler.post {
-              Trace.endAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
               lastTouchUpEvent?.first?.recycle()
               lastTouchUpEvent = null
             }
