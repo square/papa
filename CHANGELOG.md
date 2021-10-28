@@ -1,8 +1,15 @@
 Change Log
 ==========
 
+Version 0.4
+-----------
+
+_2021-10-28_
+
+* Adding atrace traces for touch tracking, leveraging Jetpack tracing.
+
 Version 0.3
--------------
+-----------
 
 _2021-9-30_
 
@@ -10,7 +17,7 @@ _2021-9-30_
 * New APIs: `isChoreographerDoingFrame()` and ` Window.onCurrentFrameDisplayed()`.
 
 Version 0.2
--------------
+-----------
 
 _2021-9-28_
 
@@ -24,7 +31,7 @@ _2021-9-28_
 * FrozenFrameOnTouchDetector stopped reporting one frame late.
 
 Version 0.1
--------------
+-----------
 
 _2021-9-23_
 
