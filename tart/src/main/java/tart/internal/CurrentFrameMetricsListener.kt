@@ -42,9 +42,9 @@ internal class CurrentFrameMetricsListener(
     if (removed) {
       return
     }
+
     val drawEndNanos =
       frameMetrics.getMetric(INTENDED_VSYNC_TIMESTAMP) +
-        frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION) +
         frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION) +
         frameMetrics.getMetric(FrameMetrics.INPUT_HANDLING_DURATION) +
         frameMetrics.getMetric(FrameMetrics.ANIMATION_DURATION) +
