@@ -67,6 +67,11 @@ fun Window.onCurrentFrameDisplayed(
         // TOTAL_DURATION is the duration from the intended vsync
         // time, not the actual vsync time.
         val frameDuration = frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION)
+        // Note: this is the time at which the window content was handed over to the display
+        // subsystem, but it's not the time at which that frame was visible to the user.
+        // The frame becomes visible on the next vsync.
+        // Several windows rendered in the same choreographer callback will have the same
+        // INTENDED_VSYNC_TIMESTAMP but different TOTAL_DURATION as they're rendered serially.
         val bufferSwapUptimeNanos = intendedVsync + frameDuration
         val bufferSwap = CpuDuration.deriveRealtimeFromUptime(NANOSECONDS, bufferSwapUptimeNanos)
         mainHandler.post {
