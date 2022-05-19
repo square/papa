@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <bool name="tart_force_traceable_receiver">false</bool>
+  <bool name="tart_gc_trigger_receiver">false</bool>
 </resources>

@@ -28,6 +28,7 @@ object Dependencies {
   const val AndroidXCore = "androidx.core:core:1.6.0"
   const val AndroidXTracing = "androidx.tracing:tracing-ktx:1.1.0"
   const val Radiography = "com.squareup.radiography:radiography:2.4.1"
+  const val Logcat = "com.squareup.logcat:logcat:0.1"
 
   object InstrumentationTests {
     const val Core = "androidx.test:core:${Versions.AndroidXTest}"

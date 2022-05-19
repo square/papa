@@ -12,12 +12,23 @@
         android:authorities="${applicationId}.perfs-startup-listener"
         android:exported="false" />
 
+    <!-- A receiver that makes the build traceable on broadcast, disabled by default. -->
     <receiver
         android:name="tart.internal.ForceTraceableReceiver"
         android:enabled="@bool/tart_force_traceable_receiver"
         android:exported="@bool/tart_force_traceable_receiver">
       <intent-filter>
         <action android:name="tart.FORCE_TRACEABLE" />
+      </intent-filter>
+    </receiver>
+
+    <!-- A receiver that triggers a GC on broadcast, disabled by default. -->
+    <receiver
+        android:name="tart.internal.GcTriggerReceiver"
+        android:enabled="@bool/tart_gc_trigger_receiver"
+        android:exported="@bool/tart_gc_trigger_receiver">
+      <intent-filter>
+        <action android:name="tart.TRIGGER_GC" />
       </intent-filter>
     </receiver>
   </application>

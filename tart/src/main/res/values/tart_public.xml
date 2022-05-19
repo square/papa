@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <public name="tart_force_traceable_receiver" type="bool"/>
+  <public name="tart_gc_trigger_receiver" type="bool"/>
 </resources>
