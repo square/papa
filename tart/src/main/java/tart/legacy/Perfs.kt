@@ -15,6 +15,7 @@ import tart.AppLaunch
 import tart.CpuDuration
 import tart.PreLaunchState
 import tart.internal.AppUpdateDetector.Companion.trackAppUpgrade
+import tart.internal.ApplicationHolder
 import tart.internal.MyProcess
 import tart.internal.MyProcess.ErrorRetrievingMyProcessData
 import tart.internal.MyProcess.MyProcessData
@@ -148,6 +149,7 @@ object Perfs {
     initialized = true
     notInitializedReason = ""
     val application: Application = context
+    ApplicationHolder.application = application
 
     val elapsedSinceProcessStartRealtimeMillis =
       SystemClock.elapsedRealtime() - myProcessInfo.processStartRealtimeMillis

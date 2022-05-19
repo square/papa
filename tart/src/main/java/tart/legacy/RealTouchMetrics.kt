@@ -6,8 +6,6 @@ import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.KeyEvent.KEYCODE_BACK
 import android.view.MotionEvent
-import androidx.tracing.Trace
-import androidx.tracing.trace
 import curtains.Curtains
 import curtains.KeyEventInterceptor
 import curtains.OnRootViewAddedListener
@@ -16,6 +14,8 @@ import curtains.keyEventInterceptors
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
 import curtains.windowAttachCount
+import tart.OkTrace
+import tart.okTrace
 
 class RealTouchMetrics : TouchMetrics {
 
@@ -35,18 +35,18 @@ class RealTouchMetrics : TouchMetrics {
           if (isActionUp) {
             val touchUpCopy = MotionEvent.obtain(motionEvent) to SystemClock.uptimeMillis()
             handler.post {
-              Trace.endAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
+              OkTrace.endAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
               lastTouchUpEvent = touchUpCopy
             }
           }
-          val dispatchState = trace(MotionEvent.actionToString(motionEvent.action)) {
+          val dispatchState = okTrace(MotionEvent.actionToString(motionEvent.action)) {
             dispatch(motionEvent)
           }
           // Android posts onClick callbacks when it receives the up event. So here we leverage
           // afterTouchEvent at which point the onClick has been posted, and by posting then we ensure
           // we're clearing the event right after the onclick is handled.
           if (isActionUp) {
-            Trace.beginAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
+            OkTrace.beginAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
             handler.post {
               lastTouchUpEvent?.first?.recycle()
               lastTouchUpEvent = null
@@ -62,7 +62,7 @@ class RealTouchMetrics : TouchMetrics {
           val dispatchState = if (isBackPressed) {
             val now = SystemClock.uptimeMillis()
             lastBackKeyEvent = keyEvent.eventTime to now
-            trace("back pressed") {
+            okTrace("back pressed") {
               dispatch(keyEvent)
             }
           } else {

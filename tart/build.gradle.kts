@@ -14,6 +14,8 @@ android {
     targetCompatibility = JavaVersion.VERSION_1_8
   }
 
+  resourcePrefix = "tart_"
+
   defaultConfig {
     minSdkVersion(21)
     targetSdkVersion(30)
