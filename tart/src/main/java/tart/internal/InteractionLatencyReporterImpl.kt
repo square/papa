@@ -15,7 +15,6 @@ import tart.InteractionTrigger.Custom
 import tart.InteractionTrigger.Input
 import tart.InteractionTrigger.Unknown
 import tart.internal.RealFrameRenderingTracker
-import tart.legacy.TouchMetrics
 
 internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
 

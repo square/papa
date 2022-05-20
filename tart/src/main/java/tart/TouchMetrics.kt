@@ -1,4 +1,4 @@
-package tart.legacy
+package tart
 
 import android.view.MotionEvent
 import tart.internal.RealTouchMetrics

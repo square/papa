@@ -17,7 +17,7 @@ import curtains.touchEventInterceptors
 import curtains.windowAttachCount
 import logcat.logcat
 import tart.OkTrace
-import tart.legacy.TouchMetrics
+import tart.TouchMetrics
 import tart.okTrace
 
 internal object RealTouchMetrics : TouchMetrics {
