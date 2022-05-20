@@ -88,6 +88,14 @@ object OkTrace {
     androidx.tracing.Trace.beginSection(label.take(MAX_LABEL_LENGTH))
   }
 
+  @JvmStatic
+  inline fun beginSection(crossinline labelLambda: () -> String) {
+    if (!isCurrentlyTracing) {
+      return
+    }
+    androidx.tracing.Trace.beginSection(labelLambda().take(MAX_LABEL_LENGTH))
+  }
+
   /**
    * Writes a trace message to indicate that a given section of code has ended. This call must
    * be preceded by a corresponding call to {@link #beginSection(String)}. Calling this method
@@ -101,6 +109,20 @@ object OkTrace {
       return
     }
     androidx.tracing.Trace.endSection()
+  }
+
+  /**
+   * @see androidx.tracing.Trace.beginAsyncSection
+   */
+  @JvmStatic
+  inline fun beginAsyncSection(
+    crossinline labelCookiePairLambda: () -> Pair<String, Int>
+  ) {
+    if (!isCurrentlyTracing) {
+      return
+    }
+    val (label, cookie) = labelCookiePairLambda()
+    androidx.tracing.Trace.beginAsyncSection(label, cookie)
   }
 
   /**
@@ -128,6 +150,20 @@ object OkTrace {
     if (!isCurrentlyTracing) {
       return
     }
+    androidx.tracing.Trace.endAsyncSection(label, cookie)
+  }
+
+  /**
+   * @see androidx.tracing.Trace.beginAsyncSection
+   */
+  @JvmStatic
+  inline fun endAsyncSection(
+    crossinline labelCookiePairLambda: () -> Pair<String, Int>
+  ) {
+    if (!isCurrentlyTracing) {
+      return
+    }
+    val (label, cookie) = labelCookiePairLambda()
     androidx.tracing.Trace.endAsyncSection(label, cookie)
   }
 

@@ -127,28 +127,23 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
   private fun AppState.Value.asLog(): String? {
     return when (this) {
       NoValue -> null
-      is NumberValue -> this.number.toString()
-      is StringValue -> this.string
+      is NumberValue -> number.toString()
+      is StringValue -> string
       // Skipping on any potentially expensive toString() call
-      is SerializedAsync -> null
+      is SerializedAsync -> value::class.java.simpleName
     }
   }
 
   private fun Interaction.startTrace(reportStartUptimeMillis: Long) {
-    // TODO OkTrace should support computing this data async with blocks
-    // Skip computation if not necessary
-    if (!OkTrace.isTraceable) {
-      return
+    OkTrace.beginAsyncSection {
+      traceName to (reportStartUptimeMillis.rem(Int.MAX_VALUE)).toInt()
     }
-    OkTrace.beginAsyncSection(traceName, (reportStartUptimeMillis.rem(Int.MAX_VALUE)).toInt())
   }
 
   private fun Interaction.endTrace(reportStartUptimeMillis: Long) {
-    // Skip computation if not necessary
-    if (!OkTrace.isTraceable) {
-      return
+    OkTrace.endAsyncSection {
+      traceName to (reportStartUptimeMillis.rem(Int.MAX_VALUE)).toInt()
     }
-    OkTrace.endAsyncSection(traceName, (reportStartUptimeMillis.rem(Int.MAX_VALUE)).toInt())
   }
 
   private val Interaction.traceName: String

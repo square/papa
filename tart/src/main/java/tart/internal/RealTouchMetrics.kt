@@ -42,7 +42,7 @@ internal object RealTouchMetrics : TouchMetrics {
               lastTouchUpEvent = touchUpCopy
             }
           }
-          val dispatchState = okTrace(MotionEvent.actionToString(motionEvent.action)) {
+          val dispatchState = okTrace({ MotionEvent.actionToString(motionEvent.action) }) {
             dispatch(motionEvent)
           }
           // Android posts onClick callbacks when it receives the up event. So here we leverage
