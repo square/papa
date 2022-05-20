@@ -10,7 +10,7 @@ import tart.internal.TraceMainThreadMessages
 
 /**
  * This is a wrapper for [androidx.tracing.Trace] that should be used instead as [beginSection] and
- * [trace] automatically truncate the label at 127 characters instead of crashing.
+ * [okTrace] automatically truncate the label at 127 characters instead of crashing.
  *
  * [OkTrace] also provides [isTraceable], [isCurrentlyTracing] and [MAX_LABEL_LENGTH].
  *
