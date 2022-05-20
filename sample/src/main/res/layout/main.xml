@@ -8,6 +8,12 @@
     android:orientation="vertical"
     tools:ignore="HardcodedText"
     >
+  <TextView
+      android:id="@+id/updated_textview"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Not updated yet"
+      />
   <Button
       android:id="@+id/freeze_ui"
       android:layout_width="wrap_content"
@@ -15,9 +21,15 @@
       android:text="Freeze UI"
       />
   <Button
-      android:id="@+id/other_button"
+      android:id="@+id/update_button"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:text="No Op Button"
+      android:text="Update title"
       />
+
+  <ListView
+      android:id="@+id/list_view"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"/>
+
 </LinearLayout>

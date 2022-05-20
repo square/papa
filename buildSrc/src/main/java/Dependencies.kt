@@ -3,7 +3,7 @@ object Versions {
    * To change this in the IDE, use `systemProp.square.kotlinVersion=x.y.z` in your
    * `~/.gradle/gradle.properties` file.
    */
-  val KotlinCompiler = System.getProperty("square.kotlinVersion") ?: "1.4.21"
+  val KotlinCompiler = System.getProperty("square.kotlinVersion") ?: "1.6.0"
 
   const val AndroidXTest = "1.3.0"
 }

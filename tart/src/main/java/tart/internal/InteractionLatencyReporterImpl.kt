@@ -110,19 +110,19 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
         val endLog = stateAfterInteractionValue.asLog()
         val stateLog = when {
           startLog != null && endLog != null -> {
-            "(before='$startLog', after='$endLog')"
+            " (before='$startLog', after='$endLog')"
           }
           startLog != null && endLog == null -> {
-            "(before='$startLog')"
+            " (before='$startLog')"
           }
           startLog == null && endLog != null -> {
-            "(after='$endLog')"
+            " (after='$endLog')"
           }
           else -> ""
         }
         val duration =
-          "$totalLatencyMillis ms (${triggerData.triggerDurationMillis} + $rawLatencyMillis)"
-        "${interaction.description}$stateLog took $duration"
+          "$totalLatencyMillis ms: ${triggerData.triggerDurationMillis} (${triggerData.triggerName}) + $rawLatencyMillis"
+        "${interaction.description} took $duration$stateLog"
       }
     }
   }

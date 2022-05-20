@@ -8,6 +8,7 @@
       >
 
     <activity
+        android:exported = "true"
         android:name=".MainActivity"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
       <intent-filter>

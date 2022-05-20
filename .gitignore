@@ -38,3 +38,5 @@ local.properties
 *.iml
 .idea/
 captures/
+
+record_android_trace

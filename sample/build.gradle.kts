@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-  compileSdkVersion(30)
+  compileSdkVersion(31)
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -13,7 +13,7 @@ android {
 
   defaultConfig {
     minSdkVersion(21)
-    targetSdkVersion(30)
+    targetSdkVersion(31)
     applicationId = "com.squareup.tart.sample"
   }
 }
