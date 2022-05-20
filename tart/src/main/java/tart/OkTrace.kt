@@ -6,6 +6,7 @@ import tart.OkTrace.MAX_LABEL_LENGTH
 import tart.OkTrace.isCurrentlyTracing
 import tart.OkTrace.isTraceable
 import tart.internal.ApplicationHolder
+import tart.internal.TraceMainThreadMessages
 
 /**
  * This is a wrapper for [androidx.tracing.Trace] that should be used instead as [beginSection] and
@@ -42,6 +43,9 @@ object OkTrace {
    * </resources>
    * ```
    *
+   * Please don't call [forceTraceable] or set `tart_force_traceable_receiver` to true in
+   * production!
+   *
    */
   @JvmStatic
   val isTraceable: Boolean
@@ -59,10 +63,14 @@ object OkTrace {
     isDebuggable || isProfileable
   }
 
+  /**
+   * @see isTraceable
+   */
   @JvmStatic
   fun forceTraceable() {
     androidx.tracing.Trace.forceEnableAppTracing()
     isForcedTraceable = true
+    TraceMainThreadMessages.enableMainThreadMessageTracing()
   }
 
   @Volatile

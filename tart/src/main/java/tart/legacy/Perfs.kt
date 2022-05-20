@@ -149,7 +149,7 @@ object Perfs {
     initialized = true
     notInitializedReason = ""
     val application: Application = context
-    ApplicationHolder.application = application
+    ApplicationHolder.install(application)
 
     val elapsedSinceProcessStartRealtimeMillis =
       SystemClock.elapsedRealtime() - myProcessInfo.processStartRealtimeMillis
