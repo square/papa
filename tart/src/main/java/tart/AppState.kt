@@ -26,8 +26,8 @@ sealed class AppState {
     fun serializedAsync(serializedAsync: Any) = SerializedAsync(serializedAsync)
 
     /**
-     * Delay retrieving the value until the frame has been rendered. This allows providing
-     * app state such as the number of recycler view rows rendered.
+     * Delay retrieving the value until immediately after the frame has been rendered. This allows
+     * providing app state such as the number of recycler view rows rendered.
      */
     fun valueOnFrameRendered(onFrameRendered: () -> Value) = ValueOnFrameRendered(onFrameRendered)
   }

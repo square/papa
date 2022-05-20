@@ -1,37 +1,32 @@
-package tart
+package tart.internal
 
 import android.os.Looper
 import android.os.SystemClock
 import logcat.logcat
+import tart.AppState
 import tart.AppState.Value.NoValue
 import tart.AppState.Value.NumberValue
 import tart.AppState.Value.SerializedAsync
 import tart.AppState.Value.StringValue
 import tart.AppState.ValueOnFrameRendered
+import tart.Interaction
 import tart.Interaction.Delayed
 import tart.Interaction.Delayed.End.Cancel
 import tart.Interaction.Delayed.End.UiUpdated
+import tart.InteractionLatencyReporter
+import tart.InteractionTrigger
 import tart.InteractionTrigger.Custom
 import tart.InteractionTrigger.Input
 import tart.InteractionTrigger.Unknown
-import tart.internal.RealFrameRenderingTracker
+import tart.OkTrace
+import tart.TouchMetrics
+import tart.UserInteractionLatencyAnalytics
+import tart.UserInteractionLatencyAnalytics.TriggerData
 
 internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
 
   private val frameRenderingTracker = RealFrameRenderingTracker()
   private val touchMetrics: TouchMetrics = TouchMetrics
-
-  // TODO Provide way to install analytics
-  private var analytics: UserInteractionLatencyAnalytics? = null
-
-  class TriggerData(
-    val triggerDurationMillisOrNull: Int?,
-    val triggerName: String
-  ) {
-    companion object {
-      val UNKNOWN = TriggerData(null, "unknown")
-    }
-  }
 
   override fun reportImmediateInteraction(
     trigger: InteractionTrigger,
@@ -98,15 +93,14 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
         is ValueOnFrameRendered -> stateAfterInteraction.onFrameRendered()
       }
       val totalLatencyMillis = (triggerData.triggerDurationMillisOrNull ?: 0) + rawLatencyMillis
-      analytics?.reportInteraction(
-        description = interaction.description,
+      UserInteractionLatencyAnalytics.analytics?.reportInteraction(
+        interaction = interaction,
         stateBeforeInteraction = stateBeforeInteraction,
         stateAfterInteraction = stateAfterInteractionValue,
         reportStartUptimeMillis = reportStartUptimeMillis,
         rawDurationUptimeMillis = rawLatencyMillis,
         totalDurationUptimeMillis = totalLatencyMillis,
-        triggerDurationUptimeMillis = triggerData.triggerDurationMillisOrNull,
-        triggerName = triggerData.triggerName,
+        triggerData = triggerData,
       )
       logcat {
         val startLog = stateBeforeInteraction.asLog()
@@ -138,14 +132,6 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
       // Skipping on any potentially expensive toString() call
       is SerializedAsync -> null
     }
-  }
-
-  internal fun installAnalytics(userInteractionLatencyAnalytics: UserInteractionLatencyAnalytics) {
-    analytics = userInteractionLatencyAnalytics
-  }
-
-  fun uninstallAnalytics() {
-    analytics = null
   }
 
   private fun Interaction.startTrace(reportStartUptimeMillis: Long) {
