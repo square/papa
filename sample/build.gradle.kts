@@ -21,4 +21,5 @@ android {
 dependencies {
   implementation(project(":tart"))
   implementation(Dependencies.AppCompat)
+  implementation(Dependencies.Logcat)
 }

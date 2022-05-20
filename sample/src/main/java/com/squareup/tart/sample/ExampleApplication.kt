@@ -3,6 +3,8 @@ package com.squareup.tart.sample
 import android.app.Application
 import android.os.Handler
 import android.os.Looper
+import logcat.AndroidLogcatLogger
+import logcat.LogcatLogger
 import tart.AppLaunch
 import tart.PreLaunchState.ACTIVITY_WAS_STOPPED
 import tart.PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
@@ -19,6 +21,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 class ExampleApplication : Application() {
   override fun onCreate() {
     super.onCreate()
+    LogcatLogger.install(AndroidLogcatLogger())
 
     Handler(Looper.getMainLooper()).postDelayed({
       println("App start:\n${Perfs.appStart}")
