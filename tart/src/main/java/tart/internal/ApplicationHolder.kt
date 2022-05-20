@@ -16,5 +16,6 @@ internal object ApplicationHolder {
   fun install(application: Application) {
     _application = application
     TraceMainThreadMessages.enableMainThreadMessageTracing()
+    RealTouchMetrics.install()
   }
 }

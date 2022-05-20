@@ -1,6 +1,7 @@
 package tart.legacy
 
 import android.view.MotionEvent
+import tart.internal.RealTouchMetrics
 
 interface TouchMetrics {
 
@@ -17,4 +18,6 @@ interface TouchMetrics {
    * (e.g. this is non null if called from within an onBackPressed() callback).
    */
   val lastBackKeyEvent: Pair<Long, Long>?
+
+  companion object : TouchMetrics by RealTouchMetrics
 }

@@ -20,8 +20,7 @@ import tart.legacy.TouchMetrics
 internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
 
   private val frameRenderingTracker = RealFrameRenderingTracker()
-
-  private val touchMetrics: TouchMetrics = TODO("auto install touch metrics")
+  private val touchMetrics: TouchMetrics = TouchMetrics
 
   // TODO Provide way to install analytics
   private var analytics: UserInteractionLatencyAnalytics? = null

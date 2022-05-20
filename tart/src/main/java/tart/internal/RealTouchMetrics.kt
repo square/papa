@@ -1,4 +1,4 @@
-package tart.legacy
+package tart.internal
 
 import android.os.Handler
 import android.os.Looper
@@ -6,6 +6,7 @@ import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.KeyEvent.KEYCODE_BACK
 import android.view.MotionEvent
+import com.squareup.tart.R
 import curtains.Curtains
 import curtains.KeyEventInterceptor
 import curtains.OnRootViewAddedListener
@@ -14,10 +15,12 @@ import curtains.keyEventInterceptors
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
 import curtains.windowAttachCount
+import logcat.logcat
 import tart.OkTrace
+import tart.legacy.TouchMetrics
 import tart.okTrace
 
-class RealTouchMetrics : TouchMetrics {
+internal object RealTouchMetrics : TouchMetrics {
 
   override var lastTouchUpEvent: Pair<MotionEvent, Long>? = null
 
@@ -77,16 +80,17 @@ class RealTouchMetrics : TouchMetrics {
     }
   }
 
-  fun install() {
-    Curtains.onRootViewsChangedListeners += listener
+  internal fun install() {
+    val context = ApplicationHolder.application
+    if (context == null) {
+      logcat { "Application not set, not tracking input events" }
+      return
+    }
+    if (context.resources.getBoolean(R.bool.tart_track_input_events)) {
+      Curtains.onRootViewsChangedListeners += listener
+    }
   }
 
-  fun uninstall() {
-    Curtains.onRootViewsChangedListeners -= listener
-  }
-
-  private companion object {
-    private const val ON_CLICK_QUEUED_NAME = "View OnClick queued"
-    private const val ON_CLICK_QUEUED_COOKIE = 0x7331BEAF
-  }
+  private const val ON_CLICK_QUEUED_NAME = "View OnClick queued"
+  private const val ON_CLICK_QUEUED_COOKIE = 0x7331BEAF
 }

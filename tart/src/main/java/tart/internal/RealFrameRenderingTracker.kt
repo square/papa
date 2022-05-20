@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Choreographer
 
+// TODO Merge this with other existing ways to track frames
 internal class RealFrameRenderingTracker {
 
   private val mainAsyncHandler by lazy {
