@@ -2,4 +2,5 @@
 <resources>
   <bool name="tart_force_traceable_receiver">false</bool>
   <bool name="tart_gc_trigger_receiver">false</bool>
+  <bool name="tart_trace_main_thread">true</bool>
 </resources>

@@ -3,9 +3,20 @@ package tart.internal
 import android.os.Build.VERSION
 import android.os.Handler
 import android.os.Looper
+import com.squareup.tart.R
+import logcat.logcat
 import tart.OkTrace
 
 internal object TraceMainThreadMessages {
+
+  private val traceMainThreadMessages by lazy {
+    val context = ApplicationHolder.application
+    if (context == null) {
+      logcat { "Application not set, main thread messages not traced" }
+      return@lazy false
+    }
+    context.resources.getBoolean(R.bool.tart_trace_main_thread)
+  }
 
   private var enabled = false
 
@@ -38,7 +49,7 @@ internal object TraceMainThreadMessages {
     // that is crashing our UI tests:
     // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/app/UiAutomation.java;l=1365-1371;drc=master
 
-    if (!enabled && VERSION.SDK_INT != 28 && OkTrace.isTraceable) {
+    if (VERSION.SDK_INT != 28 && !enabled && OkTrace.isTraceable && traceMainThreadMessages) {
       enabled = true
       var currentlyTracing = false
       Looper.getMainLooper().setMessageLogging { log ->

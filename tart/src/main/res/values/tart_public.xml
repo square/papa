@@ -2,4 +2,5 @@
 <resources>
   <public name="tart_force_traceable_receiver" type="bool"/>
   <public name="tart_gc_trigger_receiver" type="bool"/>
+  <public name="tart_trace_main_thread" type="bool"/>
 </resources>
