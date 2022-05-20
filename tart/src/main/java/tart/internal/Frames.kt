@@ -28,7 +28,7 @@ internal fun Window.onNextFrameDisplayed(callback: (CpuDuration) -> Unit) {
 }
 
 // TODO Should this be on an object instead?
-fun isChoreographerDoingFrame(): Boolean {
+internal fun isChoreographerDoingFrame(): Boolean {
   if (!isOnMainThread()) {
     return false
   }
@@ -44,7 +44,7 @@ fun isChoreographerDoingFrame(): Boolean {
   return false
 }
 
-fun Window.onCurrentFrameDisplayed(
+internal fun Window.onCurrentFrameDisplayed(
   frameTimeNanos: Long,
   callback: (CpuDuration) -> Unit,
 ) {
