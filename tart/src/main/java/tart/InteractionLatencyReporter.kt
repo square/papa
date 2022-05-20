@@ -47,29 +47,5 @@ interface InteractionLatencyReporter {
     stateBeforeInteraction: AppState.Value = NoValue
   ): Delayed<T>
 
-  companion object : InteractionLatencyReporter {
-    var delegate: InteractionLatencyReporter? = null
-    override fun reportImmediateInteraction(
-      trigger: InteractionTrigger,
-      interaction: Interaction,
-      stateBeforeInteraction: AppState.Value,
-      stateAfterInteraction: AppState
-    ) {
-      delegate?.reportImmediateInteraction(
-        trigger,
-        interaction,
-        stateBeforeInteraction,
-        stateAfterInteraction
-      )
-    }
-
-    override fun <T : Interaction> startDelayedInteraction(
-      trigger: InteractionTrigger,
-      interaction: T,
-      stateBeforeInteraction: AppState.Value
-    ): Delayed<T> {
-      return delegate?.startDelayedInteraction(trigger, interaction, stateBeforeInteraction)
-        ?: Delayed(null)
-    }
-  }
+  companion object : InteractionLatencyReporter by InteractionLatencyReporterImpl()
 }
