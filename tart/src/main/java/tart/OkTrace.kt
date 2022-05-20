@@ -16,7 +16,7 @@ import tart.internal.TraceMainThreadMessages
  *
  * All tracing methods check that [isTraceable] is true before delegating to
  * [androidx.tracing.Trace] which would otherwise default to crashing if the reflection based
- * backports fail.
+ * backport fail.
  */
 object OkTrace {
 
@@ -28,7 +28,7 @@ object OkTrace {
    *
    * Starting with API 31, builds can be profileable without setting
    * `<profileable android:shell="true"/>`. However, here we intentionally still return false on
-   * API 31 unless explicitely profileable as our goal is make it easy to avoid any additional
+   * API 31 unless explicitly profileable as our goal is make it easy to avoid any additional
    * workload in release builds.
    *
    * You can force this to be true by calling [forceTraceable], which will enable app tracing even
