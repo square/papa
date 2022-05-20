@@ -97,7 +97,10 @@ object FrozenFrameOnTouchDetector {
     }
   }
 
-  private fun ViewGroup.findPressedView(): View? {
+  internal fun ViewGroup.findPressedView(): View? {
+    if (isPressed) {
+      return this
+    }
     for (i in 0 until childCount) {
       val child = getChildAt(i)
       if (child.isPressed) {

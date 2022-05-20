@@ -5,6 +5,9 @@ import android.os.Looper
 import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.ViewConfiguration
+import android.view.ViewGroup
+import android.widget.AbsListView
 import com.squareup.tart.R
 import curtains.Curtains
 import curtains.KeyEventInterceptor
@@ -18,6 +21,7 @@ import logcat.logcat
 import tart.DeliveredInput
 import tart.InputTracker
 import tart.OkTrace
+import tart.legacy.FrozenFrameOnTouchDetector.findPressedView
 import tart.okTrace
 
 internal object RealInputTracker : InputTracker {
@@ -41,36 +45,59 @@ internal object RealInputTracker : InputTracker {
           // Note: what if we get 2 taps in a single dispatch loop? Then we're simply posting the
           // following: (recordTouch, onClick, clearTouch, recordTouch, onClick, clearTouch).
           val deliveryUptimeMillis = SystemClock.uptimeMillis()
-          val (event, cookie) = if (isActionUp) {
-            val cookie = deliveryUptimeMillis.rem(Int.MAX_VALUE).toInt()
+
+          val (actionUpEvent, cookie) = if (isActionUp) {
             val input = DeliveredInput(MotionEvent.obtain(motionEvent), deliveryUptimeMillis)
-            handler.post {
-              OkTrace.endAsyncSection(ON_CLICK_QUEUED_NAME, cookie)
-              motionEventTriggeringClickLocal.set(input)
-            }
+            val cookie = deliveryUptimeMillis.rem(Int.MAX_VALUE).toInt()
             input to cookie
           } else {
             null to 0
           }
+
+          val setEventForPostedClick = Runnable {
+            OkTrace.endAsyncSection(ON_CLICK_QUEUED_NAME, cookie)
+            motionEventTriggeringClickLocal.set(actionUpEvent)
+          }
+
+          if (actionUpEvent != null) {
+            handler.post(setEventForPostedClick)
+          }
+
           val dispatchState = okTrace({ MotionEvent.actionToString(motionEvent.action) }) {
             // Storing in case the action up is immediately triggering a click.
-            motionEventTriggeringClickLocal.set(event)
+            motionEventTriggeringClickLocal.set(actionUpEvent)
             try {
               dispatch(motionEvent)
             } finally {
               motionEventTriggeringClickLocal.set(null)
             }
           }
-          // TODO Listview
 
           // Android posts onClick callbacks when it receives the up event. So here we leverage
           // afterTouchEvent at which point the onClick has been posted, and by posting then we ensure
           // we're clearing the event right after the onclick is handled.
           if (isActionUp) {
             OkTrace.beginAsyncSection(ON_CLICK_QUEUED_NAME, cookie)
-            handler.post {
-              motionEventTriggeringClick?.event?.recycle()
-              motionEventTriggeringClickLocal.set(null)
+            val clearEventForPostedClick = Runnable {
+              actionUpEvent!!.event.recycle()
+              if (motionEventTriggeringClickLocal.get() === actionUpEvent) {
+                motionEventTriggeringClickLocal.set(null)
+              }
+            }
+
+            val dispatchEnd = SystemClock.uptimeMillis()
+            val pressedView = (window.decorView as? ViewGroup)?.findPressedView()
+            // AbsListView subclasses post clicks with a delay.
+            // https://issuetracker.google.com/issues/232962097
+            if (pressedView is AbsListView) {
+              val listViewTapDelay = ViewConfiguration.getPressedStateDuration()
+              val setEventTime = (deliveryUptimeMillis + listViewTapDelay) - 1
+              val clearEventTime = dispatchEnd + listViewTapDelay
+              handler.removeCallbacks(setEventForPostedClick)
+              handler.postAtTime(setEventForPostedClick, setEventTime)
+              handler.postAtTime(clearEventForPostedClick, clearEventTime)
+            } else {
+              handler.post(clearEventForPostedClick)
             }
           }
           dispatchState
