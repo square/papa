@@ -136,6 +136,7 @@ internal object RealInputTracker : InputTracker {
     get() = "${keyActionToString()} ${KeyEvent.keyCodeToString(keyCode)}"
 
   private fun KeyEvent.keyActionToString(): String {
+    @Suppress("DEPRECATION")
     return when (action) {
       KeyEvent.ACTION_DOWN -> "ACTION_DOWN"
       KeyEvent.ACTION_UP -> "ACTION_UP"
