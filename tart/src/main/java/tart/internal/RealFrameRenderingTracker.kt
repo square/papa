@@ -1,6 +1,5 @@
 package tart.internal
 
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.Choreographer
@@ -9,7 +8,14 @@ import android.view.Choreographer
 internal class RealFrameRenderingTracker {
 
   private val mainAsyncHandler by lazy {
-    if (Build.VERSION.SDK_INT >= 28) {
+    Handler(Looper.getMainLooper())
+  }
+
+  fun postFrameRenderedCallback(block: () -> Unit) {
+    // The frame callback runs somewhat in the middle of rendering, so by posting at the front
+    // of the queue from there we get the timestamp for right when the next frame is done
+    // rendering.
+    Choreographer.getInstance().postFrameCallback {
       // The main thread is a single thread, and work always executes one task at a time. We're
       // creating an async handler here which means that messages posted to this handler won't be
       // reordered to execute after sync barriers (which are used for processing input events and
@@ -19,18 +25,7 @@ internal class RealFrameRenderingTracker {
       // message. Unless there's a special message enqueued called a sync barrier, which basically has
       // top priority and will run prior to the current head if its time that's gone. Async prevents
       // this behavior.
-      Handler.createAsync(Looper.getMainLooper())
-    } else {
-      Handler(Looper.getMainLooper())
-    }
-  }
-
-  fun postFrameRenderedCallback(block: () -> Unit) {
-    // The frame callback runs somewhat in the middle of rendering, so by posting at the front
-    // of the queue from there we get the timestamp for right when the next frame is done
-    // rendering.
-    Choreographer.getInstance().postFrameCallback {
-      mainAsyncHandler.postAtFrontOfQueue {
+      mainAsyncHandler.postAtFrontOfQueueAsync {
         block()
       }
     }
