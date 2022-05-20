@@ -82,7 +82,7 @@ object OkTrace {
    */
   @JvmStatic
   fun beginSection(label: String) {
-    if (!isTraceable) {
+    if (!isCurrentlyTracing) {
       return
     }
     androidx.tracing.Trace.beginSection(label.take(MAX_LABEL_LENGTH))
@@ -97,7 +97,7 @@ object OkTrace {
    */
   @JvmStatic
   fun endSection() {
-    if (!isTraceable) {
+    if (!isCurrentlyTracing) {
       return
     }
     androidx.tracing.Trace.endSection()
@@ -111,7 +111,7 @@ object OkTrace {
     label: String,
     cookie: Int
   ) {
-    if (!isTraceable) {
+    if (!isCurrentlyTracing) {
       return
     }
     androidx.tracing.Trace.beginAsyncSection(label, cookie)
@@ -125,7 +125,7 @@ object OkTrace {
     label: String,
     cookie: Int
   ) {
-    if (!isTraceable) {
+    if (!isCurrentlyTracing) {
       return
     }
     androidx.tracing.Trace.endAsyncSection(label, cookie)
@@ -150,7 +150,7 @@ inline fun <T> okTrace(
   crossinline label: () -> String,
   crossinline block: () -> T
 ): T {
-  if (!isTraceable) {
+  if (!isCurrentlyTracing) {
     return block()
   }
   try {
