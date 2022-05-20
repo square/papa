@@ -2,6 +2,8 @@ package tart.internal
 
 import android.os.Looper
 import android.os.SystemClock
+import android.view.KeyEvent
+import android.view.MotionEvent
 import logcat.logcat
 import tart.AppState
 import tart.AppState.Value.NoValue
@@ -9,6 +11,7 @@ import tart.AppState.Value.NumberValue
 import tart.AppState.Value.SerializedAsync
 import tart.AppState.Value.StringValue
 import tart.AppState.ValueOnFrameRendered
+import tart.InputTracker
 import tart.Interaction
 import tart.Interaction.Delayed
 import tart.Interaction.Delayed.End.Cancel
@@ -19,14 +22,14 @@ import tart.InteractionTrigger.Custom
 import tart.InteractionTrigger.Input
 import tart.InteractionTrigger.Unknown
 import tart.OkTrace
-import tart.TouchMetrics
 import tart.UserInteractionLatencyAnalytics
 import tart.UserInteractionLatencyAnalytics.TriggerData
+import tart.internal.RealInputTracker.name
 
 internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
 
   private val frameRenderingTracker = RealFrameRenderingTracker()
-  private val touchMetrics: TouchMetrics = TouchMetrics
+  private val inputTracker: InputTracker = InputTracker
 
   override fun reportImmediateInteraction(
     trigger: InteractionTrigger,
@@ -92,7 +95,7 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
         is AppState.Value -> stateAfterInteraction
         is ValueOnFrameRendered -> stateAfterInteraction.onFrameRendered()
       }
-      val totalLatencyMillis = (triggerData.triggerDurationMillisOrNull ?: 0) + rawLatencyMillis
+      val totalLatencyMillis = (triggerData.triggerDurationMillis) + rawLatencyMillis
       UserInteractionLatencyAnalytics.analytics?.reportInteraction(
         interaction = interaction,
         stateBeforeInteraction = stateBeforeInteraction,
@@ -118,7 +121,7 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
           else -> ""
         }
         val duration =
-          "$totalLatencyMillis ms (${triggerData.triggerDurationMillisOrNull} + $rawLatencyMillis)"
+          "$totalLatencyMillis ms (${triggerData.triggerDurationMillis} + $rawLatencyMillis)"
         "${interaction.description}$stateLog took $duration"
       }
     }
@@ -152,19 +155,26 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
   private fun InteractionTrigger.computeTriggerData(reportStartUptimeMillis: Long) = when (this) {
     Input -> {
       checkMainThread()
-      // Touch up and back key events are mutually exclusive- the event times fields are only set
-      // if the user interaction is underway, i.e. this is called as a result of onBackPressed()
-      // or onClicked()
-      touchMetrics.lastTouchUpEvent?.let { (motionEvent, _) ->
-        TriggerData((reportStartUptimeMillis - motionEvent.eventTime).toInt(), "tap")
-      } ?: touchMetrics.lastBackKeyEvent?.let { (backKeyEventTime, _) ->
-        TriggerData((reportStartUptimeMillis - backKeyEventTime).toInt(), "back")
-      } ?: TriggerData.UNKNOWN
+      val triggerEvent = inputTracker.triggerEvent
+      if (triggerEvent != null) {
+        val triggerDurationMillis = (reportStartUptimeMillis - triggerEvent.event.eventTime).toInt()
+        val triggerName = when (val inputEvent = triggerEvent.event) {
+          is MotionEvent -> "tap"
+          is KeyEvent -> {
+            "key ${inputEvent.name}"
+          }
+          else -> error("Unexpected input event type $inputEvent")
+        }
+        TriggerData.Found(triggerName, triggerDurationMillis)
+      } else {
+        TriggerData.Unknown
+      }
     }
     is Custom -> {
-      TriggerData((reportStartUptimeMillis - triggerStartUptimeMillis).toInt(), name)
+      val triggerDurationMillis = (reportStartUptimeMillis - triggerStartUptimeMillis).toInt()
+      TriggerData.Found(name, triggerDurationMillis)
     }
-    Unknown -> TriggerData.UNKNOWN
+    Unknown -> TriggerData.Unknown
   }
 
   companion object {

@@ -12,12 +12,18 @@ interface UserInteractionLatencyAnalytics {
     triggerData: TriggerData
   )
 
-  class TriggerData(
-    val triggerDurationMillisOrNull: Int?,
-    val triggerName: String
-  ) {
-    companion object {
-      val UNKNOWN = TriggerData(null, "unknown")
+  sealed class TriggerData {
+    abstract val triggerName: String
+    abstract val triggerDurationMillis: Int
+
+    class Found(
+      override val triggerName: String,
+      override val triggerDurationMillis: Int
+    ) : TriggerData()
+
+    object Unknown : TriggerData() {
+      override val triggerName = "unknown"
+      override val triggerDurationMillis = 0
     }
   }
 

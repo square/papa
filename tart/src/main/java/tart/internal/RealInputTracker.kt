@@ -4,7 +4,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.KeyEvent
-import android.view.KeyEvent.KEYCODE_BACK
 import android.view.MotionEvent
 import com.squareup.tart.R
 import curtains.Curtains
@@ -16,15 +15,21 @@ import curtains.phoneWindow
 import curtains.touchEventInterceptors
 import curtains.windowAttachCount
 import logcat.logcat
+import tart.DeliveredInput
+import tart.InputTracker
 import tart.OkTrace
-import tart.TouchMetrics
 import tart.okTrace
 
-internal object RealTouchMetrics : TouchMetrics {
+internal object RealInputTracker : InputTracker {
 
-  override var lastTouchUpEvent: Pair<MotionEvent, Long>? = null
+  override val motionEventTriggeringClick: DeliveredInput<MotionEvent>?
+    get() = motionEventTriggeringClickLocal.get()
 
-  override var lastBackKeyEvent: Pair<Long, Long>? = null
+  override val currentKeyEvent: DeliveredInput<KeyEvent>?
+    get() = currentKeyEventLocal.get()
+
+  private val motionEventTriggeringClickLocal = ThreadLocal<DeliveredInput<MotionEvent>>()
+  private val currentKeyEventLocal = ThreadLocal<DeliveredInput<KeyEvent>>()
 
   private val handler = Handler(Looper.getMainLooper())
 
@@ -35,46 +40,53 @@ internal object RealTouchMetrics : TouchMetrics {
           val isActionUp = motionEvent.action == MotionEvent.ACTION_UP
           // Note: what if we get 2 taps in a single dispatch loop? Then we're simply posting the
           // following: (recordTouch, onClick, clearTouch, recordTouch, onClick, clearTouch).
-          if (isActionUp) {
-            val touchUpCopy = MotionEvent.obtain(motionEvent) to SystemClock.uptimeMillis()
+          val deliveryUptimeMillis = SystemClock.uptimeMillis()
+          val (event, cookie) = if (isActionUp) {
+            val cookie = deliveryUptimeMillis.rem(Int.MAX_VALUE).toInt()
+            val input = DeliveredInput(MotionEvent.obtain(motionEvent), deliveryUptimeMillis)
             handler.post {
-              OkTrace.endAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
-              lastTouchUpEvent = touchUpCopy
+              OkTrace.endAsyncSection(ON_CLICK_QUEUED_NAME, cookie)
+              motionEventTriggeringClickLocal.set(input)
             }
+            input to cookie
+          } else {
+            null to 0
           }
           val dispatchState = okTrace({ MotionEvent.actionToString(motionEvent.action) }) {
-            dispatch(motionEvent)
+            // Storing in case the action up is immediately triggering a click.
+            motionEventTriggeringClickLocal.set(event)
+            try {
+              dispatch(motionEvent)
+            } finally {
+              motionEventTriggeringClickLocal.set(null)
+            }
           }
+          // TODO Listview
+
           // Android posts onClick callbacks when it receives the up event. So here we leverage
           // afterTouchEvent at which point the onClick has been posted, and by posting then we ensure
           // we're clearing the event right after the onclick is handled.
           if (isActionUp) {
-            OkTrace.beginAsyncSection(ON_CLICK_QUEUED_NAME, ON_CLICK_QUEUED_COOKIE)
+            OkTrace.beginAsyncSection(ON_CLICK_QUEUED_NAME, cookie)
             handler.post {
-              lastTouchUpEvent?.first?.recycle()
-              lastTouchUpEvent = null
+              motionEventTriggeringClick?.event?.recycle()
+              motionEventTriggeringClickLocal.set(null)
             }
           }
           dispatchState
         }
         window.keyEventInterceptors += KeyEventInterceptor { keyEvent, dispatch ->
-          val isBackPressed = keyEvent.keyCode == KEYCODE_BACK &&
-            keyEvent.action == KeyEvent.ACTION_UP &&
-            !keyEvent.isCanceled
+          val now = SystemClock.uptimeMillis()
+          val input = DeliveredInput(keyEvent, now)
 
-          val dispatchState = if (isBackPressed) {
-            val now = SystemClock.uptimeMillis()
-            lastBackKeyEvent = keyEvent.eventTime to now
-            okTrace("back pressed") {
+          okTrace({ keyEvent.name }) {
+            currentKeyEventLocal.set(input)
+            try {
               dispatch(keyEvent)
+            } finally {
+              currentKeyEventLocal.set(null)
             }
-          } else {
-            dispatch(keyEvent)
           }
-
-          lastBackKeyEvent = null
-
-          dispatchState
         }
       }
     }
@@ -92,5 +104,16 @@ internal object RealTouchMetrics : TouchMetrics {
   }
 
   private const val ON_CLICK_QUEUED_NAME = "View OnClick queued"
-  private const val ON_CLICK_QUEUED_COOKIE = 0x7331BEAF
+
+  val KeyEvent.name: String
+    get() = "${keyActionToString()} ${KeyEvent.keyCodeToString(keyCode)}"
+
+  private fun KeyEvent.keyActionToString(): String {
+    return when (action) {
+      KeyEvent.ACTION_DOWN -> "ACTION_DOWN"
+      KeyEvent.ACTION_UP -> "ACTION_UP"
+      KeyEvent.ACTION_MULTIPLE -> "ACTION_MULTIPLE"
+      else -> action.toString()
+    }
+  }
 }
