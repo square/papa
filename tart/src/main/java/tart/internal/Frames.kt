@@ -1,9 +1,12 @@
 package tart
 
+import android.content.Context
 import android.os.Build
 import android.view.Choreographer
 import android.view.FrameMetrics
 import android.view.Window
+import android.view.WindowManager
+import tart.internal.ApplicationHolder
 import tart.internal.enforceMainThread
 import tart.internal.isOnMainThread
 import tart.internal.lastFrameTimeNanos
@@ -11,6 +14,7 @@ import tart.internal.mainHandler
 import tart.internal.onNextFrameMetrics
 import tart.internal.postAtFrontOfQueueAsync
 import java.util.concurrent.TimeUnit.NANOSECONDS
+import kotlin.LazyThreadSafetyMode.NONE
 
 // TODO Not sure if we should expose this. postFrameCallback() isn't tied to any
 // particular window, so this window might not actually render if there's no reason to re render.
@@ -44,6 +48,24 @@ internal fun isChoreographerDoingFrame(): Boolean {
   return false
 }
 
+internal val expectedFrameDurationNanos by lazy(NONE) {
+  val windowManager =
+    ApplicationHolder.application?.getSystemService(Context.WINDOW_SERVICE) as WindowManager?
+  var refreshRate = 60f
+  if (windowManager != null) {
+    @Suppress("DEPRECATION")
+    val display = windowManager.defaultDisplay
+    refreshRate = display.refreshRate
+  }
+  if (refreshRate < 30f || refreshRate > 200f) {
+    // Account for faulty return values (including 0)
+    refreshRate = 60f
+  }
+  val msPerSecond = 1000
+  val nanosPerMs = 1_000_000
+  (msPerSecond / refreshRate * nanosPerMs).toLong()
+}
+
 internal fun Window.onCurrentFrameDisplayed(
   frameTimeNanos: Long,
   callback: (CpuDuration) -> Unit,
@@ -73,7 +95,7 @@ internal fun Window.onCurrentFrameDisplayed(
         // Several windows rendered in the same choreographer callback will have the same
         // INTENDED_VSYNC_TIMESTAMP but different TOTAL_DURATION as they're rendered serially.
         val bufferSwapUptimeNanos = intendedVsync + frameDuration
-        val bufferSwap = CpuDuration.deriveRealtimeFromUptime(NANOSECONDS, bufferSwapUptimeNanos)
+        val bufferSwap = CpuDuration.fromUptime(NANOSECONDS, bufferSwapUptimeNanos)
         mainHandler.post {
           if (!frameEndSent) {
             frameEndSent = true

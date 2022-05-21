@@ -1,29 +1,31 @@
 package tart
 
+import java.util.concurrent.TimeUnit.NANOSECONDS
+
 interface UserInteractionLatencyAnalytics {
 
   fun reportInteraction(
     interaction: Interaction,
     stateBeforeInteraction: AppState.Value,
     stateAfterInteraction: AppState.Value,
-    reportStartUptimeMillis: Long,
-    rawDurationUptimeMillis: Int,
-    totalDurationUptimeMillis: Int,
+    reportStart: CpuDuration,
+    durationFromStart: CpuDuration,
+    totalDuration: CpuDuration,
     triggerData: TriggerData
   )
 
   sealed class TriggerData {
     abstract val triggerName: String
-    abstract val triggerDurationMillis: Int
+    abstract val triggerDuration: CpuDuration
 
     class Found(
       override val triggerName: String,
-      override val triggerDurationMillis: Int
+      override val triggerDuration: CpuDuration
     ) : TriggerData()
 
     object Unknown : TriggerData() {
       override val triggerName = "unknown"
-      override val triggerDurationMillis = 0
+      override val triggerDuration = CpuDuration(NANOSECONDS, 0, 0)
     }
   }
 
