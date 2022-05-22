@@ -12,14 +12,6 @@ import logcat.AndroidLogcatLogger
 import logcat.LogcatLogger
 import logcat.logcat
 import tart.LogcatTartEventListener
-import tart.PreLaunchState.ACTIVITY_WAS_STOPPED
-import tart.PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
-import tart.PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
-import tart.PreLaunchState.NO_PROCESS
-import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
-import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
-import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
-import tart.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
 import tart.TartEvent.AppLaunch
 import tart.TartEventListener
 import tart.legacy.Perfs
@@ -43,17 +35,7 @@ class ExampleApplication : Application() {
     TartEventListener.install { event ->
       when(event) {
         is AppLaunch -> {
-          val startType = when (event.preLaunchState) {
-            NO_PROCESS -> "cold start"
-            NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL -> "cold start"
-            NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE -> "cold start"
-            NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA -> "cold start"
-            PROCESS_WAS_LAUNCHING_IN_BACKGROUND -> "warm start"
-            NO_ACTIVITY_NO_SAVED_STATE -> "warm start"
-            NO_ACTIVITY_BUT_SAVED_STATE -> "warm start"
-            ACTIVITY_WAS_STOPPED -> "hot start"
-          }
-          println("$startType launch: ${event.durationUptimeMillis} ms")
+          println("${event.preLaunchState.launchType} launch: ${event.durationUptimeMillis} ms")
         }
       }
     }

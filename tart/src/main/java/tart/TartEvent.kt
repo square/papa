@@ -48,7 +48,7 @@ sealed class TartEvent {
      * be reported as "bad behavior".
      */
     val isSlowLaunch: Boolean
-      get() = durationUptimeMillis >= preLaunchState.slowThresholdMillis
+      get() = durationUptimeMillis >= preLaunchState.launchType.slowThresholdMillis
 
     override fun toString(): String {
       return "AppLaunch(" +
