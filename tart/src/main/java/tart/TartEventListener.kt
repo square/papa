@@ -10,10 +10,10 @@ fun interface TartEventListener {
    */
   fun onEvent(event: TartEvent)
 
-  companion object {
+  companion object : Registry {
     private val listeners = CopyOnWriteArrayList<TartEventListener>()
 
-    fun install(
+    override fun install(
       listener: TartEventListener
     ): Registration {
       listeners += listener
@@ -26,6 +26,10 @@ fun interface TartEventListener {
         listener.onEvent(event)
       }
     }
+  }
+
+  interface Registry {
+    fun install(listener: TartEventListener): Registration
   }
 
   class Registration(private val listener: TartEventListener) {
