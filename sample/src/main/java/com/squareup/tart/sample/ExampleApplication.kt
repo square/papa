@@ -11,6 +11,7 @@ import curtains.windowAttachCount
 import logcat.AndroidLogcatLogger
 import logcat.LogcatLogger
 import logcat.logcat
+import tart.LogcatTartEventListener
 import tart.PreLaunchState.ACTIVITY_WAS_STOPPED
 import tart.PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
 import tart.PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
@@ -37,6 +38,8 @@ class ExampleApplication : Application() {
     Perfs.appWarmStartListener = { appWarmStart ->
       println("Warm start:\n$appWarmStart")
     }
+
+    TartEventListener.install(LogcatTartEventListener())
 
     TartEventListener.install { event ->
       when(event) {

@@ -1,37 +1,36 @@
 package tart
 
+import tart.internal.checkMainThread
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 
 fun interface TartEventListener {
+  /**
+   * Invoked on the main thread. Implementations should post any significant work to a background
+   * thread.
+   */
   fun onEvent(event: TartEvent)
 
   companion object {
-    private val listeners = CopyOnWriteArrayList<Pair<TartEventListener, Executor>>()
+    private val listeners = CopyOnWriteArrayList<TartEventListener>()
 
     fun install(
-      listenerExecutor: Executor = Executors.newSingleThreadExecutor(),
       listener: TartEventListener
     ): Registration {
-      val listenerAndExecutor = listener to listenerExecutor
-      listeners += listenerAndExecutor
-      return Registration(listenerAndExecutor)
+      listeners += listener
+      return Registration(listener)
     }
 
     internal fun sendEvent(event: TartEvent) {
-      for ((listener, executor) in listeners) {
-        executor.execute {
-          listener.onEvent(event)
-        }
+      checkMainThread()
+      for (listener in listeners) {
+        listener.onEvent(event)
       }
     }
   }
 
-  class Registration(private val listenerAndExecutor: Pair<TartEventListener, Executor>) {
-
+  class Registration(private val listener: TartEventListener) {
     fun dispose() {
-      listeners -= listenerAndExecutor
+      listeners -= listener
     }
   }
 }

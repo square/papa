@@ -15,6 +15,14 @@ internal fun Handler.postAtFrontOfQueueAsync(callback: () -> Unit) {
   })
 }
 
+internal val isMainThread: Boolean get() = Looper.getMainLooper().thread === Thread.currentThread()
+
+internal fun checkMainThread() {
+  check(isMainThread) {
+    "Should be called from the main thread, not ${Thread.currentThread()}"
+  }
+}
+
 internal val mainHandler by lazy {
   Handler(Looper.getMainLooper())
 }
