@@ -7,24 +7,6 @@ import tart.AppState.Value.NoValue
 sealed class TartEvent {
 
   /**
-   * Usage:
-   * ```
-   * AppLaunch.onAppLaunchListeners += { appLaunch ->
-   *   val startType = when(appLaunch.preLaunchState) {
-   *     NO_PROCESS -> "cold start"
-   *     NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL -> "cold start"
-   *     NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE -> "cold start"
-   *     NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA -> "cold start"
-   *     PROCESS_WAS_LAUNCHING_IN_BACKGROUND -> "warm start"
-   *     NO_ACTIVITY_NO_SAVED_STATE -> "warm start"
-   *     NO_ACTIVITY_BUT_SAVED_STATE -> "warm start"
-   *     ACTIVITY_WAS_STOPPED -> "hot start"
-   *   }
-   *   val durationMillis = appLaunch.duration.uptimeMillis
-   *   println("$startType launch: $durationMillis ms")
-   * }
-   * ```
-   *
    * TODO: Figure out the right terminology. "app launch" here means that previously
    * the process had no resumed activity, and now it has at least one resumed activity.
    * Note: that means that if the process had one paused activity that then gets resumed,
@@ -46,6 +28,13 @@ sealed class TartEvent {
     val backgroundDurationMillis: Long?
   ) : TartEvent() {
 
+    /**
+     * The app launch duration is also known as the Time To Initial Display (TTID), the time it
+     * takes for an application to produce its first frame, including process initialization (if a
+     * cold start), activity creation (if cold/warm), and displaying first frame.
+     *
+     * https://developer.android.com/topic/performance/vitals/launch-time#time-initial
+     */
     val durationUptimeMillis: Long
       get() = endUptimeMillis - startUptimeMillis
 
