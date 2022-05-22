@@ -29,7 +29,6 @@ internal fun Window.onNextFrameDisplayed(callback: (Long) -> Unit) {
   }
 }
 
-// TODO Should this be on an object instead?
 internal fun isChoreographerDoingFrame(): Boolean {
   if (!isOnMainThread()) {
     return false
