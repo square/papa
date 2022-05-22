@@ -7,7 +7,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import curtains.onNextDraw
-import tart.CpuDuration
 import tart.legacy.ActivityEvent
 import tart.legacy.ActivityOnCreateEvent
 import tart.legacy.ActivityTouchEvent
@@ -22,7 +21,7 @@ import tart.legacy.AppWarmStart.Temperature
  */
 internal class PerfsActivityLifecycleCallbacks private constructor(
   private val appStartUpdateCallback: ((AppStartData) -> AppStartData) -> Unit,
-  private val appLifecycleCallback: (AppLifecycleState, Activity, Temperature, CpuDuration) -> Unit
+  private val appLifecycleCallback: (AppLifecycleState, Activity, Temperature, Long) -> Unit
 ) : ActivityLifecycleCallbacksAdapter {
 
   private var firstActivityCreated = false
@@ -35,15 +34,19 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
 
   private val handler = Handler(Looper.getMainLooper())
 
-  private class OnResumeRecord(val start: CpuDuration)
+  private class OnResumeRecord(val startUptimeMillis: Long)
 
   private val resumedActivityHashes = mutableMapOf<String, OnResumeRecord>()
 
-  private class OnStartRecord(val sameMessage: Boolean, val start: CpuDuration)
+  private class OnStartRecord(val sameMessage: Boolean, val startUptimeMillis: Long)
 
   private val startedActivityHashes = mutableMapOf<String, OnStartRecord>()
 
-  private class OnCreateRecord(val sameMessage: Boolean, val hasSavedState: Boolean, val start: CpuDuration)
+  private class OnCreateRecord(
+    val sameMessage: Boolean,
+    val hasSavedState: Boolean,
+    val startUptimeMillis: Long
+  )
 
   private val createdActivityHashes = mutableMapOf<String, OnCreateRecord>()
 
@@ -155,16 +158,17 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     activity: Activity,
     savedInstanceState: Bundle?
   ) {
-    val start = CpuDuration.now()
+    val startUptimeMillis = SystemClock.uptimeMillis()
     val identityHash = Integer.toHexString(System.identityHashCode(activity))
     if (identityHash in createdActivityHashes) {
       return
     }
     val hasSavedStated = savedInstanceState != null
-    createdActivityHashes[identityHash] = OnCreateRecord(true, hasSavedStated, start)
+    createdActivityHashes[identityHash] = OnCreateRecord(true, hasSavedStated, startUptimeMillis)
     joinPost {
       if (identityHash in createdActivityHashes) {
-        createdActivityHashes[identityHash] = OnCreateRecord(false, hasSavedStated, start)
+        createdActivityHashes[identityHash] =
+          OnCreateRecord(false, hasSavedStated, startUptimeMillis)
       }
     }
   }
@@ -184,15 +188,15 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
   }
 
   private fun recordActivityStarted(activity: Activity) {
-    val start = CpuDuration.now()
+    val startUptimeMillis = SystemClock.uptimeMillis()
     val identityHash = Integer.toHexString(System.identityHashCode(activity))
     if (identityHash in startedActivityHashes) {
       return
     }
-    startedActivityHashes[identityHash] = OnStartRecord(true, start)
+    startedActivityHashes[identityHash] = OnStartRecord(true, startUptimeMillis)
     joinPost {
       if (identityHash in startedActivityHashes) {
-        startedActivityHashes[identityHash] = OnStartRecord(false, start)
+        startedActivityHashes[identityHash] = OnStartRecord(false, startUptimeMillis)
       }
     }
   }
@@ -212,31 +216,31 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     val hadResumedActivity = resumedActivityHashes.size > 1
     if (!hadResumedActivity) {
       val onCreateRecord = createdActivityHashes.getValue(identityHash)
-      val (warmStartTemperature, start) = if (onCreateRecord.sameMessage) {
+      val (warmStartTemperature, startUptimeMillis) = if (onCreateRecord.sameMessage) {
         if (onCreateRecord.hasSavedState) {
-          Temperature.CREATED_WITH_STATE to onCreateRecord.start
+          Temperature.CREATED_WITH_STATE to onCreateRecord.startUptimeMillis
         } else {
-          Temperature.CREATED_NO_STATE to onCreateRecord.start
+          Temperature.CREATED_NO_STATE to onCreateRecord.startUptimeMillis
         }
       } else {
         val onStartRecord = startedActivityHashes.getValue(identityHash)
         if (onStartRecord.sameMessage) {
-          Temperature.STARTED to onStartRecord.start
+          Temperature.STARTED to onStartRecord.startUptimeMillis
         } else {
-          Temperature.RESUMED to resumedActivityHashes.getValue(identityHash).start
+          Temperature.RESUMED to resumedActivityHashes.getValue(identityHash).startUptimeMillis
         }
       }
-      appLifecycleCallback(RESUMED, activity, warmStartTemperature, start)
+      appLifecycleCallback(RESUMED, activity, warmStartTemperature, startUptimeMillis)
     }
   }
 
   private fun recordActivityResumed(activity: Activity): String {
-    val start = CpuDuration.now()
+    val startUptimeMillis = SystemClock.uptimeMillis()
     val identityHash = Integer.toHexString(System.identityHashCode(activity))
     if (identityHash in resumedActivityHashes) {
       return identityHash
     }
-    resumedActivityHashes[identityHash] = OnResumeRecord(start)
+    resumedActivityHashes[identityHash] = OnResumeRecord(startUptimeMillis)
     return identityHash
   }
 
@@ -254,7 +258,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     val hasResumedActivityNow = resumedActivityHashes.isNotEmpty()
     if (hadResumedActivity && !hasResumedActivityNow) {
       // Temperature and start don't matter when pausing. This should be a separate thing.
-      appLifecycleCallback(PAUSED, activity, Temperature.RESUMED, CpuDuration.now())
+      appLifecycleCallback(PAUSED, activity, Temperature.RESUMED, SystemClock.uptimeMillis())
     }
   }
 
@@ -272,7 +276,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
   companion object {
     internal fun Application.trackActivityLifecycle(
       appStartUpdateCallback: ((AppStartData) -> AppStartData) -> Unit,
-      appLifecycleCallback: (AppLifecycleState, Activity, Temperature, CpuDuration) -> Unit
+      appLifecycleCallback: (AppLifecycleState, Activity, Temperature, Long) -> Unit
     ) {
       registerActivityLifecycleCallbacks(
         PerfsActivityLifecycleCallbacks(appStartUpdateCallback, appLifecycleCallback)

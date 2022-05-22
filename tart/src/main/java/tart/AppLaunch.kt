@@ -1,7 +1,6 @@
 package tart
 
 import tart.legacy.Perfs
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 /**
  * Usage:
@@ -33,26 +32,26 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
  */
 class AppLaunch(
   val preLaunchState: PreLaunchState,
-  val start: CpuDuration,
-  val end: CpuDuration,
+  val startUptimeMillis: Long,
+  val endUptimeMillis: Long,
 ) {
 
-  val duration: CpuDuration
-    get() = end - start
+  val durationUptimeMillis: Long
+    get() = endUptimeMillis - startUptimeMillis
 
   /**
    * Whether this launch will be considered a slow launch by the Play Store and is likely to
    * be reported as "bad behavior".
    */
   val isSlowLaunch: Boolean
-    get() = duration.uptime(MILLISECONDS) >= preLaunchState.slowThresholdMillis
+    get() = durationUptimeMillis >= preLaunchState.slowThresholdMillis
 
   override fun toString(): String {
     return "AppLaunch(" +
       "preLaunchState=$preLaunchState, " +
-      "start=$start, " +
-      "end=$end, " +
-      "duration=$duration, " +
+      "startUptimeMillis=$startUptimeMillis, " +
+      "endUptimeMillis=$endUptimeMillis, " +
+      "endUptimeMillis=$durationUptimeMillis, " +
       "isSlowLaunch=$isSlowLaunch" +
       ")"
   }

@@ -23,7 +23,6 @@ import tart.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
 import tart.legacy.FrozenFrameOnTouchDetector
 import tart.legacy.Perfs
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class ExampleApplication : Application() {
   override fun onCreate() {
@@ -49,8 +48,7 @@ class ExampleApplication : Application() {
         NO_ACTIVITY_BUT_SAVED_STATE -> "warm start"
         ACTIVITY_WAS_STOPPED -> "hot start"
       }
-      val durationMillis = appLaunch.duration.uptime(MILLISECONDS)
-      println("$startType launch: $durationMillis ms")
+      println("$startType launch: ${appLaunch.durationUptimeMillis} ms")
     }
 
     FrozenFrameOnTouchDetector.install { frozenFrameOnTouch ->

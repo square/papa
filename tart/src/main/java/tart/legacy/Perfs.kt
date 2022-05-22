@@ -12,7 +12,6 @@ import android.os.StrictMode
 import android.os.SystemClock
 import android.view.Choreographer
 import tart.AppLaunch
-import tart.CpuDuration
 import tart.PreLaunchState
 import tart.internal.AppUpdateDetector.Companion.trackAppUpgrade
 import tart.internal.ApplicationHolder
@@ -40,7 +39,6 @@ import tart.legacy.AppWarmStart.Temperature.CREATED_WITH_STATE
 import tart.legacy.AppWarmStart.Temperature.STARTED
 import tart.onCurrentFrameDisplayed
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
@@ -60,7 +58,7 @@ object Perfs {
   @Volatile
   private lateinit var appStartData: AppStartData
 
-  private val classInit = CpuDuration.now()
+  private val classInitUptimeMillis = SystemClock.uptimeMillis()
 
   internal var classLoaderInstantiatedUptimeMillis: Long? = null
   internal var applicationInstantiatedUptimeMillis: Long? = null
@@ -68,29 +66,29 @@ object Perfs {
 
   private var reportedFullDrawn = false
 
-  private val bindApplicationStart: CpuDuration
+  private val bindApplicationStartUptimeMillis: Long
     get() = if (Build.VERSION.SDK_INT >= 24) {
-      val reportedStart = CpuDuration(MILLISECONDS, Process.getStartUptimeMillis(), Process.getStartElapsedRealtime())
+      val reportedStartUptimeMillis = Process.getStartUptimeMillis()
 
       val firstPostAtFrontElapsedUptimeMillis =
         appStartData.firstPostAtFrontElapsedUptimeMillis
       if (firstPostAtFrontElapsedUptimeMillis != null) {
         val firstPostAtFrontUptimeMillis =
           firstPostAtFrontElapsedUptimeMillis - appStartData.processStartUptimeMillis
-        if (firstPostAtFrontUptimeMillis - reportedStart.uptime(MILLISECONDS) < 60_000) {
-          reportedStart
+        if (firstPostAtFrontUptimeMillis - reportedStartUptimeMillis < 60_000) {
+          reportedStartUptimeMillis
         } else {
           // Reported process start to first post at front is greater than 1 min. That's
           // no good, let's fallback to class init as starting point.
           // https://dev.to/pyricau/android-vitals-when-did-my-app-start-24p4
-          classInit
+          classInitUptimeMillis
         }
       } else {
         // Should not happen: first post at front hasn't run yet
-        reportedStart
+        reportedStartUptimeMillis
       }
     } else {
-      classInit
+      classInitUptimeMillis
     }
 
   /**
@@ -213,7 +211,7 @@ object Perfs {
       processStartRealtimeMillis = myProcessInfo.processStartRealtimeMillis,
       processStartUptimeMillis = processStartUptimeMillis,
       handleBindApplicationElapsedUptimeMillis = handleBindApplicationElapsedUptimeMillis,
-      firstAppClassLoadElapsedUptimeMillis = classInit.uptime(MILLISECONDS) - processStartUptimeMillis,
+      firstAppClassLoadElapsedUptimeMillis = classInitUptimeMillis - processStartUptimeMillis,
       perfsInitElapsedUptimeMillis = initCalledUptimeMillis - processStartUptimeMillis,
       importance = processInfo.importance,
       importanceAfterFirstPost = processInfoAfterFirstPost.importance,
@@ -253,7 +251,7 @@ object Perfs {
       { updateAppStartData ->
         appStartData = updateAppStartData(appStartData)
       },
-      { state, activity, temperature, start ->
+      { state, activity, temperature, resumedUptimeMillis ->
         // Note: we only start tracking app lifecycle state after the first resume. If the app has
         // never been resumed, the last state will stay null.
         prefs.edit()
@@ -267,14 +265,13 @@ object Perfs {
         } else if (temperature != Temperature.RESUMED) {
           // We skipped RESUMED because going from pause to resume isn't considered a launch
           val resumedAfterFirstPost = afterFirstPost
-          val resumedUptimeMillis = start.uptime(MILLISECONDS)
           val backgroundElapsedUptimeMillis =
             resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
           activity.window.onNextPreDraw {
             val frameTimeNanos = Choreographer.getInstance().lastFrameTimeNanos
-            activity.window.onCurrentFrameDisplayed(frameTimeNanos) { launchEnd ->
+            activity.window.onCurrentFrameDisplayed(frameTimeNanos) { frameEndUptimeMillis ->
               val resumeToNextFrameElapsedUptimeMillis =
-                launchEnd.uptime(MILLISECONDS) - resumedUptimeMillis
+                frameEndUptimeMillis - resumedUptimeMillis
 
               (appStart as? AppStartData)?.let { appStartData ->
                 if (resumedAfterFirstPost) {
@@ -284,7 +281,7 @@ object Perfs {
                     STARTED -> PreLaunchState.ACTIVITY_WAS_STOPPED
                     Temperature.RESUMED -> error("resumed is skipped")
                   }
-                  appLaunchListener(AppLaunch(launchState, start, launchEnd))
+                  appLaunchListener(AppLaunch(launchState, resumedUptimeMillis, frameEndUptimeMillis))
                 } else {
                   if (appStartData.importance == IMPORTANCE_FOREGROUND) {
                     val preLaunchState = when (val updateData = appStartData.appUpdateData) {
@@ -301,8 +298,8 @@ object Perfs {
                     appLaunchListener(
                       AppLaunch(
                         preLaunchState,
-                        bindApplicationStart,
-                        launchEnd
+                        bindApplicationStartUptimeMillis,
+                        frameEndUptimeMillis
                       )
                     )
                   } else {
@@ -311,8 +308,8 @@ object Perfs {
                     appLaunchListener(
                       AppLaunch(
                         PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND,
-                        start,
-                        launchEnd
+                        resumedUptimeMillis,
+                        frameEndUptimeMillis
                       )
                     )
                   }

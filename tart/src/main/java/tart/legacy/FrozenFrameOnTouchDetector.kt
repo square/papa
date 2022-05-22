@@ -13,7 +13,6 @@ import curtains.touchEventInterceptors
 import curtains.windowAttachCount
 import tart.legacy.FrozenFrameOnTouchDetector.install
 import tart.onNextFrameDisplayed
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 /**
  * Detects when the interval of time between when a touch event is issued and the next frame is
@@ -42,11 +41,11 @@ object FrozenFrameOnTouchDetector {
                 if (handledTime - motionEvent.eventTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
                   val windowTitle = window.attributes.title.toString().substringAfter("/")
                   touchDownWaitingRender = MotionEvent.obtain(motionEvent)
-                  window.onNextFrameDisplayed { frameDisplayed ->
+                  window.onNextFrameDisplayed { frameDisplayedUptimeMillis ->
                     val localTouchDownWaitingRender = touchDownWaitingRender!!
                     val sentTime = localTouchDownWaitingRender.eventTime
                     val sentToReceive = handledTime - sentTime
-                    val receiveToFrame = frameDisplayed.uptime(MILLISECONDS) - handledTime
+                    val receiveToFrame = frameDisplayedUptimeMillis - handledTime
                     listener(
                       FrozenFrameOnTouch(
                         activityName = windowTitle,
