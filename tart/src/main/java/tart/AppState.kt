@@ -7,10 +7,23 @@ import tart.AppState.Value.StringValue
 sealed class AppState {
 
   sealed class Value : AppState() {
-    class StringValue(val string: String) : Value()
-    class NumberValue(val number: Number) : Value()
+    class StringValue(val string: String) : Value() {
+      override fun toString(): String {
+        return string
+      }
+    }
+    class NumberValue(val number: Number) : Value() {
+      override fun toString(): String {
+        return number.toString()
+      }
+    }
 
-    class SerializedAsync(val value: Any) : Value()
+    class SerializedAsync(val value: Any) : Value() {
+      override fun toString(): String {
+        // Skipping on any potentially expensive toString() call
+        return value::class.java.simpleName
+      }
+    }
     object NoValue : Value()
   }
 

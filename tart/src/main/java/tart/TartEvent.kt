@@ -1,5 +1,7 @@
 package tart
 
+import tart.AppState.Value.NoValue
+
 // TODO All subclasses should implement toString()
 // TODO Offer a listener impl that logs to logcat and can be installed as necessary?
 sealed class TartEvent {
@@ -59,14 +61,36 @@ sealed class TartEvent {
     }
   }
 
-  data class InteractionLatency(
+  class InteractionLatency(
     val interaction: Interaction,
     val stateBeforeInteraction: AppState.Value,
     val stateAfterInteraction: AppState.Value,
     val startUptimeMillis: Long,
     val durationFromStartUptimeMillis: Long,
     val triggerData: TriggerData
-  ) : TartEvent()
+  ) : TartEvent() {
+    override fun toString(): String {
+      val totalDurationUptimeMillis =
+        durationFromStartUptimeMillis + triggerData.triggerDurationUptimeMillis
+      val stateLog = when {
+        stateBeforeInteraction != NoValue && stateAfterInteraction != NoValue -> {
+          " (before='$stateBeforeInteraction', after='$stateAfterInteraction')"
+        }
+        stateBeforeInteraction != NoValue && stateAfterInteraction is NoValue -> {
+          " (before='$stateBeforeInteraction')"
+        }
+        stateBeforeInteraction is NoValue && stateAfterInteraction != NoValue -> {
+          " (after='$stateAfterInteraction')"
+        }
+        else -> ""
+      }
+      val duration =
+        "$totalDurationUptimeMillis ms: ${
+          triggerData.triggerDurationUptimeMillis
+        } (${triggerData.triggerName}) + $durationFromStartUptimeMillis"
+      return "${interaction.description} took $duration$stateLog"
+    }
+  }
 
   /**
    * Event sent when there was more than [FROZEN_FRAME_THRESHOLD] of uptime between when a touch down

@@ -5,12 +5,7 @@ import android.os.SystemClock
 import android.view.Choreographer
 import android.view.KeyEvent
 import android.view.MotionEvent
-import logcat.logcat
 import tart.AppState
-import tart.AppState.Value.NoValue
-import tart.AppState.Value.NumberValue
-import tart.AppState.Value.SerializedAsync
-import tart.AppState.Value.StringValue
 import tart.AppState.ValueOnFrameRendered
 import tart.InputTracker
 import tart.Interaction
@@ -123,41 +118,7 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
             triggerData = triggerData,
           )
         )
-        logcat {
-          val totalDurationUptimeMillis =
-            durationFromStartUptimeMillis + triggerData.triggerDurationUptimeMillis
-          val startLog = stateBeforeInteraction.asLog()
-          val endLog = stateAfterInteractionValue.asLog()
-          val stateLog = when {
-            startLog != null && endLog != null -> {
-              " (before='$startLog', after='$endLog')"
-            }
-            startLog != null && endLog == null -> {
-              " (before='$startLog')"
-            }
-            startLog == null && endLog != null -> {
-              " (after='$endLog')"
-            }
-            else -> ""
-          }
-          val duration =
-            "$totalDurationUptimeMillis ms: ${
-              triggerData.triggerDurationUptimeMillis
-            } (${triggerData.triggerName}) + $durationFromStartUptimeMillis"
-          "${interaction.description} took $duration$stateLog"
-        }
-
       }
-    }
-  }
-
-  private fun AppState.Value.asLog(): String? {
-    return when (this) {
-      NoValue -> null
-      is NumberValue -> number.toString()
-      is StringValue -> string
-      // Skipping on any potentially expensive toString() call
-      is SerializedAsync -> value::class.java.simpleName
     }
   }
 
