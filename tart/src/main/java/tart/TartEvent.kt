@@ -2,8 +2,8 @@ package tart
 
 import tart.AppState.Value.NoValue
 
-// TODO All subclasses should implement toString()
-// TODO Offer a listener impl that logs to logcat and can be installed as necessary?
+// TODO All events should have a similar shape
+// TODO Implement a consistent toString()
 sealed class TartEvent {
 
   /**
