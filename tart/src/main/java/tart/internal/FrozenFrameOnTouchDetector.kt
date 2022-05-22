@@ -1,4 +1,4 @@
-package tart.legacy
+package tart.internal
 
 import android.content.res.Resources.NotFoundException
 import android.os.SystemClock
@@ -11,7 +11,9 @@ import curtains.TouchEventInterceptor
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
 import curtains.windowAttachCount
-import tart.legacy.FrozenFrameOnTouchDetector.install
+import tart.TartEvent.FrozenFrameOnTouch
+import tart.TartEventListener
+import tart.internal.FrozenFrameOnTouchDetector.install
 import tart.onNextFrameDisplayed
 
 /**
@@ -22,9 +24,9 @@ import tart.onNextFrameDisplayed
  * [install] will install a [Curtains.onRootViewsChangedListeners] listener and then a touch
  * interceptor for each window.
  */
-object FrozenFrameOnTouchDetector {
+internal object FrozenFrameOnTouchDetector {
 
-  fun install(listener: ((FrozenFrameOnTouch) -> Unit)) {
+  fun install() {
     var touchDownWaitingRender: MotionEvent? = null
     var repeatTouchDownCount = 0
     var pressedViewName: String? = null
@@ -46,7 +48,7 @@ object FrozenFrameOnTouchDetector {
                     val sentTime = localTouchDownWaitingRender.eventTime
                     val sentToReceive = handledTime - sentTime
                     val receiveToFrame = frameDisplayedUptimeMillis - handledTime
-                    listener(
+                    TartEventListener.sendEvent(
                       FrozenFrameOnTouch(
                         activityName = windowTitle,
                         repeatTouchDownCount = repeatTouchDownCount,

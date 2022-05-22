@@ -6,16 +6,14 @@ import android.app.Application
  * Automatically set on app start by [tart.legacy.Perfs]
  */
 internal object ApplicationHolder {
-
-  val application: Application?
-    get() = _application
-
   @Volatile
-  private var _application: Application? = null
+  var application: Application? = null
+    private set
 
   fun install(application: Application) {
-    _application = application
+    this.application = application
     TraceMainThreadMessages.enableMainThreadMessageTracing()
     RealInputTracker.install()
+    FrozenFrameOnTouchDetector.install()
   }
 }

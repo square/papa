@@ -22,7 +22,6 @@ import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
 import tart.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
 import tart.TartEvent.AppLaunch
 import tart.TartEventListener
-import tart.legacy.FrozenFrameOnTouchDetector
 import tart.legacy.Perfs
 import java.util.concurrent.Executors
 
@@ -57,10 +56,6 @@ class ExampleApplication : Application() {
           println("$startType launch: ${event.durationUptimeMillis} ms")
         }
       }
-    }
-
-    FrozenFrameOnTouchDetector.install { frozenFrameOnTouch ->
-      println(frozenFrameOnTouch)
     }
 
     Curtains.onRootViewsChangedListeners += OnRootViewAddedListener { view ->

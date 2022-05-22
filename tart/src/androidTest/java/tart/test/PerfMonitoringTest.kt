@@ -25,13 +25,13 @@ import radiography.Radiography
 import radiography.ScannableView.AndroidView
 import radiography.ViewStateRenderer
 import radiography.ViewStateRenderers.DefaultsIncludingPii
+import tart.TartEvent.FrozenFrameOnTouch
+import tart.TartEventListener
 import tart.internal.lastFrameTimeNanos
 import tart.internal.mainHandler
 import tart.isChoreographerDoingFrame
 import tart.legacy.ActivityEvent
 import tart.legacy.AppStart.AppStartData
-import tart.legacy.FrozenFrameOnTouch
-import tart.legacy.FrozenFrameOnTouchDetector
 import tart.legacy.Perfs
 import tart.test.utilities.TestActivity
 import java.util.concurrent.CopyOnWriteArrayList
@@ -188,20 +188,34 @@ class PerfMonitoringTest {
   private fun reportFrozenFrame(): () -> FrozenFrameOnTouch {
     val waitForFrozenFrame = CountDownLatch(1)
     val frozenFrameOnTouchRef = AtomicReference<FrozenFrameOnTouch>()
-    runOnMainSync {
-      FrozenFrameOnTouchDetector.install { frozenFrameOnTouch ->
-        frozenFrameOnTouchRef.set(frozenFrameOnTouch)
+    val registration = getOnMainSync {
+      TartEventListener.install { tartEvent ->
+        tartEvent as FrozenFrameOnTouch
+        frozenFrameOnTouchRef.set(tartEvent)
         waitForFrozenFrame.countDown()
       }
     }
     return {
       check(waitForFrozenFrame.await(10, SECONDS))
+      registration.dispose()
       frozenFrameOnTouchRef.get()!!
     }
   }
 
   private fun runOnMainSync(block: () -> Unit) {
     InstrumentationRegistry.getInstrumentation().runOnMainSync(block)
+  }
+
+  private fun <T> getOnMainSync(block: () -> T): T {
+    val resultHolder = AtomicReference<T>()
+    val latch = CountDownLatch(1)
+    InstrumentationRegistry.getInstrumentation()
+      .runOnMainSync {
+        resultHolder.set(block())
+        latch.countDown()
+      }
+    latch.await()
+    return resultHolder.get()
   }
 
   private fun findDialogButtonCoordinates(buttonResId: Int): Pair<Int, Int> {

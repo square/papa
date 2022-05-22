@@ -21,7 +21,7 @@ import logcat.logcat
 import tart.DeliveredInput
 import tart.InputTracker
 import tart.OkTrace
-import tart.legacy.FrozenFrameOnTouchDetector.findPressedView
+import tart.internal.FrozenFrameOnTouchDetector.findPressedView
 import tart.okTrace
 
 internal object RealInputTracker : InputTracker {
