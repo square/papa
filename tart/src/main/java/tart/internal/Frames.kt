@@ -48,24 +48,6 @@ internal fun isChoreographerDoingFrame(): Boolean {
   return false
 }
 
-internal val expectedFrameDurationNanos by lazy(NONE) {
-  val windowManager =
-    ApplicationHolder.application?.getSystemService(Context.WINDOW_SERVICE) as WindowManager?
-  var refreshRate = 60f
-  if (windowManager != null) {
-    @Suppress("DEPRECATION")
-    val display = windowManager.defaultDisplay
-    refreshRate = display.refreshRate
-  }
-  if (refreshRate < 30f || refreshRate > 200f) {
-    // Account for faulty return values (including 0)
-    refreshRate = 60f
-  }
-  val msPerSecond = 1000
-  val nanosPerMs = 1_000_000
-  (msPerSecond / refreshRate * nanosPerMs).toLong()
-}
-
 internal fun Window.onCurrentFrameDisplayed(
   frameTimeNanos: Long,
   callback: (CpuDuration) -> Unit,
