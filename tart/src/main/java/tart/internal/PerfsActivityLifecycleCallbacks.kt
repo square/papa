@@ -14,14 +14,13 @@ import tart.legacy.AppLifecycleState
 import tart.legacy.AppLifecycleState.PAUSED
 import tart.legacy.AppLifecycleState.RESUMED
 import tart.legacy.AppStart.AppStartData
-import tart.legacy.AppWarmStart.Temperature
 
 /**
  * Reports first time occurrences of activity lifecycle related events to [tart.Perfs].
  */
 internal class PerfsActivityLifecycleCallbacks private constructor(
   private val appStartUpdateCallback: ((AppStartData) -> AppStartData) -> Unit,
-  private val appLifecycleCallback: (AppLifecycleState, Activity, Temperature, Long) -> Unit
+  private val appLifecycleCallback: (AppLifecycleState, Activity, StartTemperature, Long) -> Unit
 ) : ActivityLifecycleCallbacksAdapter {
 
   private var firstActivityCreated = false
@@ -218,16 +217,16 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
       val onCreateRecord = createdActivityHashes.getValue(identityHash)
       val (warmStartTemperature, startUptimeMillis) = if (onCreateRecord.sameMessage) {
         if (onCreateRecord.hasSavedState) {
-          Temperature.CREATED_WITH_STATE to onCreateRecord.startUptimeMillis
+          StartTemperature.CREATED_WITH_STATE to onCreateRecord.startUptimeMillis
         } else {
-          Temperature.CREATED_NO_STATE to onCreateRecord.startUptimeMillis
+          StartTemperature.CREATED_NO_STATE to onCreateRecord.startUptimeMillis
         }
       } else {
         val onStartRecord = startedActivityHashes.getValue(identityHash)
         if (onStartRecord.sameMessage) {
-          Temperature.STARTED to onStartRecord.startUptimeMillis
+          StartTemperature.STARTED to onStartRecord.startUptimeMillis
         } else {
-          Temperature.RESUMED to resumedActivityHashes.getValue(identityHash).startUptimeMillis
+          StartTemperature.RESUMED to resumedActivityHashes.getValue(identityHash).startUptimeMillis
         }
       }
       appLifecycleCallback(RESUMED, activity, warmStartTemperature, startUptimeMillis)
@@ -258,7 +257,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     val hasResumedActivityNow = resumedActivityHashes.isNotEmpty()
     if (hadResumedActivity && !hasResumedActivityNow) {
       // Temperature and start don't matter when pausing. This should be a separate thing.
-      appLifecycleCallback(PAUSED, activity, Temperature.RESUMED, SystemClock.uptimeMillis())
+      appLifecycleCallback(PAUSED, activity, StartTemperature.RESUMED, SystemClock.uptimeMillis())
     }
   }
 
@@ -276,7 +275,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
   companion object {
     internal fun Application.trackActivityLifecycle(
       appStartUpdateCallback: ((AppStartData) -> AppStartData) -> Unit,
-      appLifecycleCallback: (AppLifecycleState, Activity, Temperature, Long) -> Unit
+      appLifecycleCallback: (AppLifecycleState, Activity, StartTemperature, Long) -> Unit
     ) {
       registerActivityLifecycleCallbacks(
         PerfsActivityLifecycleCallbacks(appStartUpdateCallback, appLifecycleCallback)

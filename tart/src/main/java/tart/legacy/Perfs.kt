@@ -20,6 +20,7 @@ import tart.internal.MyProcess
 import tart.internal.MyProcess.ErrorRetrievingMyProcessData
 import tart.internal.MyProcess.MyProcessData
 import tart.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLifecycle
+import tart.internal.StartTemperature
 import tart.internal.enforceMainThread
 import tart.internal.isOnMainThread
 import tart.internal.lastFrameTimeNanos
@@ -34,10 +35,9 @@ import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_CLEAR_DATA
 import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_FRESH_INSTALL
 import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_UPGRADE
 import tart.legacy.AppUpdateStartStatus.NORMAL_START
-import tart.legacy.AppWarmStart.Temperature
-import tart.legacy.AppWarmStart.Temperature.CREATED_NO_STATE
-import tart.legacy.AppWarmStart.Temperature.CREATED_WITH_STATE
-import tart.legacy.AppWarmStart.Temperature.STARTED
+import tart.internal.StartTemperature.CREATED_NO_STATE
+import tart.internal.StartTemperature.CREATED_WITH_STATE
+import tart.internal.StartTemperature.STARTED
 import tart.onCurrentFrameDisplayed
 
 /**
@@ -90,11 +90,6 @@ object Perfs {
     } else {
       classInitUptimeMillis
     }
-
-  /**
-   * Can be set to listen to app warm starts.
-   */
-  var appWarmStartListener: ((AppWarmStart) -> Unit)? = null
 
   internal fun firstClassLoaded() {
     // Prior to Android P, PerfsAppStartListener is the first loaded class
@@ -254,7 +249,7 @@ object Perfs {
 
         if (state == PAUSED) {
           enteredBackgroundForWarmStartUptimeMillis = SystemClock.uptimeMillis()
-        } else if (temperature != Temperature.RESUMED) {
+        } else if (temperature != StartTemperature.RESUMED) {
           // We skipped RESUMED because going from pause to resume isn't considered a launch
           val resumedAfterFirstPost = afterFirstPost
           val backgroundElapsedUptimeMillis =
@@ -262,18 +257,22 @@ object Perfs {
           activity.window.onNextPreDraw {
             val frameTimeNanos = Choreographer.getInstance().lastFrameTimeNanos
             activity.window.onCurrentFrameDisplayed(frameTimeNanos) { frameEndUptimeMillis ->
-              val resumeToNextFrameElapsedUptimeMillis =
-                frameEndUptimeMillis - resumedUptimeMillis
-
               (appStart as? AppStartData)?.let { appStartData ->
                 if (resumedAfterFirstPost) {
                   val launchState = when (temperature) {
                     CREATED_NO_STATE -> PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
                     CREATED_WITH_STATE -> PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
                     STARTED -> PreLaunchState.ACTIVITY_WAS_STOPPED
-                    Temperature.RESUMED -> error("resumed is skipped")
+                    StartTemperature.RESUMED -> error("resumed is skipped")
                   }
-                  TartEventListener.sendEvent(AppLaunch(launchState, resumedUptimeMillis, frameEndUptimeMillis))
+                  TartEventListener.sendEvent(
+                    AppLaunch(
+                      preLaunchState = launchState,
+                      startUptimeMillis = resumedUptimeMillis,
+                      endUptimeMillis = frameEndUptimeMillis,
+                      backgroundDurationMillis = backgroundElapsedUptimeMillis
+                    )
+                  )
                 } else {
                   if (appStartData.importance == IMPORTANCE_FOREGROUND) {
                     val preLaunchState = when (val updateData = appStartData.appUpdateData) {
@@ -289,9 +288,13 @@ object Perfs {
                     }
                     TartEventListener.sendEvent(
                       AppLaunch(
-                        preLaunchState,
-                        bindApplicationStartUptimeMillis,
-                        frameEndUptimeMillis
+                        preLaunchState = preLaunchState,
+                        startUptimeMillis = bindApplicationStartUptimeMillis,
+                        endUptimeMillis = frameEndUptimeMillis,
+                        // TODO This isn't right, it should be "last time we left resume" not
+                        // "last time the process was tracked as alive".
+                        // Though we might also want to know how long the process spent dead.
+                        backgroundDurationMillis = appStartData.lastAppAliveElapsedTimeMillis
                       )
                     )
                   } else {
@@ -299,26 +302,15 @@ object Perfs {
                     // unless we had a way to know when the system changed its mind.
                     TartEventListener.sendEvent(
                       AppLaunch(
-                        PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND,
-                        resumedUptimeMillis,
-                        frameEndUptimeMillis
+                        preLaunchState = PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND,
+                        startUptimeMillis = resumedUptimeMillis,
+                        endUptimeMillis = frameEndUptimeMillis,
+                        // TODO here we want to track the last time resume. Probably can align
+                        // same for all 3 cases.
+                        backgroundDurationMillis = TODO()
                       )
                     )
                   }
-                }
-              }
-
-              // A change of state before the first post indicates a cold start. This tracks warm
-              // and hot starts.
-              if (resumedAfterFirstPost) {
-                appWarmStartListener?.let { listener ->
-                  listener(
-                    AppWarmStart(
-                      temperature = temperature,
-                      backgroundElapsedUptimeMillis = backgroundElapsedUptimeMillis,
-                      resumeToNextFrameElapsedUptimeMillis = resumeToNextFrameElapsedUptimeMillis
-                    )
-                  )
                 }
               }
             }
