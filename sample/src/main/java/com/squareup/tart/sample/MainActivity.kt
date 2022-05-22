@@ -8,6 +8,7 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.metrics.performance.PerformanceMetricsState
 import tart.AppState
 import tart.Interaction
 import tart.InteractionLatencyReporter
@@ -44,7 +45,8 @@ class MainActivity : AppCompatActivity() {
   private fun trackInteraction(element: String) {
     val textView = findViewById<TextView>(R.id.updated_textview)
     val previousText = textView.text.toString()
-    val newText = "Clicked on $element at ${Date()}"
+    val date = Date()
+    val newText = "Clicked on $element at $date"
     textView.text = newText
     InteractionLatencyReporter.reportImmediateInteraction(
       trigger = InteractionTrigger.Input,
@@ -52,6 +54,9 @@ class MainActivity : AppCompatActivity() {
       stateBeforeInteraction = AppState.value(previousText),
       stateAfterInteraction = AppState.value(newText)
     )
+
+    val stateHolder = PerformanceMetricsState.getForHierarchy(textView).state!!
+    stateHolder.addState("textview", "updated at $date")
   }
 
   object UpdateText : Interaction
