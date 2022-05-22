@@ -11,8 +11,9 @@ import android.os.Process
 import android.os.StrictMode
 import android.os.SystemClock
 import android.view.Choreographer
-import tart.AppLaunch
 import tart.PreLaunchState
+import tart.TartEvent.AppLaunch
+import tart.TartEventListener
 import tart.internal.AppUpdateDetector.Companion.trackAppUpgrade
 import tart.internal.ApplicationHolder
 import tart.internal.MyProcess
@@ -38,7 +39,6 @@ import tart.legacy.AppWarmStart.Temperature.CREATED_NO_STATE
 import tart.legacy.AppWarmStart.Temperature.CREATED_WITH_STATE
 import tart.legacy.AppWarmStart.Temperature.STARTED
 import tart.onCurrentFrameDisplayed
-import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
@@ -95,14 +95,6 @@ object Perfs {
    * Can be set to listen to app warm starts.
    */
   var appWarmStartListener: ((AppWarmStart) -> Unit)? = null
-
-  internal val appLaunchListeners = CopyOnWriteArrayList<(AppLaunch) -> Unit>()
-
-  private val appLaunchListener: (AppLaunch) -> Unit = { appLaunch ->
-    for (listener in appLaunchListeners) {
-      listener(appLaunch)
-    }
-  }
 
   internal fun firstClassLoaded() {
     // Prior to Android P, PerfsAppStartListener is the first loaded class
@@ -281,7 +273,7 @@ object Perfs {
                     STARTED -> PreLaunchState.ACTIVITY_WAS_STOPPED
                     Temperature.RESUMED -> error("resumed is skipped")
                   }
-                  appLaunchListener(AppLaunch(launchState, resumedUptimeMillis, frameEndUptimeMillis))
+                  TartEventListener.sendEvent(AppLaunch(launchState, resumedUptimeMillis, frameEndUptimeMillis))
                 } else {
                   if (appStartData.importance == IMPORTANCE_FOREGROUND) {
                     val preLaunchState = when (val updateData = appStartData.appUpdateData) {
@@ -295,7 +287,7 @@ object Perfs {
                       }
                       else -> PreLaunchState.NO_PROCESS
                     }
-                    appLaunchListener(
+                    TartEventListener.sendEvent(
                       AppLaunch(
                         preLaunchState,
                         bindApplicationStartUptimeMillis,
@@ -305,7 +297,7 @@ object Perfs {
                   } else {
                     // TODO this will yield much smaller time than perceived by users
                     // unless we had a way to know when the system changed its mind.
-                    appLaunchListener(
+                    TartEventListener.sendEvent(
                       AppLaunch(
                         PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND,
                         resumedUptimeMillis,

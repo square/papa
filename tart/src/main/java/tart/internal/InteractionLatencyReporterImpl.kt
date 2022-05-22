@@ -23,8 +23,9 @@ import tart.InteractionTrigger.Custom
 import tart.InteractionTrigger.Input
 import tart.InteractionTrigger.Unknown
 import tart.OkTrace
-import tart.UserInteractionLatencyAnalytics
-import tart.UserInteractionLatencyAnalytics.TriggerData
+import tart.TartEvent.InteractionLatency
+import tart.TartEventListener
+import tart.TriggerData
 import tart.internal.RealInputTracker.name
 
 internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
@@ -111,13 +112,16 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
           is AppState.Value -> stateAfterInteraction
           is ValueOnFrameRendered -> stateAfterInteraction.onFrameRendered()
         }
-        UserInteractionLatencyAnalytics.analytics?.reportInteraction(
-          interaction = interaction,
-          stateBeforeInteraction = stateBeforeInteraction,
-          stateAfterInteraction = stateAfterInteractionValue,
-          startUptimeMillis = startUptimeMillis,
-          durationFromStartUptimeMillis = durationFromStartUptimeMillis,
-          triggerData = triggerData,
+
+        TartEventListener.sendEvent(
+          InteractionLatency(
+            interaction = interaction,
+            stateBeforeInteraction = stateBeforeInteraction,
+            stateAfterInteraction = stateAfterInteractionValue,
+            startUptimeMillis = startUptimeMillis,
+            durationFromStartUptimeMillis = durationFromStartUptimeMillis,
+            triggerData = triggerData,
+          )
         )
         logcat {
           val totalDurationUptimeMillis =
