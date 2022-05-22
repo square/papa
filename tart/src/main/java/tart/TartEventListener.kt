@@ -1,6 +1,7 @@
 package tart
 
 import tart.internal.checkMainThread
+import java.io.Closeable
 import java.util.concurrent.CopyOnWriteArrayList
 
 fun interface TartEventListener {
@@ -15,9 +16,11 @@ fun interface TartEventListener {
 
     override fun install(
       listener: TartEventListener
-    ): Registration {
+    ): Closeable {
       listeners += listener
-      return Registration(listener)
+      return Closeable {
+        listeners -= listener
+      }
     }
 
     internal fun sendEvent(event: TartEvent) {
@@ -29,12 +32,6 @@ fun interface TartEventListener {
   }
 
   interface Registry {
-    fun install(listener: TartEventListener): Registration
-  }
-
-  class Registration(private val listener: TartEventListener) {
-    fun dispose() {
-      listeners -= listener
-    }
+    fun install(listener: TartEventListener): Closeable
   }
 }
