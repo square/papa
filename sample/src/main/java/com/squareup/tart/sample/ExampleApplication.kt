@@ -26,14 +26,10 @@ class ExampleApplication : Application() {
       println("App start:\n${Perfs.appStart}")
     }, 6000)
 
-    Perfs.appWarmStartListener = { appWarmStart ->
-      println("Warm start:\n$appWarmStart")
-    }
-
     TartEventListener.install(LogcatTartEventListener())
 
     TartEventListener.install { event ->
-      when(event) {
+      when (event) {
         is AppLaunch -> {
           println("${event.preLaunchState.launchType} launch: ${event.durationUptimeMillis} ms")
         }

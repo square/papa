@@ -46,7 +46,7 @@ import tart.legacy.AppUpdateStartStatus.NORMAL_START
  */
 object Perfs {
 
-  internal const val FOREGROUND_COLD_START_TRACE_NAME = "Startup To Initial Display"
+  internal const val FOREGROUND_COLD_START_TRACE_NAME = "Class Load To Initial Display"
   private const val LAST_RESUMED_STATE = "lastResumedState"
 
   // String value kept for backward compat reasons
