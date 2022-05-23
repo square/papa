@@ -1,6 +1,6 @@
 package tart.internal
 
-internal enum class StartTemperature {
+internal enum class WarmPrelaunchState {
   /**
    * Warm start: the activity was created with no state bundle and then resumed.
    */
@@ -12,12 +12,12 @@ internal enum class StartTemperature {
   CREATED_WITH_STATE,
 
   /**
-   * Warm start: the activity was started and then resumed
+   * hot start: the activity was started and then resumed
    */
   STARTED,
 
   /**
-   * A hot start: the activity was resumed.
+   * Not a launch: the activity was just resumed.
    */
   RESUMED
 }

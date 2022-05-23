@@ -20,12 +20,13 @@ sealed class TartEvent {
     val preLaunchState: PreLaunchState,
     val startUptimeMillis: Long,
     val endUptimeMillis: Long,
+
     /**
-     * The uptime millis duration the app spent in background, e.g. the elapsed time between
-     * when the pause lifecycle change was dequeued to when the resume lifecycle change was dequeued.
-     * TODO Update doc to explain when its set or not and if its real time or uptime.
+     * The elapsed real time millis duration the app spent in background, or null if the app has
+     * never been in foreground before. This is the elapsed real time duration from when the app
+     * entered background until the start of this launch.
      */
-    val backgroundDurationMillis: Long?
+    val backgroundDurationRealtimeMillis: Long?
   ) : TartEvent() {
 
     /**

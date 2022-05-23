@@ -126,12 +126,13 @@ object OkTrace {
   }
 
   /**
+   * [cookie] defaults to 0 (cookie is used for async traces that overlap)
    * @see androidx.tracing.Trace.beginAsyncSection
    */
   @JvmStatic
   fun beginAsyncSection(
     label: String,
-    cookie: Int
+    cookie: Int = 0
   ) {
     if (!isCurrentlyTracing) {
       return
@@ -140,12 +141,13 @@ object OkTrace {
   }
 
   /**
+   * [cookie] defaults to 0 (cookie is used for async traces that overlap)
    * @see androidx.tracing.Trace.endAsyncSection
    */
   @JvmStatic
   fun endAsyncSection(
     label: String,
-    cookie: Int
+    cookie: Int = 0
   ) {
     if (!isCurrentlyTracing) {
       return

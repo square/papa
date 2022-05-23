@@ -11,6 +11,8 @@ import android.os.Process
 import android.os.StrictMode
 import android.os.SystemClock
 import android.view.Choreographer
+import tart.AppLaunchType.COLD
+import tart.OkTrace
 import tart.PreLaunchState
 import tart.TartEvent.AppLaunch
 import tart.TartEventListener
@@ -20,10 +22,13 @@ import tart.internal.MyProcess
 import tart.internal.MyProcess.ErrorRetrievingMyProcessData
 import tart.internal.MyProcess.MyProcessData
 import tart.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLifecycle
-import tart.internal.StartTemperature
+import tart.internal.WarmPrelaunchState
+import tart.internal.WarmPrelaunchState.CREATED_NO_STATE
+import tart.internal.WarmPrelaunchState.CREATED_WITH_STATE
+import tart.internal.WarmPrelaunchState.STARTED
 import tart.internal.enforceMainThread
 import tart.internal.isOnMainThread
-import tart.internal.lastFrameTimeNanos
+import tart.internal.mainHandler
 import tart.internal.onNextPreDraw
 import tart.internal.postAtFrontOfQueueAsync
 import tart.legacy.AppLifecycleState.PAUSED
@@ -35,18 +40,17 @@ import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_CLEAR_DATA
 import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_FRESH_INSTALL
 import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_UPGRADE
 import tart.legacy.AppUpdateStartStatus.NORMAL_START
-import tart.internal.StartTemperature.CREATED_NO_STATE
-import tart.internal.StartTemperature.CREATED_WITH_STATE
-import tart.internal.StartTemperature.STARTED
-import tart.onCurrentFrameDisplayed
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
  */
 object Perfs {
 
+  internal const val FOREGROUND_COLD_START_TRACE_NAME = "Startup To Initial Display"
   private const val LAST_RESUMED_STATE = "lastResumedState"
-  private const val LAST_RESUMED_CURRENT_MILLIS = "lastResumedCurrentMillis"
+
+  // String value kept for backward compat reasons
+  private const val LAST_RESUMED_STATE_CHANGE_CURRENT_MILLIS = "lastResumedCurrentMillis"
   private const val LAST_ALIVE_CURRENT_MILLIS = "lastAliveCurrentMillis"
 
   @Volatile
@@ -111,6 +115,8 @@ object Perfs {
 
   internal fun init(context: Context) {
     val initCalledUptimeMillis = SystemClock.uptimeMillis()
+    val initCalledCurrentTimeMillis = System.currentTimeMillis()
+    val initCalledRealtimeMillis = SystemClock.elapsedRealtime()
     // Should only be init on the main thread, once.
     if (!isOnMainThread() || initialized) {
       return
@@ -134,7 +140,7 @@ object Perfs {
     initialized = true
     notInitializedReason = ""
     val application: Application = context
-    ApplicationHolder.install(application)
+    ApplicationHolder.install(application, myProcessInfo.info.importance == IMPORTANCE_FOREGROUND)
 
     val elapsedSinceProcessStartRealtimeMillis =
       SystemClock.elapsedRealtime() - myProcessInfo.processStartRealtimeMillis
@@ -177,12 +183,15 @@ object Perfs {
 
     val lastAppLifecycleState = prefs.getString(LAST_RESUMED_STATE, null)
       ?.let { stateName -> if (stateName == RESUMED.name) RESUMED else PAUSED }
+
+    val lastAppLifecycleStateChangedCurrentTimeMillis =
+      prefs.getLong(LAST_RESUMED_STATE_CHANGE_CURRENT_MILLIS, -1)
     val lastAppLifecycleStateChangedElapsedTimeMillis =
-      prefs.getLong(LAST_RESUMED_CURRENT_MILLIS, -1).let { lastTime ->
+      lastAppLifecycleStateChangedCurrentTimeMillis.let { lastTime ->
         if (lastTime == -1L) {
           null
         } else {
-          System.currentTimeMillis() - lastTime
+          initCalledCurrentTimeMillis - lastTime
         }
       }
     val lastAppAliveElapsedTimeMillis =
@@ -190,7 +199,7 @@ object Perfs {
         if (lastTime == -1L) {
           null
         } else {
-          System.currentTimeMillis() - lastTime
+          initCalledCurrentTimeMillis - lastTime
         }
       }
     val processInfo = myProcessInfo.info
@@ -232,87 +241,143 @@ object Perfs {
         false
       }
 
-    var enteredBackgroundForWarmStartUptimeMillis = initCalledUptimeMillis
+    var enteredBackgroundForWarmStartRealtimeMillis: Long? = null
 
     application.trackActivityLifecycle(
       { updateAppStartData ->
         appStartData = updateAppStartData(appStartData)
       },
-      { state, activity, temperature, resumedUptimeMillis ->
+      { state, activity, warmPrelaunchState, startUptimeMillis, startRealtimeMillis ->
         // Note: we only start tracking app lifecycle state after the first resume. If the app has
         // never been resumed, the last state will stay null.
         prefs.edit()
           .putString(LAST_RESUMED_STATE, state.name)
           // We can't use SystemClock.uptimeMillis() as the device might restart in between.
-          .putLong(LAST_RESUMED_CURRENT_MILLIS, System.currentTimeMillis())
+          .putLong(LAST_RESUMED_STATE_CHANGE_CURRENT_MILLIS, System.currentTimeMillis())
           .apply()
 
+        // state is either RESUMED (1 activity resumed) or PAUSED (0 activity resumed). When
+        // PAUSED, we might still have an activity in started state rendering behind another
+        // foreground app. At that stage, we consider the app to have entered background and
+        // will use the PAUSE time for the background duration. However, if the app becomes resumed
+        // again without first being stopped, we won't report an app launch. So this breaks down
+        // a bit if the app is paused, then stopped somewhat later then resumed, as the total
+        // time will include the paused time instead of just the stopped time.
         if (state == PAUSED) {
-          enteredBackgroundForWarmStartUptimeMillis = SystemClock.uptimeMillis()
-        } else if (temperature != StartTemperature.RESUMED) {
-          // We skipped RESUMED because going from pause to resume isn't considered a launch
+          enteredBackgroundForWarmStartRealtimeMillis = startRealtimeMillis
+        } else if (warmPrelaunchState != WarmPrelaunchState.RESUMED) {
+          // We skipped RESUMED because going from pause to resume isn't considered a launch, only
+          // going from STOPPED to STARTED.
           val resumedAfterFirstPost = afterFirstPost
-          val backgroundElapsedUptimeMillis =
-            resumedUptimeMillis - enteredBackgroundForWarmStartUptimeMillis
-          activity.window.onNextPreDraw {
-            val frameTimeNanos = Choreographer.getInstance().lastFrameTimeNanos
-            activity.window.onCurrentFrameDisplayed(frameTimeNanos) { frameEndUptimeMillis ->
-              (appStart as? AppStartData)?.let { appStartData ->
-                if (resumedAfterFirstPost) {
-                  val launchState = when (temperature) {
-                    CREATED_NO_STATE -> PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
-                    CREATED_WITH_STATE -> PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
-                    STARTED -> PreLaunchState.ACTIVITY_WAS_STOPPED
-                    StartTemperature.RESUMED -> error("resumed is skipped")
-                  }
-                  TartEventListener.sendEvent(
-                    AppLaunch(
-                      preLaunchState = launchState,
-                      startUptimeMillis = resumedUptimeMillis,
-                      endUptimeMillis = frameEndUptimeMillis,
-                      backgroundDurationMillis = backgroundElapsedUptimeMillis
-                    )
-                  )
-                } else {
-                  if (appStartData.importance == IMPORTANCE_FOREGROUND) {
-                    val preLaunchState = when (val updateData = appStartData.appUpdateData) {
-                      is RealAppUpdateData -> {
-                        when (updateData.status) {
-                          FIRST_START_AFTER_CLEAR_DATA -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
-                          FIRST_START_AFTER_FRESH_INSTALL -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
-                          FIRST_START_AFTER_UPGRADE -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
-                          NORMAL_START -> PreLaunchState.NO_PROCESS
-                        }
-                      }
-                      else -> PreLaunchState.NO_PROCESS
-                    }
-                    TartEventListener.sendEvent(
-                      AppLaunch(
-                        preLaunchState = preLaunchState,
-                        startUptimeMillis = bindApplicationStartUptimeMillis,
-                        endUptimeMillis = frameEndUptimeMillis,
-                        // TODO This isn't right, it should be "last time we left resume" not
-                        // "last time the process was tracked as alive".
-                        // Though we might also want to know how long the process spent dead.
-                        backgroundDurationMillis = appStartData.lastAppAliveElapsedTimeMillis
-                      )
-                    )
-                  } else {
-                    // TODO this will yield much smaller time than perceived by users
-                    // unless we had a way to know when the system changed its mind.
-                    TartEventListener.sendEvent(
-                      AppLaunch(
-                        preLaunchState = PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND,
-                        startUptimeMillis = resumedUptimeMillis,
-                        endUptimeMillis = frameEndUptimeMillis,
-                        // TODO here we want to track the last time resume. Probably can align
-                        // same for all 3 cases.
-                        backgroundDurationMillis = TODO()
-                      )
-                    )
+
+          val preLaunchState = when {
+            resumedAfterFirstPost -> {
+              when (warmPrelaunchState) {
+                CREATED_NO_STATE -> PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
+                CREATED_WITH_STATE -> PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
+                STARTED -> PreLaunchState.ACTIVITY_WAS_STOPPED
+                WarmPrelaunchState.RESUMED -> error("resumed is skipped")
+              }
+            }
+            appStartData.importance == IMPORTANCE_FOREGROUND -> {
+              // Note: this relies on appUpdateData which is computed on a background thread
+              // on app start, so reading this at the latest possible point is best.
+              when (val updateData = appStartData.appUpdateData) {
+                is RealAppUpdateData -> {
+                  when (updateData.status) {
+                    FIRST_START_AFTER_CLEAR_DATA -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
+                    FIRST_START_AFTER_FRESH_INSTALL -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
+                    FIRST_START_AFTER_UPGRADE -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
+                    NORMAL_START -> PreLaunchState.NO_PROCESS
                   }
                 }
+                else -> PreLaunchState.NO_PROCESS
               }
+            }
+            else -> {
+              // We got resumed before the first post but process importance wasn't
+              // foreground. This means the process was started for another reason but while
+              // starting the process the activity manager then decided to foreground the app.
+              // We're therefore classifying this launch as a warm start, which means we'll use
+              // startUptimeMillis as its start time, which could yield much a  time than perceived
+              // by users. Would be nice if we had a way to know when the system changed its
+              // mind.
+              PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
+            }
+          }
+
+          val (launchStartUptimeMillis, backgroundDurationRealtimeMillis) = if (preLaunchState.launchType == COLD) {
+            val launchStartUptimeMillis = bindApplicationStartUptimeMillis
+            val backgroundDurationRealtimeMillis =
+              if (lastAppLifecycleStateChangedCurrentTimeMillis != -1L) {
+                if (lastAppLifecycleState == PAUSED) {
+                  val millisSinceForegroundStart =
+                    SystemClock.uptimeMillis() - launchStartUptimeMillis
+                  val currentTimeMillisAtForegroundStart =
+                    System.currentTimeMillis() - millisSinceForegroundStart
+                  currentTimeMillisAtForegroundStart - lastAppLifecycleStateChangedCurrentTimeMillis
+                } else {
+                  // In the cold start case, launchStartUptimeMillis is before
+                  // initCalledUptimeMillis. lastAppAliveElapsedTimeMillis is computed from
+                  // initCalled, so we need to remove the time between start and init.
+                  appStartData.lastAppAliveElapsedTimeMillis?.let { lastAppAliveElapsedTimeMillis ->
+                    val startToInitUptimeMillis = initCalledUptimeMillis - launchStartUptimeMillis
+                    lastAppAliveElapsedTimeMillis - startToInitUptimeMillis
+                  }
+                }
+              } else {
+                null
+              }
+            launchStartUptimeMillis to backgroundDurationRealtimeMillis
+          } else {
+            val launchStartUptimeMillis = startUptimeMillis
+            val backgroundDurationRealtimeMillis =
+              enteredBackgroundForWarmStartRealtimeMillis?.let {
+                // The process entered foreground then background and now foreground again. We
+                // can use realtime to compute the exact time spent in background.
+                launchStartUptimeMillis - it
+              } ?: if (lastAppLifecycleStateChangedCurrentTimeMillis != -1L) {
+                if (lastAppLifecycleState == PAUSED) {
+                  // Compute the clock time that has passed from the last time the app went from
+                  // foreground to background until the launch start.
+                  val millisSinceForegroundStart =
+                    SystemClock.uptimeMillis() - launchStartUptimeMillis
+                  val currentTimeMillisAtForegroundStart =
+                    System.currentTimeMillis() - millisSinceForegroundStart
+                  currentTimeMillisAtForegroundStart - lastAppLifecycleStateChangedCurrentTimeMillis
+                } else {
+                  // If the last known app lifecycle state change was entering foreground,
+                  // then it's probably that the app got killed while in foreground.
+                  // We have a tick updated every second while the app is alive, so we can use
+                  // that to figure out when the app was last alive in foreground.
+                  appStartData.lastAppAliveElapsedTimeMillis?.let { lastAppAliveElapsedTimeMillis ->
+                    val initToStartRealtimeMillis = startRealtimeMillis - initCalledRealtimeMillis
+                    // lastAppAliveElapsedTimeMillis is the time from the last save until init.
+                    lastAppAliveElapsedTimeMillis + initToStartRealtimeMillis
+                  }
+                }
+              } else {
+                // The app never entered foreground before.
+                null
+              }
+            startUptimeMillis to backgroundDurationRealtimeMillis
+          }
+
+          activity.window.onNextPreDraw {
+            mainHandler.postAtFrontOfQueueAsync {
+              // TODO async trace
+              val frameEndUptimeMillis = SystemClock.uptimeMillis()
+              if (preLaunchState.launchType == COLD) {
+                OkTrace.endAsyncSection(FOREGROUND_COLD_START_TRACE_NAME)
+              }
+              TartEventListener.sendEvent(
+                AppLaunch(
+                  preLaunchState = preLaunchState,
+                  startUptimeMillis = launchStartUptimeMillis,
+                  endUptimeMillis = frameEndUptimeMillis,
+                  backgroundDurationRealtimeMillis = backgroundDurationRealtimeMillis
+                )
+              )
             }
           }
         }
