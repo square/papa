@@ -9,8 +9,12 @@ sealed class TartEvent {
    * The app came was in the background and came to the foreground. In practice this means the app
    * had 0 activity in started or resumed state, and now has at least one activity in resumed state.
    *
-   * Note: going from "paused" back to "resumed" isn't considered a foregrounding here. This is
+   * Going from "paused" back to "resumed" isn't considered a foregrounding here. This is
    * an intentional decision, as a paused by not stopped activity is still visible and rendering.
+   *
+   * Currently we report an [AppLaunch] if at any point in time we go from 1 to 0 to 1 resumed
+   * activity. This can lead to false positives (e.g. when finishing one activity restarts a new
+   * activity stack) or shorter app launches (when using incorrectly written Trampoline activities).
    */
   class AppLaunch(
     val preLaunchState: PreLaunchState,
@@ -46,7 +50,7 @@ sealed class TartEvent {
         "duration=$durationUptimeMillis ms, " +
         "isSlowLaunch=$isSlowLaunch, " +
         "backgroundDuration=$backgroundDurationRealtimeMillis ms, " +
-        "startUptimeMillis=$startUptimeMillis, " +
+        "startUptimeMillis=$startUptimeMillis" +
         ")"
     }
   }

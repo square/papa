@@ -2,20 +2,44 @@
     package="com.squareup.tart.sample">
 
   <application
-      android:label="Tart"
-      android:icon="@mipmap/ic_launcher"
       android:name=".ExampleApplication"
-      >
+      android:icon="@mipmap/ic_launcher"
+      android:label="Tart">
 
     <activity
-        android:exported = "true"
         android:name=".MainActivity"
+        android:exported="true"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+        <category android:name="android.intent.category.DEFAULT"/>
+      </intent-filter>
+
+    </activity>
+
+    <activity
+        android:name=".TrampolineOnCreateActivity"
+        android:exported="true"
+        android:label="OnCreateTrampolineTart"
+        android:taskAffinity="tart.TrampolineOnCreateActivity"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
+    </activity>
 
+    <activity
+        android:name=".TrampolineOnResumeActivity"
+        android:exported="true"
+        android:label="OnResumeTrampolineTart"
+        android:taskAffinity="tart.OnResumeTrampolineTart"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
     </activity>
 
   </application>

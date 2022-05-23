@@ -328,10 +328,10 @@ internal object Perfs {
           } else {
             val launchStartUptimeMillis = startUptimeMillis
             val backgroundDurationRealtimeMillis =
-              enteredBackgroundForWarmStartRealtimeMillis?.let {
+              enteredBackgroundForWarmStartRealtimeMillis?.let { realtimeMillis ->
                 // The process entered foreground then background and now foreground again. We
                 // can use realtime to compute the exact time spent in background.
-                launchStartUptimeMillis - it
+                startRealtimeMillis - realtimeMillis
               } ?: if (lastAppLifecycleStateChangedCurrentTimeMillis != -1L) {
                 if (lastAppLifecycleState == PAUSED) {
                   // Compute the clock time that has passed from the last time the app went from
