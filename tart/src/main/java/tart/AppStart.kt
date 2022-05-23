@@ -3,7 +3,6 @@ package tart
 import android.os.SystemClock
 import tart.AppUpdateData.NoAppUpdateDataYet
 import tart.internal.Perfs
-import tart.internal.Perfs.reportFullyDrawn
 
 /**
  * A cold start refers to an app's starting from scratch: the system's process has not, until this
@@ -132,7 +131,7 @@ sealed class AppStart {
     val firstPostAfterFirstDraw: AndroidComponentEvent? = null,
     val firstTouchEvent: ActivityTouchEvent? = null,
     /**
-     * Elapsed time (since process fork) before the first frame after [Perfs.reportFullyDrawn] was
+     * Elapsed time (since process fork) before the first frame after [reportFullyDrawn] was
      * called.
      */
     val firstFrameAfterFullyDrawnElapsedUptimeMillis: Long? = null,

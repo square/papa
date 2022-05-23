@@ -71,7 +71,7 @@ sealed class TartEvent {
       return "InteractionLatency(" +
         "interaction='${interaction.description}', " +
         "totalDuration=$totalDurationUptimeMillis ms, " +
-        "trigger=${triggerData}, " +
+        "trigger=$triggerData, " +
         "displayDuration=$displayDurationUptimeMillis ms" +
         (if (stateBeforeInteraction != NoValue) ", stateBeforeInteraction='$stateBeforeInteraction'" else "") +
         (if (stateAfterInteraction != NoValue) ", stateAfterInteraction='$stateAfterInteraction'" else "") +

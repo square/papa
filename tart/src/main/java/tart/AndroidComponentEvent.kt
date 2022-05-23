@@ -20,4 +20,4 @@ class ActivityTouchEvent(
   val eventSentElapsedMillis: Long,
   val rawX: Float,
   val rawY: Float
-): AndroidComponentEvent(name, elapsedUptimeMillis)
+) : AndroidComponentEvent(name, elapsedUptimeMillis)

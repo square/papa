@@ -207,10 +207,10 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     }
     val startUptimeMillis = SystemClock.uptimeMillis()
     val startRealtimeMillis = SystemClock.elapsedRealtime()
-    if (resumedActivityHashes.isEmpty()
-      && Perfs.afterFirstPost
+    if (resumedActivityHashes.isEmpty() &&
+      Perfs.afterFirstPost &&
       // Warm startup not already started by onCreate()
-      && !createdActivityHashes.getValue(identityHash).sameMessage
+      !createdActivityHashes.getValue(identityHash).sameMessage
     ) {
       // We're entering foreground for a warm startup
       OkTrace.beginAsyncSection(FOREGROUND_HOT_START_TRACE_NAME)
