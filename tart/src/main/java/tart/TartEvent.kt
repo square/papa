@@ -48,11 +48,12 @@ sealed class TartEvent {
 
     override fun toString(): String {
       return "AppLaunch(" +
-        "preLaunchState=$preLaunchState, " +
-        "startUptimeMillis=$startUptimeMillis, " +
-        "endUptimeMillis=$endUptimeMillis, " +
-        "durationUptimeMillis=$durationUptimeMillis, " +
-        "isSlowLaunch=$isSlowLaunch" +
+        "preLaunchState=$preLaunchState," +
+        "durationUptimeMillis=$durationUptimeMillis," +
+        "isSlowLaunch=$isSlowLaunch," +
+        "backgroundDurationRealtimeMillis=$backgroundDurationRealtimeMillis,"+
+        "startUptimeMillis=$startUptimeMillis," +
+        "endUptimeMillis=$endUptimeMillis" +
         ")"
     }
   }

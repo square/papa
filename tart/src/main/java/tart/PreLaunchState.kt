@@ -65,4 +65,8 @@ enum class PreLaunchState(val launchType: AppLaunchType) {
    * is nothing to redraw on resume.
    */
   ACTIVITY_WAS_STOPPED(HOT);
+
+  override fun toString(): String {
+    return "$name ($launchType)"
+  }
 }

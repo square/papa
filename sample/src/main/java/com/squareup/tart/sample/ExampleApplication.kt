@@ -28,14 +28,6 @@ class ExampleApplication : Application() {
 
     TartEventListener.install(LogcatTartEventListener())
 
-    TartEventListener.install { event ->
-      when (event) {
-        is AppLaunch -> {
-          println("${event.preLaunchState.launchType} launch: ${event.durationUptimeMillis} ms")
-        }
-      }
-    }
-
     Curtains.onRootViewsChangedListeners += OnRootViewAddedListener { view ->
       view.phoneWindow?.let { window ->
         if (view.windowAttachCount == 0) {
