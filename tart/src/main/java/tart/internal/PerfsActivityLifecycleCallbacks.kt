@@ -14,6 +14,10 @@ import tart.AppLifecycleState
 import tart.AppLifecycleState.PAUSED
 import tart.AppLifecycleState.RESUMED
 import tart.AppStart.AppStartData
+import tart.OkTrace
+import tart.legacy.Perfs
+import tart.legacy.Perfs.FOREGROUND_HOT_START_TRACE_NAME
+import tart.legacy.Perfs.FOREGROUND_WARM_START_TRACE_NAME
 
 /**
  * Reports first time occurrences of activity lifecycle related events to [tart.legacy.Perfs].
@@ -168,6 +172,10 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     }
     val startUptimeMillis = SystemClock.uptimeMillis()
     val startRealtimeMillis = SystemClock.elapsedRealtime()
+    if (resumedActivityHashes.isEmpty() && Perfs.afterFirstPost) {
+      // We're entering foreground for a warm startup
+      OkTrace.beginAsyncSection(FOREGROUND_WARM_START_TRACE_NAME)
+    }
     val hasSavedStated = savedInstanceState != null
     createdActivityHashes[identityHash] =
       OnCreateRecord(true, hasSavedStated, startUptimeMillis, startRealtimeMillis)
@@ -200,6 +208,15 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     }
     val startUptimeMillis = SystemClock.uptimeMillis()
     val startRealtimeMillis = SystemClock.elapsedRealtime()
+    if (resumedActivityHashes.isEmpty()
+      && Perfs.afterFirstPost
+      // Warm startup not already started by onCreate()
+      && !createdActivityHashes.getValue(identityHash).sameMessage
+    ) {
+      // We're entering foreground for a warm startup
+      OkTrace.beginAsyncSection(FOREGROUND_HOT_START_TRACE_NAME)
+    }
+
     startedActivityHashes[identityHash] =
       OnStartRecord(true, startUptimeMillis, startRealtimeMillis)
     joinPost {
@@ -266,11 +283,11 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
   }
 
   private fun recordActivityResumed(activity: Activity): String {
-    val startUptimeMillis = SystemClock.uptimeMillis()
     val identityHash = Integer.toHexString(System.identityHashCode(activity))
     if (identityHash in resumedActivityHashes) {
       return identityHash
     }
+    val startUptimeMillis = SystemClock.uptimeMillis()
     resumedActivityHashes[identityHash] = OnResumeRecord(startUptimeMillis)
     return identityHash
   }

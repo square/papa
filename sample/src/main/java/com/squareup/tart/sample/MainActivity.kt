@@ -21,6 +21,10 @@ class MainActivity : AppCompatActivity() {
 
     setContentView(R.layout.main)
 
+    findViewById<View>(R.id.finish_activity).setOnClickListener {
+      finish()
+    }
+
     findViewById<View>(R.id.freeze_ui).setOnClickListener {
       Handler(Looper.getMainLooper()).postDelayed({
         Thread.sleep(5000)

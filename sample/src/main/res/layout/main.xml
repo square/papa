@@ -15,6 +15,12 @@
       android:text="Not updated yet"
       />
   <Button
+      android:id="@+id/finish_activity"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Finish"
+      />
+  <Button
       android:id="@+id/freeze_ui"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"

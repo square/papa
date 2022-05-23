@@ -12,6 +12,8 @@ import android.os.StrictMode
 import android.os.SystemClock
 import tart.AndroidComponentEvent
 import tart.AppLaunchType.COLD
+import tart.AppLaunchType.HOT
+import tart.AppLaunchType.WARM
 import tart.AppLifecycleState.PAUSED
 import tart.AppLifecycleState.RESUMED
 import tart.AppStart
@@ -49,6 +51,8 @@ import tart.internal.postAtFrontOfQueueAsync
 object Perfs {
 
   internal const val FOREGROUND_COLD_START_TRACE_NAME = "Class Load To Initial Display"
+  internal const val FOREGROUND_WARM_START_TRACE_NAME = "Warm Start To Display"
+  internal const val FOREGROUND_HOT_START_TRACE_NAME = "Hot Start To Display"
   private const val LAST_RESUMED_STATE = "lastResumedState"
 
   // String value kept for backward compat reasons
@@ -69,6 +73,9 @@ object Perfs {
   internal var classLoaderInstantiatedUptimeMillis: Long? = null
   internal var applicationInstantiatedUptimeMillis: Long? = null
   internal var firstPostApplicationComponentInstantiated = false
+
+  // Accessed from main thread only.
+  internal var afterFirstPost = false
 
   private var reportedFullDrawn = false
 
@@ -160,7 +167,6 @@ object Perfs {
     }
 
     val handler = Handler(Looper.getMainLooper())
-    var afterFirstPost = false
     handler.post {
       afterFirstPost = true
       val firstPost = appStartData.elapsedSinceStart()
@@ -367,9 +373,12 @@ object Perfs {
 
           activity.window.onNextPreDraw {
             onCurrentFrameRendered { frameRenderedUptimeMillis ->
-              if (preLaunchState.launchType == COLD) {
-                OkTrace.endAsyncSection(FOREGROUND_COLD_START_TRACE_NAME)
+              val sectionName = when (preLaunchState.launchType) {
+                COLD -> FOREGROUND_COLD_START_TRACE_NAME
+                WARM -> FOREGROUND_WARM_START_TRACE_NAME
+                HOT -> FOREGROUND_HOT_START_TRACE_NAME
               }
+              OkTrace.endAsyncSection(sectionName)
               TartEventListener.sendEvent(
                 AppLaunch(
                   preLaunchState = preLaunchState,
