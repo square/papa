@@ -1,6 +1,9 @@
 package tart
+
 import android.os.SystemClock
 import tart.AppUpdateData.NoAppUpdateDataYet
+import tart.internal.Perfs
+import tart.internal.Perfs.reportFullyDrawn
 
 /**
  * A cold start refers to an app's starting from scratch: the system's process has not, until this
@@ -153,4 +156,28 @@ sealed class AppStart {
   }
 
   data class NoAppStartData(val reason: String) : AppStart()
+
+  companion object {
+    /**
+     * Provides [AppStart] filled in with the latest information. Can be called from any thread.
+     */
+    val latestAppStartData: AppStart
+      get() = Perfs.appStart
+
+    @JvmStatic
+    @JvmOverloads
+    fun customFirstEvent(
+      eventName: String,
+      extra: Any? = null
+    ) = Perfs.customFirstEvent(eventName, extra)
+
+    /**
+     * Functional equivalent to [android.app.Activity.reportFullyDrawn]. This lets app report when
+     * they consider themselves ready, regardless of any prior view traversal and rendering.
+     * The first call to [reportFullyDrawn] will update
+     * [AppStartData.firstFrameAfterFullyDrawnElapsedUptimeMillis] on the next frame.
+     */
+    @JvmStatic
+    fun reportFullyDrawn() = Perfs.reportFullyDrawn()
+  }
 }

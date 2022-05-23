@@ -31,7 +31,7 @@ import tart.TartEventListener
 import tart.internal.mainHandler
 import tart.internal.isChoreographerDoingFrame
 import tart.AppStart.AppStartData
-import tart.legacy.Perfs
+import tart.internal.Perfs
 import tart.test.utilities.TestActivity
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch

@@ -1,7 +1,6 @@
 package tart.internal
 
 import android.content.Context
-import tart.legacy.Perfs
 
 /**
  * Inits [Perfs] on app start.

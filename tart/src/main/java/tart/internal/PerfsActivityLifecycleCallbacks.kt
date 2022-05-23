@@ -15,9 +15,8 @@ import tart.AppLifecycleState.PAUSED
 import tart.AppLifecycleState.RESUMED
 import tart.AppStart.AppStartData
 import tart.OkTrace
-import tart.legacy.Perfs
-import tart.legacy.Perfs.FOREGROUND_HOT_START_TRACE_NAME
-import tart.legacy.Perfs.FOREGROUND_WARM_START_TRACE_NAME
+import tart.internal.Perfs.FOREGROUND_HOT_START_TRACE_NAME
+import tart.internal.Perfs.FOREGROUND_WARM_START_TRACE_NAME
 
 /**
  * Reports first time occurrences of activity lifecycle related events to [tart.legacy.Perfs].

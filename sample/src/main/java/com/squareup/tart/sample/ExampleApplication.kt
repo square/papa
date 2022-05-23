@@ -11,10 +11,9 @@ import curtains.windowAttachCount
 import logcat.AndroidLogcatLogger
 import logcat.LogcatLogger
 import logcat.logcat
+import tart.AppStart
 import tart.LogcatTartEventListener
-import tart.TartEvent.AppLaunch
 import tart.TartEventListener
-import tart.legacy.Perfs
 import java.util.concurrent.Executors
 
 class ExampleApplication : Application() {
@@ -23,7 +22,7 @@ class ExampleApplication : Application() {
     LogcatLogger.install(AndroidLogcatLogger())
 
     Handler(Looper.getMainLooper()).postDelayed({
-      println("App start:\n${Perfs.appStart}")
+      println("App start:\n${AppStart.latestAppStartData}")
     }, 6000)
 
     TartEventListener.install(LogcatTartEventListener())

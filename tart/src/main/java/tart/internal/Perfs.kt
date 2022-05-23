@@ -1,4 +1,4 @@
-package tart.legacy
+package tart.internal
 
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
@@ -29,26 +29,17 @@ import tart.PreLaunchState
 import tart.TartEvent.AppLaunch
 import tart.TartEventListener
 import tart.internal.AppUpdateDetector.Companion.trackAppUpgrade
-import tart.internal.ApplicationHolder
-import tart.internal.MyProcess
 import tart.internal.MyProcess.ErrorRetrievingMyProcessData
 import tart.internal.MyProcess.MyProcessData
 import tart.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLifecycle
-import tart.internal.WarmPrelaunchState
 import tart.internal.WarmPrelaunchState.CREATED_NO_STATE
 import tart.internal.WarmPrelaunchState.CREATED_WITH_STATE
 import tart.internal.WarmPrelaunchState.STARTED
-import tart.internal.enforceMainThread
-import tart.internal.isOnMainThread
-import tart.internal.onCurrentFrameRendered
-import tart.internal.onNextFrameRendered
-import tart.internal.onNextPreDraw
-import tart.internal.postAtFrontOfQueueAsync
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
  */
-object Perfs {
+internal object Perfs {
 
   internal const val FOREGROUND_COLD_START_TRACE_NAME = "Class Load To Initial Display"
   internal const val FOREGROUND_WARM_START_TRACE_NAME = "Warm Start To Display"
@@ -112,9 +103,6 @@ object Perfs {
     // gets set.
   }
 
-  /**
-   * Provides [AppStart] filled in with the latest information. Can be called from any thread.
-   */
   val appStart: AppStart
     get() = if (initialized) {
       appStartData
@@ -415,12 +403,6 @@ object Perfs {
     )
   }
 
-  /**
-   * Functional equivalent to [android.app.Activity.reportFullyDrawn]. This lets app report when
-   * they consider themselves ready, regardless of any prior view traversal and rendering.
-   * The first call to [reportFullyDrawn] will update
-   * [AppStartData.firstFrameAfterFullyDrawnElapsedUptimeMillis] on the next frame.
-   */
   fun reportFullyDrawn() {
     enforceMainThread()
     if (!initialized || reportedFullDrawn) {
@@ -434,8 +416,6 @@ object Perfs {
     }
   }
 
-  @JvmStatic
-  @JvmOverloads
   fun customFirstEvent(
     eventName: String,
     extra: Any? = null

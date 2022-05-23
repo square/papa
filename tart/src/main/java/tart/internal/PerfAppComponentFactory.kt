@@ -10,7 +10,6 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.SystemClock
 import androidx.annotation.RequiresApi
-import tart.legacy.Perfs
 
 /**
  * Tracks the time at which the classloader, application and first components are created on app

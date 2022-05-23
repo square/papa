@@ -2,7 +2,6 @@ package tart.internal
 
 import android.app.Application
 import tart.OkTrace
-import tart.legacy.Perfs
 
 /**
  * Automatically set on app start by [tart.legacy.Perfs]
