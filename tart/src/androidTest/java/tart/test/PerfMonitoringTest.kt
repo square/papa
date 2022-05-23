@@ -26,12 +26,12 @@ import radiography.ScannableView.AndroidView
 import radiography.ViewStateRenderer
 import radiography.ViewStateRenderers.DefaultsIncludingPii
 import tart.AndroidComponentEvent
+import tart.AppStart.AppStartData
 import tart.TartEvent.FrozenFrameOnTouch
 import tart.TartEventListener
-import tart.internal.mainHandler
-import tart.internal.isChoreographerDoingFrame
-import tart.AppStart.AppStartData
 import tart.internal.Perfs
+import tart.internal.isChoreographerDoingFrame
+import tart.internal.mainHandler
 import tart.test.utilities.TestActivity
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -176,9 +176,10 @@ class PerfMonitoringTest {
     val frozenFrameOnTouchRef = AtomicReference<FrozenFrameOnTouch>()
     val registration = getOnMainSync {
       TartEventListener.install { tartEvent ->
-        tartEvent as FrozenFrameOnTouch
-        frozenFrameOnTouchRef.set(tartEvent)
-        waitForFrozenFrame.countDown()
+        if (tartEvent is FrozenFrameOnTouch) {
+          frozenFrameOnTouchRef.set(tartEvent)
+          waitForFrozenFrame.countDown()
+        }
       }
     }
     return {
