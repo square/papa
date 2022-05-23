@@ -37,6 +37,7 @@ extensions.configure<ApiValidationExtension> {
   ignoredProjects = mutableSetOf(
     "sample"
   )
+
 }
 
 // See https://stackoverflow.com/questions/25324880/detect-ide-environment-with-gradle

@@ -15,7 +15,7 @@ object Dependencies {
     val Kotlin = "org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.KotlinCompiler}"
     const val Ktlint = "org.jlleitschuh.gradle:ktlint-gradle:9.2.1"
     const val AndroidXAnnotation = "androidx.annotation:annotation:1.1.0"
-    const val BinaryCompatibility = "org.jetbrains.kotlinx:binary-compatibility-validator:0.2.3"
+    const val BinaryCompatibility = "org.jetbrains.kotlinx:binary-compatibility-validator:0.8.0"
     val KotlinStbLib = "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.KotlinCompiler}"
   }
 
