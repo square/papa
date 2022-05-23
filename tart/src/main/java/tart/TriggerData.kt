@@ -1,16 +1,24 @@
 package tart
 
 sealed class TriggerData {
-  abstract val triggerName: String
-  abstract val triggerDurationUptimeMillis: Long
+  abstract val name: String
+  abstract val durationUptimeMillis: Long
 
   class Found(
-    override val triggerName: String,
-    override val triggerDurationUptimeMillis: Long
-  ) : TriggerData()
+    override val name: String,
+    override val durationUptimeMillis: Long
+  ) : TriggerData() {
+    override fun toString(): String {
+      return "Found(name='$name', duration=$durationUptimeMillis ms)"
+    }
+  }
 
   object Unknown : TriggerData() {
-    override val triggerName = "unknown"
-    override val triggerDurationUptimeMillis = 0L
+    override val name = "unknown"
+    override val durationUptimeMillis = 0L
+
+    override fun toString(): String {
+      return "unknown"
+    }
   }
 }

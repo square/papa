@@ -138,7 +138,7 @@ class PerfMonitoringTest {
 
       val frozenFrameOnTouch = waitForFrozenFrame()
 
-      assertThat(frozenFrameOnTouch.handledElapsedUptimeMillis).isAtLeast(2000)
+      assertThat(frozenFrameOnTouch.deliverDurationUptimeMillis).isAtLeast(2000)
       assertWithMessage(
         "Result: $frozenFrameOnTouch\n" +
           "Touch Events:\n$onTouchEventViewHierarchies"

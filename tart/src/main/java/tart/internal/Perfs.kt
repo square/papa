@@ -370,9 +370,9 @@ internal object Perfs {
               TartEventListener.sendEvent(
                 AppLaunch(
                   preLaunchState = preLaunchState,
-                  startUptimeMillis = launchStartUptimeMillis,
-                  endUptimeMillis = frameRenderedUptimeMillis,
-                  backgroundDurationRealtimeMillis = backgroundDurationRealtimeMillis
+                  durationUptimeMillis = frameRenderedUptimeMillis - launchStartUptimeMillis,
+                  backgroundDurationRealtimeMillis = backgroundDurationRealtimeMillis,
+                  startUptimeMillis = launchStartUptimeMillis
                 )
               )
             }

@@ -2,7 +2,6 @@ package tart.internal
 
 import android.os.Looper
 import android.os.SystemClock
-import android.view.Choreographer
 import android.view.KeyEvent
 import android.view.MotionEvent
 import tart.AppState
@@ -99,7 +98,7 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
             stateBeforeInteraction = stateBeforeInteraction,
             stateAfterInteraction = stateAfterInteractionValue,
             startUptimeMillis = startUptimeMillis,
-            durationFromStartUptimeMillis = durationFromStartUptimeMillis,
+            displayDurationUptimeMillis = durationFromStartUptimeMillis,
             triggerData = triggerData,
           )
         )

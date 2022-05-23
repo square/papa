@@ -67,6 +67,6 @@ enum class PreLaunchState(val launchType: AppLaunchType) {
   ACTIVITY_WAS_STOPPED(HOT);
 
   override fun toString(): String {
-    return "$name ($launchType)"
+    return "$name($launchType)"
   }
 }

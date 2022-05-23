@@ -51,8 +51,8 @@ internal object FrozenFrameOnTouchDetector {
                       FrozenFrameOnTouch(
                         activityName = windowTitle,
                         repeatTouchDownCount = repeatTouchDownCount,
-                        handledElapsedUptimeMillis = sentToReceive,
-                        frameElapsedUptimeMillis = receiveToFrame,
+                        deliverDurationUptimeMillis = sentToReceive,
+                        dislayDurationUptimeMillis = receiveToFrame,
                         pressedView = pressedViewName
                       )
                     )

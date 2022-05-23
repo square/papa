@@ -20,8 +20,7 @@ sealed class AppState {
 
     class SerializedAsync(val value: Any) : Value() {
       override fun toString(): String {
-        // Skipping on any potentially expensive toString() call
-        return value::class.java.simpleName
+        return value.toString()
       }
     }
     object NoValue : Value()
