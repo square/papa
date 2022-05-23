@@ -1,4 +1,4 @@
-package tart.legacy
+package tart
 
 enum class AppLifecycleState {
   /**

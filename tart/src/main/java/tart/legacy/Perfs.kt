@@ -11,7 +11,9 @@ import android.os.Process
 import android.os.StrictMode
 import android.os.SystemClock
 import android.view.Choreographer
+import tart.AndroidComponentEvent
 import tart.AppLaunchType.COLD
+import tart.AppStart
 import tart.OkTrace
 import tart.PreLaunchState
 import tart.TartEvent.AppLaunch
@@ -31,15 +33,15 @@ import tart.internal.isOnMainThread
 import tart.internal.mainHandler
 import tart.internal.onNextPreDraw
 import tart.internal.postAtFrontOfQueueAsync
-import tart.legacy.AppLifecycleState.PAUSED
-import tart.legacy.AppLifecycleState.RESUMED
-import tart.legacy.AppStart.AppStartData
-import tart.legacy.AppStart.NoAppStartData
-import tart.legacy.AppUpdateData.RealAppUpdateData
-import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_CLEAR_DATA
-import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_FRESH_INSTALL
-import tart.legacy.AppUpdateStartStatus.FIRST_START_AFTER_UPGRADE
-import tart.legacy.AppUpdateStartStatus.NORMAL_START
+import tart.AppLifecycleState.PAUSED
+import tart.AppLifecycleState.RESUMED
+import tart.AppStart.AppStartData
+import tart.AppStart.NoAppStartData
+import tart.AppUpdateData.RealAppUpdateData
+import tart.AppUpdateStartStatus.FIRST_START_AFTER_CLEAR_DATA
+import tart.AppUpdateStartStatus.FIRST_START_AFTER_FRESH_INSTALL
+import tart.AppUpdateStartStatus.FIRST_START_AFTER_UPGRADE
+import tart.AppUpdateStartStatus.NORMAL_START
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
@@ -399,7 +401,7 @@ object Perfs {
       return
     }
     appStartData = appStartData.copy(
-      firstComponentInstantiated = ComponentInstantiatedEvent(
+      firstComponentInstantiated = AndroidComponentEvent(
         componentName,
         appStartData.elapsedSinceStart()
       )
@@ -420,6 +422,9 @@ object Perfs {
     reportedFullDrawn = true
     Choreographer.getInstance()
       .postFrameCallback {
+        // TODO This shouldn't just "first frame"
+        // TODO Also, 3 usages, let's extract the first frame + post at front logic.
+        // TODO Add trace for warm starts.
         appStartData = appStartData.copy(
           firstFrameAfterFullyDrawnElapsedUptimeMillis = appStartData.elapsedSinceStart()
         )

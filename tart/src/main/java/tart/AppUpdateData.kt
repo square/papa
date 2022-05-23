@@ -1,4 +1,4 @@
-package tart.legacy
+package tart
 
 sealed class AppUpdateData {
 

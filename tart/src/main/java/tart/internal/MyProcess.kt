@@ -5,7 +5,7 @@ import android.app.ActivityManager.RunningAppProcessInfo
 import android.content.Context
 import android.os.Build
 import android.os.SystemClock
-import tart.legacy.AppTask
+import tart.AppTask
 import tart.internal.MyProcess.Companion.findMyProcessInfo
 import tart.internal.MyProcess.MyProcessData
 import tart.internal.MyProcess.ErrorRetrievingMyProcessData

@@ -7,13 +7,13 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import curtains.onNextDraw
-import tart.legacy.ActivityEvent
-import tart.legacy.ActivityOnCreateEvent
-import tart.legacy.ActivityTouchEvent
-import tart.legacy.AppLifecycleState
-import tart.legacy.AppLifecycleState.PAUSED
-import tart.legacy.AppLifecycleState.RESUMED
-import tart.legacy.AppStart.AppStartData
+import tart.ActivityOnCreateEvent
+import tart.ActivityTouchEvent
+import tart.AndroidComponentEvent
+import tart.AppLifecycleState
+import tart.AppLifecycleState.PAUSED
+import tart.AppLifecycleState.RESUMED
+import tart.AppStart.AppStartData
 
 /**
  * Reports first time occurrences of activity lifecycle related events to [tart.legacy.Perfs].
@@ -86,7 +86,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
       appStartUpdateCallback { appStart ->
         val elapsedMillis = SystemClock.uptimeMillis() - appStart.processStartUptimeMillis
         val activityEvent = ActivityOnCreateEvent(
-          activityName = activityClassName,
+          name = activityClassName,
           restoredState = restoredState,
           elapsedUptimeMillis = elapsedMillis,
           intent = activity.intent
@@ -145,7 +145,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
             val eventSentElapsedMillis = motionEvent.eventTime - appStart.processStartUptimeMillis
             appStart.copy(
               firstTouchEvent = ActivityTouchEvent(
-                activityName = activityClassName,
+                name = activityClassName,
                 elapsedUptimeMillis = elapsedMillis,
                 eventSentElapsedMillis = eventSentElapsedMillis,
                 rawX = motionEvent.rawX,
@@ -303,11 +303,11 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
 
   private fun updateAppStart(
     activityClassName: String,
-    block: (AppStartData, ActivityEvent) -> AppStartData
+    block: (AppStartData, AndroidComponentEvent) -> AppStartData
   ) {
     appStartUpdateCallback { appStart ->
       val elapsedMillis = SystemClock.uptimeMillis() - appStart.processStartUptimeMillis
-      val activityEvent = ActivityEvent(activityClassName, elapsedMillis)
+      val activityEvent = AndroidComponentEvent(activityClassName, elapsedMillis)
       block(appStart, activityEvent)
     }
   }

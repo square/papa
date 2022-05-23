@@ -6,10 +6,10 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import tart.legacy.AppStart.AppStartData
-import tart.legacy.AppUpdateData.ErrorRetrievingAppUpdateData
-import tart.legacy.AppUpdateData.RealAppUpdateData
-import tart.legacy.AppUpdateStartStatus
+import tart.AppStart.AppStartData
+import tart.AppUpdateData.ErrorRetrievingAppUpdateData
+import tart.AppUpdateData.RealAppUpdateData
+import tart.AppUpdateStartStatus
 import java.util.concurrent.Executors
 import kotlin.math.abs
 

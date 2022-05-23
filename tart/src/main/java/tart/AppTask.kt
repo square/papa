@@ -1,4 +1,4 @@
-package tart.legacy
+package tart
 
 /**
  * On Android Q+, captures information from [android.app.ActivityManager.AppTask] returned by

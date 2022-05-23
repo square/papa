@@ -30,8 +30,7 @@ import tart.TartEventListener
 import tart.internal.lastFrameTimeNanos
 import tart.internal.mainHandler
 import tart.isChoreographerDoingFrame
-import tart.legacy.ActivityEvent
-import tart.legacy.AppStart.AppStartData
+import tart.AppStart.AppStartData
 import tart.legacy.Perfs
 import tart.test.utilities.TestActivity
 import java.util.concurrent.CopyOnWriteArrayList

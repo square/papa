@@ -1,4 +1,4 @@
-package tart.legacy
+package tart
 
 enum class AppUpdateStartStatus {
   FIRST_START_AFTER_CLEAR_DATA,
