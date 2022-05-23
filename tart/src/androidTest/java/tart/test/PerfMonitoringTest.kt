@@ -25,11 +25,11 @@ import radiography.Radiography
 import radiography.ScannableView.AndroidView
 import radiography.ViewStateRenderer
 import radiography.ViewStateRenderers.DefaultsIncludingPii
+import tart.AndroidComponentEvent
 import tart.TartEvent.FrozenFrameOnTouch
 import tart.TartEventListener
-import tart.internal.lastFrameTimeNanos
 import tart.internal.mainHandler
-import tart.isChoreographerDoingFrame
+import tart.internal.isChoreographerDoingFrame
 import tart.AppStart.AppStartData
 import tart.legacy.Perfs
 import tart.test.utilities.TestActivity
@@ -51,14 +51,14 @@ class PerfMonitoringTest {
     ActivityScenario.launch(TestActivity::class.java).use {
       // Our activity isn't actually first when testing, oh well.
       val firstActivity = "androidx.test.core.app.InstrumentationActivityInvoker\$BootstrapActivity"
-      assertThat(appStart.firstActivityOnCreate!!.activityName).isEqualTo(
+      assertThat(appStart.firstActivityOnCreate!!.name).isEqualTo(
         firstActivity
       )
 
       val firstActivityOnCreate =
         appStart.firstActivityOnCreate?.let {
-          ActivityEvent(
-            it.activityName,
+          AndroidComponentEvent(
+            it.name,
             it.elapsedUptimeMillis
           )
         }
@@ -77,7 +77,7 @@ class PerfMonitoringTest {
       ) {
         assertWithMessage("For $lifecycle").that(activityEvent)
           .isNotNull()
-        assertWithMessage("For $lifecycle").that(activityEvent!!.activityName)
+        assertWithMessage("For $lifecycle").that(activityEvent!!.name)
           .isEqualTo(firstActivity)
         assertWithMessage("For $lifecycle").that(activityEvent.elapsedUptimeMillis)
           .isAtLeast(previousElapsed)
@@ -147,19 +147,6 @@ class PerfMonitoringTest {
     }
   }
 
-  @Test fun frameTimeNanos_value_for_current_frame() {
-    val frameCallbackLatch = CountDownLatch(1)
-    lateinit var frameTimes: Pair<Long, Long>
-    mainHandler.post {
-      Choreographer.getInstance().postFrameCallback { frameTimeNanos ->
-        frameTimes = Choreographer.getInstance().lastFrameTimeNanos to frameTimeNanos
-        frameCallbackLatch.countDown()
-      }
-    }
-    check(frameCallbackLatch.await(10, SECONDS))
-    assertThat(frameTimes.first).isEqualTo(frameTimes.second)
-  }
-
   @Test fun Choreographer_is_doing_Frame() {
     val frameCallbackLatch = CountDownLatch(1)
     var isChoreographerDoingFrame = false
@@ -196,7 +183,7 @@ class PerfMonitoringTest {
     }
     return {
       check(waitForFrozenFrame.await(10, SECONDS))
-      registration.dispose()
+      registration.close()
       frozenFrameOnTouchRef.get()!!
     }
   }

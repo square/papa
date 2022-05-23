@@ -14,7 +14,6 @@ import curtains.windowAttachCount
 import tart.TartEvent.FrozenFrameOnTouch
 import tart.TartEventListener
 import tart.internal.FrozenFrameOnTouchDetector.install
-import tart.onNextFrameDisplayed
 
 /**
  * Detects when the interval of time between when a touch event is issued and the next frame is
@@ -43,11 +42,11 @@ internal object FrozenFrameOnTouchDetector {
                 if (handledTime - motionEvent.eventTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
                   val windowTitle = window.attributes.title.toString().substringAfter("/")
                   touchDownWaitingRender = MotionEvent.obtain(motionEvent)
-                  window.onNextFrameDisplayed { frameDisplayedUptimeMillis ->
+                  onCurrentOrNextFrameRendered { frameRenderedUptimeMillis ->
                     val localTouchDownWaitingRender = touchDownWaitingRender!!
                     val sentTime = localTouchDownWaitingRender.eventTime
                     val sentToReceive = handledTime - sentTime
-                    val receiveToFrame = frameDisplayedUptimeMillis - handledTime
+                    val receiveToFrame = frameRenderedUptimeMillis - handledTime
                     TartEventListener.sendEvent(
                       FrozenFrameOnTouch(
                         activityName = windowTitle,

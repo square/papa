@@ -1,19 +1,59 @@
 package tart.internal
 
+import android.os.SystemClock
 import android.view.Choreographer
 
-/**
- * Choreographer.mLastFrameTimeNanos is annotated with @UnsupportedAppUsage which
- * means it's on the grey list but we can still use it.
- * https://cs.android.com/android/_/android/platform/frameworks/base/+/662af62f16f378d0ffdc5546de2cabfbc7c0e147:core/java/android/view/Choreographer.java;l=179;drc=5d123b67756dffcfdebdb936ab2de2b29c799321
- *
- * Based on
- * https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi16Impl.kt;l=109-115;drc=523d7a11e46390281ed3f77893671730cd6edb98
- */
-private val choreographerLastFrameTimeField by lazy {
-  @Suppress("DiscouragedPrivateApi")
-  Choreographer::class.java.getDeclaredField("mLastFrameTimeNanos").apply { isAccessible = true }
+internal fun onNextFrameRendered(callback: (Long) -> Unit) {
+  Choreographer.getInstance().postFrameCallback {
+    onCurrentFrameRendered(callback)
+  }
 }
 
-internal val Choreographer.lastFrameTimeNanos: Long
-  get() = choreographerLastFrameTimeField[this] as Long
+internal fun onCurrentOrNextFrameRendered(callback: (Long) -> Unit) {
+  if (isChoreographerDoingFrame()) {
+    onCurrentFrameRendered(callback)
+  } else {
+    onNextFrameRendered(callback)
+  }
+}
+
+/**
+ * Note: this is somewhat slow and fragile.
+ */
+internal fun isChoreographerDoingFrame(): Boolean {
+  if (!isOnMainThread()) {
+    return false
+  }
+  val stackTrace = RuntimeException().stackTrace
+  for (i in stackTrace.lastIndex downTo 0) {
+    val element = stackTrace[i]
+    if (element.className == "android.view.Choreographer" &&
+      element.methodName == "doFrame"
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Should be called from within a choreographer frame callback
+ */
+internal fun onCurrentFrameRendered(callback: (Long) -> Unit) {
+  // The frame callback runs somewhat in the middle of rendering, so by posting at the front
+  // of the queue from there we get the timestamp for right when the next frame is done
+  // rendering.
+  // The main thread is a single thread, and work always executes one task at a time. We're
+  // creating an async message that won't be reordered to execute after sync barriers (which are
+  // used for processing input events and rendering frames). "sync barriers" are essentially
+  // prioritized messages. When you post, you
+  // can post to the front or the back, and you're just inserting in a different place in the
+  // queue. When the queue is done with the current message, it looks at its head for the next
+  // message. Unless there's a special message enqueued called a sync barrier, which basically has
+  // top priority and will run prior to the current head if its time that's gone. Async prevents
+  // this behavior.
+  mainHandler.postAtFrontOfQueueAsync {
+    val frameRenderedUptimeMillis = SystemClock.uptimeMillis()
+    callback(frameRenderedUptimeMillis)
+  }
+}
