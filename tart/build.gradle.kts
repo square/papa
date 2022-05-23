@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-  compileSdkVersion(30)
+  compileSdkVersion(31)
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -18,7 +18,6 @@ android {
 
   defaultConfig {
     minSdkVersion(21)
-    targetSdkVersion(30)
     versionCode = 1
     versionName = "1.0"
     testInstrumentationRunner = "tart.test.utilities.TartTestInstrumentationRunner"
