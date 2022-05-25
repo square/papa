@@ -29,6 +29,17 @@ sealed class TartEvent {
     val durationUptimeMillis: Long,
 
     /**
+     * True if more than one activity was launched as part of this launch. Trampoline activities
+     * are a common pattern where the launcher activity immediately starts another activity based
+     * on runtime conditions (for example whether the user is logged in or not).
+     * Note that trampoline activities should always start the next activity in their onCreate()
+     * method, otherwise the first frame rendered will show the trampoline activity instead of the
+     * target activity (in that case, the launch end will be measured at that first frame and
+     * [trampolined] will actually be false)
+     */
+    val trampolined: Boolean,
+
+    /**
      * The elapsed real time millis duration the app spent invisible, or null if the app has
      * never been visible before. This is the elapsed real time duration from when the app
      * became invisible until the start of this launch.
@@ -49,6 +60,7 @@ sealed class TartEvent {
         "preLaunchState=$preLaunchState, " +
         "duration=$durationUptimeMillis ms, " +
         "isSlowLaunch=$isSlowLaunch, " +
+        "trampolined=$trampolined, " +
         "backgroundDuration=$invisibleDurationRealtimeMillis ms, " +
         "startUptimeMillis=$startUptimeMillis" +
         ")"

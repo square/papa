@@ -11,6 +11,7 @@ internal class LaunchTracker {
   private var launchInProgress: LaunchInProgress? = null
 
   class Launch(
+    val trampoline: Boolean,
     val startUptimeMillis: Long,
     val startRealtimeMillis: Long,
     val invisibleDurationRealtimeMillis: Long?,
@@ -30,23 +31,31 @@ internal class LaunchTracker {
     val startUptimeMillis: Long,
     val startRealtimeMillis: Long,
     val invisibleDurationRealtimeMillis: Long?,
-    private var lastLifecycleChangeUptimeMillis: Long
+    val activityHash: String
   ) {
+
+    val updateLastLifecycleChangeUptimeMillis = Runnable {
+      lastLifecycleChangeDoneUptimeMillis = SystemClock.uptimeMillis()
+    }
+
+    // null means the latest lifecycle change hasn't cleared.
+    var lastLifecycleChangeDoneUptimeMillis: Long? = null
+
     fun updateLastLifecycleChangeTime() {
-      lastLifecycleChangeUptimeMillis = SystemClock.uptimeMillis()
+      lastLifecycleChangeDoneUptimeMillis = null
+      mainHandler.removeCallbacks(updateLastLifecycleChangeUptimeMillis)
+      mainHandler.post(updateLastLifecycleChangeUptimeMillis)
     }
 
     /**
-     * Stale if the last lifecycle update for the launch in progress was one second ago.
+     * Stale if the last lifecycle update for the launch in progress was done more than 500ms
+     * ago.
      */
     val isStale: Boolean
-      get() = (SystemClock.uptimeMillis() - lastLifecycleChangeUptimeMillis) > 1000
+      get() = lastLifecycleChangeDoneUptimeMillis?.let { (SystemClock.uptimeMillis() - it) > 500 }
+        ?: false
   }
 
-  // TODO I wonder if we should handle the deadline in a smarter way. E.g.
-  // when onCreate+onStop+onResume (or a subset) happen all within the same post then
-  // we don't want it to become stale no matter the duration.
-  // Need to think a bit more about this.
   fun pushLaunchInProgressDeadline() {
     launchInProgress?.let { launch ->
       if (launch.isStale) {
@@ -65,7 +74,7 @@ internal class LaunchTracker {
     lastAppBecameInvisibleRealtimeMillis = SystemClock.elapsedRealtime()
   }
 
-  fun appMightBecomeVisible() {
+  fun appMightBecomeVisible(activityHash: String) {
     if (launchInProgress == null) {
       // Check to handle the cold start case where we're already tracing a launch.
       if (!Perfs.isTracingLaunch) {
@@ -73,27 +82,27 @@ internal class LaunchTracker {
         Perfs.isTracingLaunch = true
       }
 
-      val nowUptimeMillis = SystemClock.uptimeMillis()
-
       val invisibleDurationRealtimeMillis =
         lastAppBecameInvisibleRealtimeMillis?.let { SystemClock.elapsedRealtime() - it }
 
       launchInProgress = LaunchInProgress(
-        startUptimeMillis = nowUptimeMillis,
+        activityHash = activityHash,
+        startUptimeMillis = SystemClock.uptimeMillis(),
         startRealtimeMillis = SystemClock.elapsedRealtime(),
         invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
-        lastLifecycleChangeUptimeMillis = nowUptimeMillis
       )
     }
   }
 
   fun appEnteredForeground(
     resumedActivity: Activity,
+    resumedActivityHash: String,
     activityStartingTransition: LaunchedActivityStartingTransition
   ): Launch? {
     return launchInProgress?.run {
       launchInProgress = null
       Launch(
+        trampoline = activityHash != resumedActivityHash,
         resumedActivity = resumedActivity,
         startUptimeMillis = startUptimeMillis,
         startRealtimeMillis = startRealtimeMillis,

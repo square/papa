@@ -345,6 +345,9 @@ internal object Perfs {
         launch.startUptimeMillis to invisibleDurationRealtimeMillis
       }
 
+      // TODO What if this is a trampoline ish activity called from on resume and there isn't
+      // actually a next draw? Then we've lost the launch. We might want to move this into the
+      // launch tracker so that we keep the launch around until a frame has actually rendered.
       launch.resumedActivity.window.onNextPreDraw {
         onCurrentFrameRendered { frameRenderedUptimeMillis ->
           if (isTracingLaunch) {
@@ -355,6 +358,7 @@ internal object Perfs {
             AppLaunch(
               preLaunchState = preLaunchState,
               durationUptimeMillis = frameRenderedUptimeMillis - launchStartUptimeMillis,
+              trampolined = launch.trampoline,
               invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
               startUptimeMillis = launchStartUptimeMillis
             )

@@ -163,7 +163,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     val appWasInvisible = startedActivityHashes.isEmpty()
     launchTracker.pushLaunchInProgressDeadline()
     if (appWasInvisible) {
-      launchTracker.appMightBecomeVisible()
+      launchTracker.appMightBecomeVisible(identityHash)
     }
     val hasSavedStated = savedInstanceState != null
     createdActivityHashes[identityHash] =
@@ -205,7 +205,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     val appWasInvisible = startedActivityHashes.isEmpty()
     launchTracker.pushLaunchInProgressDeadline()
     if (appWasInvisible) {
-      launchTracker.appMightBecomeVisible()
+      launchTracker.appMightBecomeVisible(identityHash)
       appVisibilityStateCallback(VISIBLE)
     }
     startedActivityHashes += identityHash
@@ -244,11 +244,10 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
         // sequence, then we'll just fallback to STARTED.
         LaunchedActivityStartingTransition.STARTED
       }
-      launchTracker.appEnteredForeground(activity, startingTransition)?.let { launch ->
+      launchTracker.appEnteredForeground(activity, identityHash, startingTransition)?.let { launch ->
         // Note: warmPrelaunchState is based on the activity being currently resumed,
-        // in case of trampolining we're ignore information about prior activities. We could
-        // report if any trampolining occurred during the launch, by comparing the hash of the
-        // first created activity and first resumed activity.
+        // in case of trampolining we're skip information about prior activities but are including
+        // whether any trampoline happened.
         if (launch.isRealLaunch) {
           appLaunchedCallback(launch)
         }

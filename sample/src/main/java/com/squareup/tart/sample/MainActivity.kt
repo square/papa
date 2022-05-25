@@ -1,8 +1,11 @@
 package com.squareup.tart.sample
 
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Message
+import android.view.Choreographer
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
@@ -16,9 +19,19 @@ import tart.InteractionTrigger
 import java.util.Date
 
 class MainActivity : AppCompatActivity() {
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    setContentView(R.layout.loader)
 
+    Handler(Looper.getMainLooper()).postDelayed({
+      doneLoading()
+      // Just adding this to see it show up in traces.
+      reportFullyDrawn()
+    }, 1000)
+  }
+
+  private fun doneLoading() {
     setContentView(R.layout.main)
 
     findViewById<View>(R.id.finish_activity).setOnClickListener {
