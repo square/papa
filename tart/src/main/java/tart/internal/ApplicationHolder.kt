@@ -14,7 +14,7 @@ internal object ApplicationHolder {
   fun install(application: Application, isForegroundImportance: Boolean) {
     this.application = application
     if (isForegroundImportance) {
-      OkTrace.beginAsyncSection(Perfs.FOREGROUND_COLD_START_TRACE_NAME)
+      OkTrace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME)
     }
     TraceMainThreadMessages.enableMainThreadMessageTracing()
     RealInputTracker.install()

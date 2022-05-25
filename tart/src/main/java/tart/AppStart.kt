@@ -62,20 +62,20 @@ sealed class AppStart {
     val startImportanceReasonComponent: String?,
 
     /**
-     * The latest [AppLifecycleState] value before the application was killed. Applications with
-     * resumed activities are in foreground and therefore this should be [AppLifecycleState.PAUSED]
+     * The latest [AppVisibilityState] value before the application was killed. Applications with
+     * started activities are visible and therefore this should be [AppVisibilityState.INVISIBLE]
      * most of the time, except for crashes.
      * null if this is the first start where we're tracking this.
      */
-    val lastAppLifecycleState: AppLifecycleState?,
+    val lastAppVisibilityState: AppVisibilityState?,
 
     /**
-     * The elapsed time between when [lastAppLifecycleState] was last saved and when the app started.
+     * The elapsed time between when [lastAppVisibilityState] was last saved and when the app started.
      * Note: the interval is tracked using [System.currentTimeMillis] because the device could have
      * restarted since. The interval ends when this [AppStart] event is created.
      * null if this is the first start where we're tracking this.
      */
-    val lastAppLifecycleStateChangedElapsedTimeMillis: Long?,
+    val lastVisibilityChangeElapsedTimeMillis: Long?,
     /**
      * The elapsed time between when the previous process was still alive and when the app started.
      * Note: the interval is tracked using [System.currentTimeMillis] because the device could have

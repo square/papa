@@ -29,11 +29,11 @@ sealed class TartEvent {
     val durationUptimeMillis: Long,
 
     /**
-     * The elapsed real time millis duration the app spent in background, or null if the app has
-     * never been in foreground before. This is the elapsed real time duration from when the app
-     * entered background until the start of this launch.
+     * The elapsed real time millis duration the app spent invisible, or null if the app has
+     * never been visible before. This is the elapsed real time duration from when the app
+     * became invisible until the start of this launch.
      */
-    val backgroundDurationRealtimeMillis: Long?,
+    val invisibleDurationRealtimeMillis: Long?,
 
     val startUptimeMillis: Long,
   ) : TartEvent() {
@@ -49,7 +49,7 @@ sealed class TartEvent {
         "preLaunchState=$preLaunchState, " +
         "duration=$durationUptimeMillis ms, " +
         "isSlowLaunch=$isSlowLaunch, " +
-        "backgroundDuration=$backgroundDurationRealtimeMillis ms, " +
+        "backgroundDuration=$invisibleDurationRealtimeMillis ms, " +
         "startUptimeMillis=$startUptimeMillis" +
         ")"
     }

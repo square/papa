@@ -10,20 +10,19 @@ import curtains.onNextDraw
 import tart.ActivityOnCreateEvent
 import tart.ActivityTouchEvent
 import tart.AndroidComponentEvent
-import tart.AppLifecycleState
-import tart.AppLifecycleState.PAUSED
-import tart.AppLifecycleState.RESUMED
 import tart.AppStart.AppStartData
-import tart.OkTrace
-import tart.internal.Perfs.FOREGROUND_HOT_START_TRACE_NAME
-import tart.internal.Perfs.FOREGROUND_WARM_START_TRACE_NAME
+import tart.AppVisibilityState
+import tart.AppVisibilityState.INVISIBLE
+import tart.AppVisibilityState.VISIBLE
+import tart.internal.LaunchTracker.Launch
 
 /**
- * Reports first time occurrences of activity lifecycle related events to [tart.legacy.Perfs].
+ * Reports first time occurrences of activity lifecycle related events to [tart.internal.Perfs].
  */
 internal class PerfsActivityLifecycleCallbacks private constructor(
   private val appStartUpdateCallback: ((AppStartData) -> AppStartData) -> Unit,
-  private val appLifecycleCallback: (AppLifecycleState, Activity, WarmPrelaunchState, Long, Long) -> Unit
+  private val appVisibilityStateCallback: (AppVisibilityState) -> Unit,
+  private val appLaunchedCallback: (Launch) -> Unit
 ) : ActivityLifecycleCallbacksAdapter {
 
   private var firstActivityCreated = false
@@ -36,24 +35,16 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
 
   private val handler = Handler(Looper.getMainLooper())
 
-  private class OnResumeRecord(val startUptimeMillis: Long)
+  private val resumedActivityHashes = mutableSetOf<String>()
 
-  private val resumedActivityHashes = mutableMapOf<String, OnResumeRecord>()
-
-  private class OnStartRecord(
-    val sameMessage: Boolean,
-    val startUptimeMillis: Long,
-    val startRealtimeMillis: Long
-  )
-
-  private val startedActivityHashes = mutableMapOf<String, OnStartRecord>()
+  private val startedActivityHashes = mutableSetOf<String>()
 
   private class OnCreateRecord(
     val sameMessage: Boolean,
     val hasSavedState: Boolean,
-    val startUptimeMillis: Long,
-    val startRealtimeMillis: Long
   )
+
+  private val launchTracker = LaunchTracker()
 
   private val createdActivityHashes = mutableMapOf<String, OnCreateRecord>()
 
@@ -169,21 +160,27 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     if (identityHash in createdActivityHashes) {
       return
     }
-    val startUptimeMillis = SystemClock.uptimeMillis()
-    val startRealtimeMillis = SystemClock.elapsedRealtime()
-    if (resumedActivityHashes.isEmpty() && Perfs.afterFirstPost) {
-      // We're entering foreground for a warm startup
-      OkTrace.beginAsyncSection(FOREGROUND_WARM_START_TRACE_NAME)
+    val appWasInvisible = startedActivityHashes.isEmpty()
+    launchTracker.pushLaunchInProgressDeadline()
+    if (appWasInvisible) {
+      launchTracker.appMightBecomeVisible()
     }
     val hasSavedStated = savedInstanceState != null
     createdActivityHashes[identityHash] =
-      OnCreateRecord(true, hasSavedStated, startUptimeMillis, startRealtimeMillis)
+      OnCreateRecord(
+        true,
+        hasSavedStated
+      )
     joinPost {
       if (identityHash in createdActivityHashes) {
         createdActivityHashes[identityHash] =
-          OnCreateRecord(false, hasSavedStated, startUptimeMillis, startRealtimeMillis)
+          OnCreateRecord(
+            false,
+            hasSavedStated
+          )
       }
     }
+
   }
 
   override fun onActivityPreStarted(activity: Activity) {
@@ -205,25 +202,13 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     if (identityHash in startedActivityHashes) {
       return
     }
-    val startUptimeMillis = SystemClock.uptimeMillis()
-    val startRealtimeMillis = SystemClock.elapsedRealtime()
-    if (resumedActivityHashes.isEmpty() &&
-      Perfs.afterFirstPost &&
-      // Warm startup not already started by onCreate()
-      !createdActivityHashes.getValue(identityHash).sameMessage
-    ) {
-      // We're entering foreground for a warm startup
-      OkTrace.beginAsyncSection(FOREGROUND_HOT_START_TRACE_NAME)
+    val appWasInvisible = startedActivityHashes.isEmpty()
+    launchTracker.pushLaunchInProgressDeadline()
+    if (appWasInvisible) {
+      launchTracker.appMightBecomeVisible()
+      appVisibilityStateCallback(VISIBLE)
     }
-
-    startedActivityHashes[identityHash] =
-      OnStartRecord(true, startUptimeMillis, startRealtimeMillis)
-    joinPost {
-      if (identityHash in startedActivityHashes) {
-        startedActivityHashes[identityHash] =
-          OnStartRecord(false, startUptimeMillis, startRealtimeMillis)
-      }
-    }
+    startedActivityHashes += identityHash
   }
 
   override fun onActivityPreResumed(activity: Activity) {
@@ -238,46 +223,36 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
         appStart.copy(firstActivityOnResume = activityEvent)
       }
     }
-    val hadResumedActivity = resumedActivityHashes.size > 1
-    if (!hadResumedActivity) {
+
+    val appEnteredForeground = resumedActivityHashes.size == 1
+    if (appEnteredForeground) {
+      // TODO add a new state, e.g. TRAMPOLINE where the resumed activity wasn't the one initially
+      // created or started.
       val onCreateRecord = createdActivityHashes.getValue(identityHash)
-      val (warmStartTemperature, startUptimeMillis, startRealtimeMillis) = if (onCreateRecord.sameMessage) {
+      val startingTransition = if (onCreateRecord.sameMessage) {
         if (onCreateRecord.hasSavedState) {
-          Triple(
-            WarmPrelaunchState.CREATED_WITH_STATE,
-            onCreateRecord.startUptimeMillis,
-            onCreateRecord.startRealtimeMillis
-          )
+          LaunchedActivityStartingTransition.CREATED_WITH_STATE
         } else {
-          Triple(
-            WarmPrelaunchState.CREATED_NO_STATE,
-            onCreateRecord.startUptimeMillis,
-            onCreateRecord.startRealtimeMillis
-          )
+          LaunchedActivityStartingTransition.CREATED_NO_STATE
         }
       } else {
-        val onStartRecord = startedActivityHashes.getValue(identityHash)
-        if (onStartRecord.sameMessage) {
-          Triple(
-            WarmPrelaunchState.STARTED,
-            onStartRecord.startUptimeMillis,
-            onStartRecord.startRealtimeMillis
-          )
-        } else {
-          Triple(
-            WarmPrelaunchState.RESUMED,
-            resumedActivityHashes.getValue(identityHash).startUptimeMillis,
-            0L
-          )
+        // We're bundling together the case where start and resume are in the same main thread
+        // message and the case where resume happens later, which generally shouldn't happen for
+        // a launch because a single resume would indicate that the app was previously visible
+        // and we don't count that as a launch. However we're ready for anything and in case
+        // a resume does happen sometimes later but as part of what we initially deemed a launch
+        // sequence, then we'll just fallback to STARTED.
+        LaunchedActivityStartingTransition.STARTED
+      }
+      launchTracker.appEnteredForeground(activity, startingTransition)?.let { launch ->
+        // Note: warmPrelaunchState is based on the activity being currently resumed,
+        // in case of trampolining we're ignore information about prior activities. We could
+        // report if any trampolining occurred during the launch, by comparing the hash of the
+        // first created activity and first resumed activity.
+        if (launch.isRealLaunch) {
+          appLaunchedCallback(launch)
         }
       }
-      appLifecycleCallback(
-        RESUMED,
-        activity,
-        warmStartTemperature,
-        startUptimeMillis,
-        startRealtimeMillis
-      )
     }
   }
 
@@ -286,35 +261,28 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     if (identityHash in resumedActivityHashes) {
       return identityHash
     }
-    val startUptimeMillis = SystemClock.uptimeMillis()
-    resumedActivityHashes[identityHash] = OnResumeRecord(startUptimeMillis)
+    resumedActivityHashes += identityHash
+    launchTracker.pushLaunchInProgressDeadline()
     return identityHash
   }
 
   override fun onActivityDestroyed(activity: Activity) {
     createdActivityHashes -= Integer.toHexString(System.identityHashCode(activity))
+    launchTracker.pushLaunchInProgressDeadline()
   }
 
   override fun onActivityStopped(activity: Activity) {
     startedActivityHashes -= Integer.toHexString(System.identityHashCode(activity))
+    if (startedActivityHashes.isEmpty()) {
+      launchTracker.appBecameInvisible()
+      appVisibilityStateCallback(INVISIBLE)
+    }
+    launchTracker.pushLaunchInProgressDeadline()
   }
 
   override fun onActivityPaused(activity: Activity) {
-    val hadResumedActivity = resumedActivityHashes.isNotEmpty()
     resumedActivityHashes -= Integer.toHexString(System.identityHashCode(activity))
-    val hasResumedActivityNow = resumedActivityHashes.isNotEmpty()
-    if (hadResumedActivity && !hasResumedActivityNow) {
-      val pauseUptimeMillis = SystemClock.uptimeMillis()
-      val pauseRealtimeMillis = SystemClock.elapsedRealtime()
-      // Temperature don't matter when pausing. This should be a separate thing.
-      appLifecycleCallback(
-        PAUSED,
-        activity,
-        WarmPrelaunchState.RESUMED,
-        pauseUptimeMillis,
-        pauseRealtimeMillis
-      )
-    }
+    launchTracker.pushLaunchInProgressDeadline()
   }
 
   private fun updateAppStart(
@@ -331,10 +299,15 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
   companion object {
     internal fun Application.trackActivityLifecycle(
       appStartUpdateCallback: ((AppStartData) -> AppStartData) -> Unit,
-      appLifecycleCallback: (AppLifecycleState, Activity, WarmPrelaunchState, Long, Long) -> Unit
+      appVisibilityStateCallback: (AppVisibilityState) -> Unit,
+      appLaunchedCallback: (Launch) -> Unit
     ) {
       registerActivityLifecycleCallbacks(
-        PerfsActivityLifecycleCallbacks(appStartUpdateCallback, appLifecycleCallback)
+        PerfsActivityLifecycleCallbacks(
+          appStartUpdateCallback,
+          appVisibilityStateCallback,
+          appLaunchedCallback
+        )
       )
     }
   }
