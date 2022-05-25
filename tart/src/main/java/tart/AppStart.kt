@@ -10,6 +10,9 @@ import tart.internal.Perfs
  * the first time since the device booted, or since the system killed the app.
  */
 sealed class AppStart {
+  // Note: no guarantees are made on the backward compatibility of this class when it comes to
+  // being a data class (i.e. copy and component methods).
+  // TODO Make this not a data class, it's only a data class for internal convenience.
   data class AppStartData(
     /**
      * Elapsed realtime when the process started, read from "/proc/$pid/stat".
@@ -154,7 +157,11 @@ sealed class AppStart {
     fun elapsedSinceStart() = SystemClock.uptimeMillis() - processStartUptimeMillis
   }
 
-  data class NoAppStartData(val reason: String) : AppStart()
+  class NoAppStartData(val reason: String) : AppStart() {
+    override fun toString(): String {
+      return "NoAppStartData(reason='$reason')"
+    }
+  }
 
   companion object {
     /**
