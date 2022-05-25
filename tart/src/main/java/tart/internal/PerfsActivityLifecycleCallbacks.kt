@@ -22,7 +22,7 @@ import tart.internal.LaunchTracker.Launch
 internal class PerfsActivityLifecycleCallbacks private constructor(
   private val appStartUpdateCallback: ((AppStartData) -> AppStartData) -> Unit,
   private val appVisibilityStateCallback: (AppVisibilityState) -> Unit,
-  private val appLaunchedCallback: (Launch) -> Unit
+  appLaunchedCallback: (Launch) -> Unit
 ) : ActivityLifecycleCallbacksAdapter {
 
   private var firstActivityCreated = false
@@ -44,7 +44,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     val hasSavedState: Boolean,
   )
 
-  private val launchTracker = LaunchTracker()
+  private val launchTracker = LaunchTracker(appLaunchedCallback)
 
   private val createdActivityHashes = mutableMapOf<String, OnCreateRecord>()
 
@@ -180,7 +180,6 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
           )
       }
     }
-
   }
 
   override fun onActivityPreStarted(activity: Activity) {
@@ -224,35 +223,23 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
       }
     }
 
-    val appEnteredForeground = resumedActivityHashes.size == 1
-    if (appEnteredForeground) {
-      // TODO add a new state, e.g. TRAMPOLINE where the resumed activity wasn't the one initially
-      // created or started.
-      val onCreateRecord = createdActivityHashes.getValue(identityHash)
-      val startingTransition = if (onCreateRecord.sameMessage) {
-        if (onCreateRecord.hasSavedState) {
-          LaunchedActivityStartingTransition.CREATED_WITH_STATE
-        } else {
-          LaunchedActivityStartingTransition.CREATED_NO_STATE
-        }
+    val onCreateRecord = createdActivityHashes.getValue(identityHash)
+    val startingTransition = if (onCreateRecord.sameMessage) {
+      if (onCreateRecord.hasSavedState) {
+        LaunchedActivityStartingTransition.CREATED_WITH_STATE
       } else {
-        // We're bundling together the case where start and resume are in the same main thread
-        // message and the case where resume happens later, which generally shouldn't happen for
-        // a launch because a single resume would indicate that the app was previously visible
-        // and we don't count that as a launch. However we're ready for anything and in case
-        // a resume does happen sometimes later but as part of what we initially deemed a launch
-        // sequence, then we'll just fallback to STARTED.
-        LaunchedActivityStartingTransition.STARTED
+        LaunchedActivityStartingTransition.CREATED_NO_STATE
       }
-      launchTracker.appEnteredForeground(activity, identityHash, startingTransition)?.let { launch ->
-        // Note: warmPrelaunchState is based on the activity being currently resumed,
-        // in case of trampolining we're skip information about prior activities but are including
-        // whether any trampoline happened.
-        if (launch.isRealLaunch) {
-          appLaunchedCallback(launch)
-        }
-      }
+    } else {
+      // We're bundling together the case where start and resume are in the same main thread
+      // message and the case where resume happens later, which generally shouldn't happen for
+      // a launch because a single resume would indicate that the app was previously visible
+      // and we don't count that as a launch. However we're ready for anything and in case
+      // a resume does happen sometimes later but as part of what we initially deemed a launch
+      // sequence, then we'll just fallback to STARTED.
+      LaunchedActivityStartingTransition.STARTED
     }
+    launchTracker.onActivityResumed(activity, identityHash, startingTransition)
   }
 
   private fun recordActivityResumed(activity: Activity): String {

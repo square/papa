@@ -4,7 +4,9 @@ import android.app.Activity
 import android.os.SystemClock
 import tart.OkTrace
 
-internal class LaunchTracker {
+internal class LaunchTracker(
+  val appLaunchedCallback: (Launch) -> Unit
+) {
 
   private var lastAppBecameInvisibleRealtimeMillis: Long? = null
 
@@ -14,18 +16,10 @@ internal class LaunchTracker {
     val trampoline: Boolean,
     val startUptimeMillis: Long,
     val startRealtimeMillis: Long,
+    val endUptimeMillis: Long,
     val invisibleDurationRealtimeMillis: Long?,
-    val resumedActivity: Activity,
     val activityStartingTransition: LaunchedActivityStartingTransition
-  ) {
-
-    /**
-     * Not a real launch if we've been invisible for less than 500 ms
-     */
-    val isRealLaunch: Boolean
-      get() = invisibleDurationRealtimeMillis?.let { invisibleDurationRealtimeMillis >= 500 }
-        ?: true
-  }
+  )
 
   private class LaunchInProgress(
     val startUptimeMillis: Long,
@@ -94,21 +88,43 @@ internal class LaunchTracker {
     }
   }
 
-  fun appEnteredForeground(
+  fun onActivityResumed(
     resumedActivity: Activity,
     resumedActivityHash: String,
     activityStartingTransition: LaunchedActivityStartingTransition
-  ): Launch? {
-    return launchInProgress?.run {
-      launchInProgress = null
-      Launch(
-        trampoline = activityHash != resumedActivityHash,
-        resumedActivity = resumedActivity,
-        startUptimeMillis = startUptimeMillis,
-        startRealtimeMillis = startRealtimeMillis,
-        invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
-        activityStartingTransition = activityStartingTransition
-      )
+  ) {
+    if (launchInProgress == null) {
+      return
+    }
+
+    // We're ending the launch of first frame post draw of this activity. If the activity ends up
+    // not drawing and another activity is resumed immediately after, whichever activity draws
+    // first will end up being declared as the final launched activity.
+    resumedActivity.window.onNextPreDraw {
+      onCurrentFrameRendered { frameRenderedUptimeMillis ->
+        val launchInProgress = launchInProgress ?: return@onCurrentFrameRendered
+        this.launchInProgress = null
+
+        // We're ignoring a launch happening less than 500ms after the app became invisible.
+        val isRealLaunch = launchInProgress.invisibleDurationRealtimeMillis?.let { it >= 500 }
+          ?: true
+        // We're cancelling at the end so that all activity lifecycle events in between are still
+        // tracked as part of this fluke launch.
+        if (!isRealLaunch) {
+          return@onCurrentFrameRendered
+        }
+        val launch = with(launchInProgress) {
+          Launch(
+            trampoline = activityHash != resumedActivityHash,
+            startUptimeMillis = startUptimeMillis,
+            startRealtimeMillis = startRealtimeMillis,
+            endUptimeMillis = frameRenderedUptimeMillis,
+            invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
+            activityStartingTransition = activityStartingTransition
+          )
+        }
+        appLaunchedCallback(launch)
+      }
     }
   }
 }

@@ -25,6 +25,14 @@ import tart.AppVisibilityState.INVISIBLE
 import tart.AppVisibilityState.VISIBLE
 import tart.OkTrace
 import tart.PreLaunchState
+import tart.PreLaunchState.ACTIVITY_WAS_STOPPED
+import tart.PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
+import tart.PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
+import tart.PreLaunchState.NO_PROCESS
+import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
+import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
+import tart.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
+import tart.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
 import tart.TartEvent.AppLaunch
 import tart.TartEventListener
 import tart.internal.AppUpdateDetector.Companion.trackAppUpgrade
@@ -249,107 +257,16 @@ internal object Perfs {
     }
 
     val appLaunchedCallback: (Launch) -> Unit = { launch ->
-      val launchStartedAfterFirstPost = firstPostUptimeMillis?.let {
-        launch.startUptimeMillis > it
-      } ?: false
+          val preLaunchState = computePreLaunchState(launch)
 
-      val preLaunchState = when {
-        // launch started after first post => warm or hot launch
-        launchStartedAfterFirstPost -> {
-          when (launch.activityStartingTransition) {
-            CREATED_NO_STATE -> PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
-            CREATED_WITH_STATE -> PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
-            STARTED -> PreLaunchState.ACTIVITY_WAS_STOPPED
-          }
-        }
-        // launch started before first post AND importance foreground => cold launch
-        appStartData.importance == IMPORTANCE_FOREGROUND -> {
-          // Note: this relies on appUpdateData which is computed on a background thread
-          // on app start, so reading this at the latest possible point is best.
-          when (val updateData = appStartData.appUpdateData) {
-            is RealAppUpdateData -> {
-              when (updateData.status) {
-                FIRST_START_AFTER_CLEAR_DATA -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
-                FIRST_START_AFTER_FRESH_INSTALL -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
-                FIRST_START_AFTER_UPGRADE -> PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
-                NORMAL_START -> PreLaunchState.NO_PROCESS
-              }
-            }
-            else -> PreLaunchState.NO_PROCESS
-          }
-        }
-        // launch started before first post but importance not foreground => lukewarm launch
-        else -> {
-          // Launch started before the first post but process importance wasn't
-          // foreground. This means the process was started for another reason but while
-          // starting the process the activity manager then decided to foreground the app.
-          // We're therefore classifying this launch as a warm start, which means we'll use
-          // startUptimeMillis as its start time, which could yield much a  time than perceived
-          // by users. Would be nice if we had a way to know when the system changed its
-          // mind.
-          PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
-        }
-      }
-
-      val (launchStartUptimeMillis, invisibleDurationRealtimeMillis) = if (preLaunchState.launchType == COLD) {
-        val launchStartUptimeMillis = bindApplicationStartUptimeMillis
-        val invisibleDurationRealtimeMillis =
-          if (lastVisibilityChangeCurrentTimeMillis != -1L) {
-            if (lastAppVisibilityState == INVISIBLE) {
-              val millisSinceForegroundStart =
-                SystemClock.uptimeMillis() - launchStartUptimeMillis
-              val currentTimeMillisAtForegroundStart =
-                System.currentTimeMillis() - millisSinceForegroundStart
-              currentTimeMillisAtForegroundStart - lastVisibilityChangeCurrentTimeMillis
-            } else {
-              // In the cold start case, launchStartUptimeMillis is before
-              // initCalledUptimeMillis. lastAppAliveElapsedTimeMillis is computed from
-              // initCalled, so we need to remove the time between start and init.
-              appStartData.lastAppAliveElapsedTimeMillis?.let { lastAppAliveElapsedTimeMillis ->
-                val startToInitUptimeMillis = initCalledUptimeMillis - launchStartUptimeMillis
-                lastAppAliveElapsedTimeMillis - startToInitUptimeMillis
-              }
-            }
-          } else {
-            null
-          }
-        launchStartUptimeMillis to invisibleDurationRealtimeMillis
-      } else {
-        val launchStartUptimeMillis = launch.startUptimeMillis
-        val invisibleDurationRealtimeMillis = launch.invisibleDurationRealtimeMillis
-          ?: if (lastVisibilityChangeCurrentTimeMillis != -1L) {
-            if (lastAppVisibilityState == INVISIBLE) {
-              // Compute the clock time that has passed from the last time the app went from
-              // foreground to background until the launch start.
-              val millisSinceLaunch =
-                SystemClock.uptimeMillis() - launchStartUptimeMillis
-              val currentTimeMillisAtLaunch =
-                System.currentTimeMillis() - millisSinceLaunch
-              currentTimeMillisAtLaunch - lastVisibilityChangeCurrentTimeMillis
-            } else {
-              // If the last known app lifecycle state change was visible,
-              // then it's probably that the app got killed while visible.
-              // We have a tick updated every second while the app is alive, so we can use
-              // that to figure out when the app was last alive in foreground.
-              appStartData.lastAppAliveElapsedTimeMillis?.let { lastAppAliveElapsedTimeMillis ->
-                val initToLaunchRealtimeMillis =
-                  launch.startRealtimeMillis - initCalledRealtimeMillis
-                // lastAppAliveElapsedTimeMillis is the time from the last save until init.
-                lastAppAliveElapsedTimeMillis + initToLaunchRealtimeMillis
-              }
-            }
-          } else {
-            // The app never entered foreground before.
-            null
-          }
-        launch.startUptimeMillis to invisibleDurationRealtimeMillis
-      }
-
-      // TODO What if this is a trampoline ish activity called from on resume and there isn't
-      // actually a next draw? Then we've lost the launch. We might want to move this into the
-      // launch tracker so that we keep the launch around until a frame has actually rendered.
-      launch.resumedActivity.window.onNextPreDraw {
-        onCurrentFrameRendered { frameRenderedUptimeMillis ->
+          val (launchStartUptimeMillis, invisibleDurationRealtimeMillis) = computeLaunchTimes(
+            preLaunchState,
+            lastVisibilityChangeCurrentTimeMillis,
+            lastAppVisibilityState,
+            initCalledUptimeMillis,
+            launch,
+            initCalledRealtimeMillis
+          )
           if (isTracingLaunch) {
             OkTrace.endAsyncSection(LAUNCH_TRACE_NAME)
             isTracingLaunch = false
@@ -357,15 +274,12 @@ internal object Perfs {
           TartEventListener.sendEvent(
             AppLaunch(
               preLaunchState = preLaunchState,
-              durationUptimeMillis = frameRenderedUptimeMillis - launchStartUptimeMillis,
+              durationUptimeMillis = launch.endUptimeMillis - launchStartUptimeMillis,
               trampolined = launch.trampoline,
               invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
               startUptimeMillis = launchStartUptimeMillis
             )
           )
-        }
-      }
-
     }
     application.trackActivityLifecycle(
       { updateAppStartData ->
@@ -381,6 +295,112 @@ internal object Perfs {
       val firstPostAtFront = appStartData.elapsedSinceStart()
       appStartData = appStartData.copy(firstPostAtFrontElapsedUptimeMillis = firstPostAtFront)
     }
+  }
+
+  private fun computeLaunchTimes(
+    preLaunchState: PreLaunchState,
+    lastVisibilityChangeCurrentTimeMillis: Long,
+    lastAppVisibilityState: AppVisibilityState?,
+    initCalledUptimeMillis: Long,
+    launch: Launch,
+    initCalledRealtimeMillis: Long
+  ) = if (preLaunchState.launchType == COLD) {
+    val launchStartUptimeMillis = bindApplicationStartUptimeMillis
+    val invisibleDurationRealtimeMillis =
+      if (lastVisibilityChangeCurrentTimeMillis != -1L) {
+        if (lastAppVisibilityState == INVISIBLE) {
+          val millisSinceForegroundStart =
+            SystemClock.uptimeMillis() - launchStartUptimeMillis
+          val currentTimeMillisAtForegroundStart =
+            System.currentTimeMillis() - millisSinceForegroundStart
+          currentTimeMillisAtForegroundStart - lastVisibilityChangeCurrentTimeMillis
+        } else {
+          // In the cold start case, launchStartUptimeMillis is before
+          // initCalledUptimeMillis. lastAppAliveElapsedTimeMillis is computed from
+          // initCalled, so we need to remove the time between start and init.
+          appStartData.lastAppAliveElapsedTimeMillis?.let { lastAppAliveElapsedTimeMillis ->
+            val startToInitUptimeMillis = initCalledUptimeMillis - launchStartUptimeMillis
+            lastAppAliveElapsedTimeMillis - startToInitUptimeMillis
+          }
+        }
+      } else {
+        null
+      }
+    launchStartUptimeMillis to invisibleDurationRealtimeMillis
+  } else {
+    val launchStartUptimeMillis = launch.startUptimeMillis
+    val invisibleDurationRealtimeMillis = launch.invisibleDurationRealtimeMillis
+      ?: if (lastVisibilityChangeCurrentTimeMillis != -1L) {
+        if (lastAppVisibilityState == INVISIBLE) {
+          // Compute the clock time that has passed from the last time the app went from
+          // foreground to background until the launch start.
+          val millisSinceLaunch =
+            SystemClock.uptimeMillis() - launchStartUptimeMillis
+          val currentTimeMillisAtLaunch =
+            System.currentTimeMillis() - millisSinceLaunch
+          currentTimeMillisAtLaunch - lastVisibilityChangeCurrentTimeMillis
+        } else {
+          // If the last known app lifecycle state change was visible,
+          // then it's probably that the app got killed while visible.
+          // We have a tick updated every second while the app is alive, so we can use
+          // that to figure out when the app was last alive in foreground.
+          appStartData.lastAppAliveElapsedTimeMillis?.let { lastAppAliveElapsedTimeMillis ->
+            val initToLaunchRealtimeMillis =
+              launch.startRealtimeMillis - initCalledRealtimeMillis
+            // lastAppAliveElapsedTimeMillis is the time from the last save until init.
+            lastAppAliveElapsedTimeMillis + initToLaunchRealtimeMillis
+          }
+        }
+      } else {
+        // The app never entered foreground before.
+        null
+      }
+    launch.startUptimeMillis to invisibleDurationRealtimeMillis
+  }
+
+  private fun computePreLaunchState(launch: Launch): PreLaunchState {
+    val launchStartedAfterFirstPost = firstPostUptimeMillis?.let {
+      launch.startUptimeMillis > it
+    } ?: false
+
+    val preLaunchState = when {
+      // launch started after first post => warm or hot launch
+      launchStartedAfterFirstPost -> {
+        when (launch.activityStartingTransition) {
+          CREATED_NO_STATE -> NO_ACTIVITY_NO_SAVED_STATE
+          CREATED_WITH_STATE -> NO_ACTIVITY_BUT_SAVED_STATE
+          STARTED -> ACTIVITY_WAS_STOPPED
+        }
+      }
+      // launch started before first post AND importance foreground => cold launch
+      appStartData.importance == IMPORTANCE_FOREGROUND -> {
+        // Note: this relies on appUpdateData which is computed on a background thread
+        // on app start, so reading this at the latest possible point is best.
+        when (val updateData = appStartData.appUpdateData) {
+          is RealAppUpdateData -> {
+            when (updateData.status) {
+              FIRST_START_AFTER_CLEAR_DATA -> NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
+              FIRST_START_AFTER_FRESH_INSTALL -> NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
+              FIRST_START_AFTER_UPGRADE -> NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
+              NORMAL_START -> NO_PROCESS
+            }
+          }
+          else -> NO_PROCESS
+        }
+      }
+      // launch started before first post but importance not foreground => lukewarm launch
+      else -> {
+        // Launch started before the first post but process importance wasn't
+        // foreground. This means the process was started for another reason but while
+        // starting the process the activity manager then decided to foreground the app.
+        // We're therefore classifying this launch as a warm start, which means we'll use
+        // startUptimeMillis as its start time, which could yield much a  time than perceived
+        // by users. Would be nice if we had a way to know when the system changed its
+        // mind.
+        PROCESS_WAS_LAUNCHING_IN_BACKGROUND
+      }
+    }
+    return preLaunchState
   }
 
   internal fun firstComponentInstantiated(componentName: String) {
