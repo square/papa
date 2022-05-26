@@ -44,12 +44,12 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
+  api(project(":tart-oktrace"))
 
   compileOnly(Dependencies.Build.AndroidXAnnotation)
 
   implementation(Dependencies.Curtains)
   implementation(Dependencies.AndroidXCore)
-  implementation(Dependencies.AndroidXTracing)
   implementation(Dependencies.Logcat)
 
   testImplementation(Dependencies.JUnit)

@@ -3,21 +3,22 @@ package tart.internal
 import android.os.Build.VERSION
 import android.os.Handler
 import android.os.Looper
-import com.squareup.tart.R
-import logcat.logcat
+import com.squareup.tart.oktrace.R
 import tart.OkTrace
+import tart.OkTraceSetup
 
 internal object TraceMainThreadMessages {
 
-  private val traceMainThreadMessages by lazy {
-    val context = ApplicationHolder.application
-    if (context == null) {
-      logcat { "Application not set, main thread messages not traced" }
-      return@lazy false
+  private val traceMainThreadMessages: Boolean
+    get() {
+      if (!OkTraceSetup.initDone) {
+        return false
+      }
+      val resources = OkTraceSetup.application.resources
+      return resources.getBoolean(R.bool.tart_trace_main_thread)
     }
-    context.resources.getBoolean(R.bool.tart_trace_main_thread)
-  }
 
+  @Volatile
   private var enabled = false
 
   fun enableMainThreadMessageTracing() {

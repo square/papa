@@ -3,9 +3,9 @@ package tart
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import tart.OkTrace.MAX_LABEL_LENGTH
+import tart.OkTrace.beginSection
 import tart.OkTrace.isCurrentlyTracing
 import tart.OkTrace.isTraceable
-import tart.internal.ApplicationHolder
 import tart.internal.TraceMainThreadMessages
 
 /**
@@ -35,28 +35,20 @@ object OkTrace {
    * on non profileable build.
    *
    * You can also trigger [forceTraceable] at runtime by sending a `tart.FORCE_TRACEABLE` broadcast.
-   * To support this, you first need to define the `tart_force_traceable_receiver` resource boolean
-   * as true (default is false):
-   * ```
-   * <resources>
-   *   <bool name="tart_force_traceable_receiver">true</bool>
-   * </resources>
-   * ```
-   *
-   * Please don't call [forceTraceable] or set `tart_force_traceable_receiver` to true in
-   * production!
+   * To support this, you should add a dependency to the tart-dev-receivers artifact
    *
    */
   @JvmStatic
   val isTraceable: Boolean
-    get() = isForcedTraceable || isTraceableBuild
+    get() = isForcedTraceable || (OkTraceSetup.initDone && isTraceableBuild)
 
   @JvmStatic
   val isCurrentlyTracing: Boolean
     get() = isTraceable && androidx.tracing.Trace.isEnabled()
 
+  // Note: this should not be called if OkTraceAppHolder.application isn't set.
   private val isTraceableBuild by lazy {
-    val application = ApplicationHolder.application ?: return@lazy false
+    val application = OkTraceSetup.application
     val applicationInfo = application.applicationInfo
     val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     val isProfileable = Build.VERSION.SDK_INT >= 29 && applicationInfo.isProfileableByShell
@@ -177,32 +169,3 @@ object OkTrace {
    */
   const val MAX_LABEL_LENGTH = 127
 }
-
-/**
- * Allows tracing of a block of code without any overhead when [isTraceable] is false.
- *
- * [label] a string producing lambda if the label is computed dynamically. If the label isn't
- * dynamic, use the [okTrace] which directly takes a string instead.
- */
-inline fun <T> okTrace(
-  crossinline label: () -> String,
-  crossinline block: () -> T
-): T {
-  if (!isCurrentlyTracing) {
-    return block()
-  }
-  try {
-    OkTrace.beginSection(label())
-    return block()
-  } finally {
-    OkTrace.endSection()
-  }
-}
-
-/**
- * Allows tracing of a block of code
- */
-inline fun <T> okTrace(
-  label: String,
-  crossinline block: () -> T
-): T = okTrace({ label }, block)

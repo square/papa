@@ -340,28 +340,6 @@ public final class tart/LogcatTartEventListener : tart/TartEventListener {
 	public fun onEvent (Ltart/TartEvent;)V
 }
 
-public final class tart/OkTrace {
-	public static final field INSTANCE Ltart/OkTrace;
-	public static final field MAX_LABEL_LENGTH I
-	public static final fun beginAsyncSection (Ljava/lang/String;I)V
-	public static final fun beginAsyncSection (Lkotlin/jvm/functions/Function0;)V
-	public static synthetic fun beginAsyncSection$default (Ljava/lang/String;IILjava/lang/Object;)V
-	public static final fun beginSection (Ljava/lang/String;)V
-	public static final fun beginSection (Lkotlin/jvm/functions/Function0;)V
-	public static final fun endAsyncSection (Ljava/lang/String;I)V
-	public static final fun endAsyncSection (Lkotlin/jvm/functions/Function0;)V
-	public static synthetic fun endAsyncSection$default (Ljava/lang/String;IILjava/lang/Object;)V
-	public static final fun endSection ()V
-	public static final fun forceTraceable ()V
-	public static final fun isCurrentlyTracing ()Z
-	public static final fun isTraceable ()Z
-}
-
-public final class tart/OkTraceKt {
-	public static final fun okTrace (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
-	public static final fun okTrace (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
-}
-
 public final class tart/PreLaunchState : java/lang/Enum {
 	public static final field ACTIVITY_WAS_STOPPED Ltart/PreLaunchState;
 	public static final field NO_ACTIVITY_BUT_SAVED_STATE Ltart/PreLaunchState;

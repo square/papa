@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <bool name="tart_track_input_events">true</bool>
+  <public name="tart_trace_main_thread" type="bool"/>
 </resources>
