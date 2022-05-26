@@ -61,7 +61,7 @@ jobs:
           path: ./**/build/reports/androidTests/connected/**
 
   snapshot-deployment:
-    if: github.repository == 'square/tart' && github.event_name == 'push'
+    if: github.repository == 'square/papa' && github.event_name == 'push'
     needs: [ build, instrumentation-tests ]
     runs-on: ubuntu-latest
     steps:
