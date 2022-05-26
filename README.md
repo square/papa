@@ -1,10 +1,10 @@
-# Square Tart
+# Square Papa
 
-_Tracing Action Response Times!_
+_Performance of Android Production Applications_
 
 **This library is not stable for usage beyond Square, the APIs and internals might change anytime.**
 
-Tart... ?
+Papa... ?
 
 ## Table of contents
 
@@ -17,42 +17,38 @@ _We still need a logo!_
 
 ## Usage
 
-Add the `tart` dependency to your library or app's `build.gradle` file:
+Add the `papa` dependency to your library or app's `build.gradle` file:
 
 ```gradle
 dependencies {
-  implementation 'com.squareup.tart:tart:0.1'
+  implementation 'com.squareup.papa:papa:0.5'
 }
 ```
 
-Then add a new `AppLaunch.onAppLaunchListeners`. See `AppLaunch` javadoc for details.
+Then install a `PapaEventListener` (see `PapaEvent` for details):
 
 ```kotlin
 import android.app.Application
-import tart.AppLaunch
-import tart.PreLaunchState
+import papa.PapaEvent.AppLaunch
+import papa.PapaEventListener
+import papa.PapaEventLogger
 
 class ExampleApplication : Application() {
   override fun onCreate() {
     super.onCreate()
-    AppLaunch.onAppLaunchListeners += { appLaunch ->
-      val startType = when (appLaunch.preLaunchState) {
-        NO_PROCESS -> "cold start"
-        NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL -> "cold start"
-        NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE -> "cold start"
-        NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA -> "cold start"
-        PROCESS_WAS_LAUNCHING_IN_BACKGROUND -> "warm start"
-        NO_ACTIVITY_NO_SAVED_STATE -> "warm start"
-        NO_ACTIVITY_BUT_SAVED_STATE -> "warm start"
-        ACTIVITY_WAS_STOPPED -> "hot start"
+    if (BuildConfig.DEBUG) {
+      PapaEventListener.install(PapaEventLogger())
+    }
+
+    PapaEventListener.install { event ->
+      when (event) {
+        is AppLaunch -> {
+          TODO("Log to analytics")
+        }
       }
-      val durationMillis = appLaunch.duration.uptime(MILLISECONDS)
-      println("$startType launch: $durationMillis ms")
     }
   }
 }
-
-
 ```
 
 ## FAQ

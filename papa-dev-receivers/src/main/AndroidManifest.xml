@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.squareup.papa.dev.receivers">
+
+  <application>
+    <!-- A receiver that makes the build traceable on broadcast, disabled by default. -->
+    <receiver
+        android:name="papa.internal.ForceTraceableReceiver"
+        android:enabled="true"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="papa.FORCE_TRACEABLE" />
+      </intent-filter>
+    </receiver>
+
+    <!-- A receiver that triggers a GC on broadcast, disabled by default. -->
+    <receiver
+        android:name="papa.internal.GcTriggerReceiver"
+        android:enabled="true"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="papa.TRIGGER_GC" />
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>

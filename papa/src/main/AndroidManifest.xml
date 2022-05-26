@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.squareup.papa">
+
+  <application
+      android:appComponentFactory="papa.internal.PerfAppComponentFactory"
+      tools:replace="android:appComponentFactory"
+      tools:targetApi="p">
+    <provider
+        android:name="papa.internal.PerfsAppStartListener"
+        android:authorities="${applicationId}.perfs-startup-listener"
+        android:exported="false" />
+  </application>
+</manifest>

@@ -5,7 +5,7 @@
 ### Set up your Sonatype OSSRH account
 
 * Create a [Sonatype OSSRH JIRA account](https://issues.sonatype.org/secure/Signup!default.jspa).
-* Create a ticket to request access to the `com.squareup.tart` project. Here's an example: [OSSRH-54959](https://issues.sonatype.org/browse/OSSRH-54959).
+* Create a ticket to request access to the `com.squareup.papa` project. Here's an example: [OSSRH-54959](https://issues.sonatype.org/browse/OSSRH-54959).
 * Then ask someone with deployer role from the team to confirm access.
 
 ### Set up your signing key
@@ -149,8 +149,8 @@ git push
 
 * Create a new release
 ```bash
-gh release create v{NEW_VERSION} --title v{NEW_VERSION} --notes 'See [Change Log](https://github.com/square/tart/blob/main/CHANGELOG.md)'
+gh release create v{NEW_VERSION} --title v{NEW_VERSION} --notes 'See [Change Log](https://github.com/square/papa/blob/main/CHANGELOG.md)'
 ```
 
-* Wait for the release to be available [on Maven Central](https://repo1.maven.org/maven2/com/squareup/tart/tart/).
+* Wait for the release to be available [on Maven Central](https://repo1.maven.org/maven2/com/squareup/papa/papa/).
 * Tell your friends, update all of your apps, and tweet the new release. As a nice extra touch, mention external contributions.

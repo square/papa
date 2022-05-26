@@ -14,12 +14,12 @@ android {
   defaultConfig {
     minSdkVersion(21)
     targetSdkVersion(31)
-    applicationId = "com.squareup.tart.sample"
+    applicationId = "com.example.papa"
   }
 }
 
 dependencies {
-  implementation(project(":tart"))
+  implementation(project(":papa"))
   implementation(Dependencies.AppCompat)
   implementation(Dependencies.Curtains)
   implementation(Dependencies.JankStat)

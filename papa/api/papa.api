@@ -1,0 +1,444 @@
+public final class papa/ActivityOnCreateEvent : papa/AndroidComponentEvent {
+	public fun <init> (Ljava/lang/String;JZLandroid/content/Intent;)V
+	public final fun getIntent ()Landroid/content/Intent;
+	public final fun getRestoredState ()Z
+}
+
+public final class papa/ActivityTouchEvent : papa/AndroidComponentEvent {
+	public fun <init> (Ljava/lang/String;JJFF)V
+	public final fun getEventSentElapsedMillis ()J
+	public final fun getRawX ()F
+	public final fun getRawY ()F
+}
+
+public class papa/AndroidComponentEvent {
+	public fun <init> (Ljava/lang/String;J)V
+	public final fun getElapsedUptimeMillis ()J
+	public final fun getName ()Ljava/lang/String;
+}
+
+public final class papa/AppLaunchType : java/lang/Enum {
+	public static final field COLD Lpapa/AppLaunchType;
+	public static final field HOT Lpapa/AppLaunchType;
+	public static final field WARM Lpapa/AppLaunchType;
+	public final fun getSlowThresholdMillis ()J
+	public static fun valueOf (Ljava/lang/String;)Lpapa/AppLaunchType;
+	public static fun values ()[Lpapa/AppLaunchType;
+}
+
+public abstract class papa/AppStart {
+	public static final field Companion Lpapa/AppStart$Companion;
+	public static final fun customFirstEvent (Ljava/lang/String;)V
+	public static final fun customFirstEvent (Ljava/lang/String;Ljava/lang/Object;)V
+	public static final fun reportFullyDrawn ()V
+}
+
+public final class papa/AppStart$AppStartData : papa/AppStart {
+	public fun <init> (JJLjava/lang/Long;JJIIIILjava/lang/String;Lpapa/AppVisibilityState;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Lpapa/AppUpdateData;Ljava/lang/Long;Ljava/lang/Long;Lpapa/AndroidComponentEvent;Lpapa/ActivityOnCreateEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/ActivityTouchEvent;Ljava/lang/Long;Ljava/util/Map;)V
+	public synthetic fun <init> (JJLjava/lang/Long;JJIIIILjava/lang/String;Lpapa/AppVisibilityState;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Lpapa/AppUpdateData;Ljava/lang/Long;Ljava/lang/Long;Lpapa/AndroidComponentEvent;Lpapa/ActivityOnCreateEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/ActivityTouchEvent;Ljava/lang/Long;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()J
+	public final fun component10 ()Ljava/lang/String;
+	public final fun component11 ()Lpapa/AppVisibilityState;
+	public final fun component12 ()Ljava/lang/Long;
+	public final fun component13 ()Ljava/lang/Long;
+	public final fun component14 ()Ljava/util/List;
+	public final fun component15 ()Ljava/lang/Long;
+	public final fun component16 ()Ljava/lang/Long;
+	public final fun component17 ()Ljava/lang/Long;
+	public final fun component18 ()Lpapa/AppUpdateData;
+	public final fun component19 ()Ljava/lang/Long;
+	public final fun component2 ()J
+	public final fun component20 ()Ljava/lang/Long;
+	public final fun component21 ()Lpapa/AndroidComponentEvent;
+	public final fun component22 ()Lpapa/ActivityOnCreateEvent;
+	public final fun component23 ()Lpapa/AndroidComponentEvent;
+	public final fun component24 ()Lpapa/AndroidComponentEvent;
+	public final fun component25 ()Lpapa/AndroidComponentEvent;
+	public final fun component26 ()Lpapa/AndroidComponentEvent;
+	public final fun component27 ()Lpapa/AndroidComponentEvent;
+	public final fun component28 ()Lpapa/AndroidComponentEvent;
+	public final fun component29 ()Lpapa/AndroidComponentEvent;
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component30 ()Lpapa/ActivityTouchEvent;
+	public final fun component31 ()Ljava/lang/Long;
+	public final fun component32 ()Ljava/util/Map;
+	public final fun component4 ()J
+	public final fun component5 ()J
+	public final fun component6 ()I
+	public final fun component7 ()I
+	public final fun component8 ()I
+	public final fun component9 ()I
+	public final fun copy (JJLjava/lang/Long;JJIIIILjava/lang/String;Lpapa/AppVisibilityState;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Lpapa/AppUpdateData;Ljava/lang/Long;Ljava/lang/Long;Lpapa/AndroidComponentEvent;Lpapa/ActivityOnCreateEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/ActivityTouchEvent;Ljava/lang/Long;Ljava/util/Map;)Lpapa/AppStart$AppStartData;
+	public static synthetic fun copy$default (Lpapa/AppStart$AppStartData;JJLjava/lang/Long;JJIIIILjava/lang/String;Lpapa/AppVisibilityState;Ljava/lang/Long;Ljava/lang/Long;Ljava/util/List;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/Long;Lpapa/AppUpdateData;Ljava/lang/Long;Ljava/lang/Long;Lpapa/AndroidComponentEvent;Lpapa/ActivityOnCreateEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/AndroidComponentEvent;Lpapa/ActivityTouchEvent;Ljava/lang/Long;Ljava/util/Map;ILjava/lang/Object;)Lpapa/AppStart$AppStartData;
+	public final fun elapsedSinceStart ()J
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppTasks ()Ljava/util/List;
+	public final fun getAppUpdateData ()Lpapa/AppUpdateData;
+	public final fun getApplicationInstantiatedElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getApplicationOnCreateDurationMillis ()Ljava/lang/Long;
+	public final fun getClassLoaderInstantiatedElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getCustomFirstEvents ()Ljava/util/Map;
+	public final fun getFirstActivityOnCreate ()Lpapa/ActivityOnCreateEvent;
+	public final fun getFirstActivityOnResume ()Lpapa/AndroidComponentEvent;
+	public final fun getFirstActivityOnStart ()Lpapa/AndroidComponentEvent;
+	public final fun getFirstAppClassLoadElapsedUptimeMillis ()J
+	public final fun getFirstComponentInstantiated ()Lpapa/AndroidComponentEvent;
+	public final fun getFirstDraw ()Lpapa/AndroidComponentEvent;
+	public final fun getFirstFrameAfterFullyDrawnElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getFirstGlobalLayout ()Lpapa/AndroidComponentEvent;
+	public final fun getFirstIdleAfterFirstDraw ()Lpapa/AndroidComponentEvent;
+	public final fun getFirstIdleElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getFirstPostAfterFirstDraw ()Lpapa/AndroidComponentEvent;
+	public final fun getFirstPostAtFrontElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getFirstPostElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getFirstPreDraw ()Lpapa/AndroidComponentEvent;
+	public final fun getFirstTouchEvent ()Lpapa/ActivityTouchEvent;
+	public final fun getHandleBindApplicationElapsedUptimeMillis ()Ljava/lang/Long;
+	public final fun getImportance ()I
+	public final fun getImportanceAfterFirstPost ()I
+	public final fun getImportanceReasonCode ()I
+	public final fun getImportanceReasonPid ()I
+	public final fun getLastAppAliveElapsedTimeMillis ()Ljava/lang/Long;
+	public final fun getLastAppVisibilityState ()Lpapa/AppVisibilityState;
+	public final fun getLastVisibilityChangeElapsedTimeMillis ()Ljava/lang/Long;
+	public final fun getPerfsInitElapsedUptimeMillis ()J
+	public final fun getProcessStartRealtimeMillis ()J
+	public final fun getProcessStartUptimeMillis ()J
+	public final fun getStartImportanceReasonComponent ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/AppStart$Companion {
+	public final fun customFirstEvent (Ljava/lang/String;)V
+	public final fun customFirstEvent (Ljava/lang/String;Ljava/lang/Object;)V
+	public static synthetic fun customFirstEvent$default (Lpapa/AppStart$Companion;Ljava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)V
+	public final fun getLatestAppStartData ()Lpapa/AppStart;
+	public final fun reportFullyDrawn ()V
+}
+
+public final class papa/AppStart$NoAppStartData : papa/AppStart {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getReason ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class papa/AppState {
+	public static final field Companion Lpapa/AppState$Companion;
+}
+
+public final class papa/AppState$Companion {
+	public final fun serializedAsync (Ljava/lang/Object;)Lpapa/AppState$Value$SerializedAsync;
+	public final fun value (Ljava/lang/Number;)Lpapa/AppState$Value$NumberValue;
+	public final fun value (Ljava/lang/String;)Lpapa/AppState$Value$StringValue;
+	public final fun valueOnFrameRendered (Lkotlin/jvm/functions/Function0;)Lpapa/AppState$ValueOnFrameRendered;
+}
+
+public abstract class papa/AppState$Value : papa/AppState {
+}
+
+public final class papa/AppState$Value$NoValue : papa/AppState$Value {
+	public static final field INSTANCE Lpapa/AppState$Value$NoValue;
+}
+
+public final class papa/AppState$Value$NumberValue : papa/AppState$Value {
+	public fun <init> (Ljava/lang/Number;)V
+	public final fun getNumber ()Ljava/lang/Number;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/AppState$Value$SerializedAsync : papa/AppState$Value {
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun getValue ()Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/AppState$Value$StringValue : papa/AppState$Value {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getString ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/AppState$ValueOnFrameRendered : papa/AppState {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public final fun getOnFrameRendered ()Lkotlin/jvm/functions/Function0;
+}
+
+public final class papa/AppTask {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;)Lpapa/AppTask;
+	public static synthetic fun copy$default (Lpapa/AppTask;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)Lpapa/AppTask;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBaseIntent ()Ljava/lang/String;
+	public final fun getElapsedSinceLastActiveRealtimeMillis ()Ljava/lang/Long;
+	public final fun getNumActivities ()Ljava/lang/Integer;
+	public final fun getTopActivity ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class papa/AppUpdateData {
+}
+
+public final class papa/AppUpdateData$ErrorRetrievingAppUpdateData : papa/AppUpdateData {
+	public fun <init> (Ljava/lang/Throwable;)V
+	public final fun component1 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/Throwable;)Lpapa/AppUpdateData$ErrorRetrievingAppUpdateData;
+	public static synthetic fun copy$default (Lpapa/AppUpdateData$ErrorRetrievingAppUpdateData;Ljava/lang/Throwable;ILjava/lang/Object;)Lpapa/AppUpdateData$ErrorRetrievingAppUpdateData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getThrowable ()Ljava/lang/Throwable;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/AppUpdateData$NoAppUpdateDataYet : papa/AppUpdateData {
+	public static final field INSTANCE Lpapa/AppUpdateData$NoAppUpdateDataYet;
+}
+
+public final class papa/AppUpdateData$RealAppUpdateData : papa/AppUpdateData {
+	public fun <init> (Lpapa/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;)V
+	public final fun component1 ()Lpapa/AppUpdateStartStatus;
+	public final fun component2 ()J
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/lang/Boolean;
+	public final fun component7 ()Ljava/lang/Boolean;
+	public final fun component8 ()Ljava/lang/Boolean;
+	public final fun component9 ()Ljava/lang/Long;
+	public final fun copy (Lpapa/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;)Lpapa/AppUpdateData$RealAppUpdateData;
+	public static synthetic fun copy$default (Lpapa/AppUpdateData$RealAppUpdateData;Lpapa/AppUpdateStartStatus;JJLjava/util/List;Ljava/util/List;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Long;ILjava/lang/Object;)Lpapa/AppUpdateData$RealAppUpdateData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllInstalledVersionCodes ()Ljava/util/List;
+	public final fun getAllInstalledVersionNames ()Ljava/util/List;
+	public final fun getCrashedInLastProcess ()Ljava/lang/Boolean;
+	public final fun getElapsedRealtimeSinceCrash ()Ljava/lang/Long;
+	public final fun getFirstInstallTimeMillis ()J
+	public final fun getLastUpdateTimeMillis ()J
+	public final fun getRebootedSinceLastStart ()Ljava/lang/Boolean;
+	public final fun getStatus ()Lpapa/AppUpdateStartStatus;
+	public final fun getUpdatedOsSinceLastStart ()Ljava/lang/Boolean;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/AppUpdateStartStatus : java/lang/Enum {
+	public static final field FIRST_START_AFTER_CLEAR_DATA Lpapa/AppUpdateStartStatus;
+	public static final field FIRST_START_AFTER_FRESH_INSTALL Lpapa/AppUpdateStartStatus;
+	public static final field FIRST_START_AFTER_UPGRADE Lpapa/AppUpdateStartStatus;
+	public static final field NORMAL_START Lpapa/AppUpdateStartStatus;
+	public static fun valueOf (Ljava/lang/String;)Lpapa/AppUpdateStartStatus;
+	public static fun values ()[Lpapa/AppUpdateStartStatus;
+}
+
+public final class papa/AppVisibilityState : java/lang/Enum {
+	public static final field INVISIBLE Lpapa/AppVisibilityState;
+	public static final field VISIBLE Lpapa/AppVisibilityState;
+	public static fun valueOf (Ljava/lang/String;)Lpapa/AppVisibilityState;
+	public static fun values ()[Lpapa/AppVisibilityState;
+}
+
+public final class papa/DelayedInteractionStore {
+	public fun <init> (I)V
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun get (Ljava/lang/Class;)Lpapa/Interaction$Delayed;
+	public final fun plusAssign (Lpapa/Interaction$Delayed;)V
+}
+
+public final class papa/DeliveredInput {
+	public fun <init> (Landroid/view/InputEvent;J)V
+	public final fun getDeliveryUptimeMillis ()J
+	public final fun getEvent ()Landroid/view/InputEvent;
+}
+
+public abstract interface class papa/InputTracker {
+	public static final field Companion Lpapa/InputTracker$Companion;
+	public abstract fun getCurrentKeyEvent ()Lpapa/DeliveredInput;
+	public abstract fun getMotionEventTriggeringClick ()Lpapa/DeliveredInput;
+	public abstract fun getTriggerEvent ()Lpapa/DeliveredInput;
+}
+
+public final class papa/InputTracker$Companion : papa/InputTracker {
+	public fun getCurrentKeyEvent ()Lpapa/DeliveredInput;
+	public fun getMotionEventTriggeringClick ()Lpapa/DeliveredInput;
+	public fun getTriggerEvent ()Lpapa/DeliveredInput;
+}
+
+public final class papa/InputTracker$DefaultImpls {
+	public static fun getTriggerEvent (Lpapa/InputTracker;)Lpapa/DeliveredInput;
+}
+
+public abstract interface class papa/Interaction {
+	public abstract fun getDescription ()Ljava/lang/String;
+}
+
+public final class papa/Interaction$DefaultImpls {
+	public static fun getDescription (Lpapa/Interaction;)Ljava/lang/String;
+}
+
+public final class papa/Interaction$Delayed {
+	public fun <init> (Lpapa/Interaction;)V
+	public final fun cancel ()V
+	public final fun getEndListeners ()Ljava/util/List;
+	public final fun getInteraction ()Lpapa/Interaction;
+	public final fun reportUiUpdated (Lpapa/AppState;)V
+	public static synthetic fun reportUiUpdated$default (Lpapa/Interaction$Delayed;Lpapa/AppState;ILjava/lang/Object;)V
+}
+
+public abstract class papa/Interaction$Delayed$End {
+}
+
+public final class papa/Interaction$Delayed$End$Cancel : papa/Interaction$Delayed$End {
+	public static final field INSTANCE Lpapa/Interaction$Delayed$End$Cancel;
+}
+
+public final class papa/Interaction$Delayed$End$UiUpdated : papa/Interaction$Delayed$End {
+	public fun <init> (Lpapa/AppState;)V
+	public final fun getStateAfterInteraction ()Lpapa/AppState;
+}
+
+public abstract interface class papa/InteractionLatencyReporter {
+	public static final field Companion Lpapa/InteractionLatencyReporter$Companion;
+	public abstract fun reportImmediateInteraction (Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;Lpapa/AppState;)V
+	public abstract fun startDelayedInteraction (Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;)Lpapa/Interaction$Delayed;
+}
+
+public final class papa/InteractionLatencyReporter$Companion : papa/InteractionLatencyReporter {
+	public fun reportImmediateInteraction (Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;Lpapa/AppState;)V
+	public fun startDelayedInteraction (Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;)Lpapa/Interaction$Delayed;
+}
+
+public final class papa/InteractionLatencyReporter$DefaultImpls {
+	public static synthetic fun reportImmediateInteraction$default (Lpapa/InteractionLatencyReporter;Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;Lpapa/AppState;ILjava/lang/Object;)V
+	public static synthetic fun startDelayedInteraction$default (Lpapa/InteractionLatencyReporter;Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;ILjava/lang/Object;)Lpapa/Interaction$Delayed;
+}
+
+public abstract class papa/InteractionTrigger {
+}
+
+public final class papa/InteractionTrigger$Custom : papa/InteractionTrigger {
+	public fun <init> (Ljava/lang/String;J)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getTriggerStartUptimeMillis ()J
+}
+
+public final class papa/InteractionTrigger$Input : papa/InteractionTrigger {
+	public static final field INSTANCE Lpapa/InteractionTrigger$Input;
+}
+
+public final class papa/InteractionTrigger$Unknown : papa/InteractionTrigger {
+	public static final field INSTANCE Lpapa/InteractionTrigger$Unknown;
+}
+
+public abstract class papa/PapaEvent {
+}
+
+public final class papa/PapaEvent$AppLaunch : papa/PapaEvent {
+	public fun <init> (Lpapa/PreLaunchState;JZLjava/lang/Long;J)V
+	public final fun getDurationUptimeMillis ()J
+	public final fun getInvisibleDurationRealtimeMillis ()Ljava/lang/Long;
+	public final fun getPreLaunchState ()Lpapa/PreLaunchState;
+	public final fun getStartUptimeMillis ()J
+	public final fun getTrampolined ()Z
+	public final fun isSlowLaunch ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/PapaEvent$FrozenFrameOnTouch : papa/PapaEvent {
+	public static final field Companion Lpapa/PapaEvent$FrozenFrameOnTouch$Companion;
+	public static final field FROZEN_FRAME_THRESHOLD I
+	public fun <init> (Ljava/lang/String;IJJLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun component4 ()J
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;IJJLjava/lang/String;)Lpapa/PapaEvent$FrozenFrameOnTouch;
+	public static synthetic fun copy$default (Lpapa/PapaEvent$FrozenFrameOnTouch;Ljava/lang/String;IJJLjava/lang/String;ILjava/lang/Object;)Lpapa/PapaEvent$FrozenFrameOnTouch;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActivityName ()Ljava/lang/String;
+	public final fun getDeliverDurationUptimeMillis ()J
+	public final fun getDislayDurationUptimeMillis ()J
+	public final fun getPressedView ()Ljava/lang/String;
+	public final fun getRepeatTouchDownCount ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/PapaEvent$FrozenFrameOnTouch$Companion {
+}
+
+public final class papa/PapaEvent$InteractionLatency : papa/PapaEvent {
+	public fun <init> (Lpapa/Interaction;Lpapa/TriggerData;JLpapa/AppState$Value;Lpapa/AppState$Value;J)V
+	public final fun getDisplayDurationUptimeMillis ()J
+	public final fun getInteraction ()Lpapa/Interaction;
+	public final fun getStartUptimeMillis ()J
+	public final fun getStateAfterInteraction ()Lpapa/AppState$Value;
+	public final fun getStateBeforeInteraction ()Lpapa/AppState$Value;
+	public final fun getTotalDurationUptimeMillis ()J
+	public final fun getTriggerData ()Lpapa/TriggerData;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/PapaEvent$UsageError : papa/PapaEvent {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getDebugMessage ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class papa/PapaEventListener {
+	public static final field Companion Lpapa/PapaEventListener$Companion;
+	public abstract fun onEvent (Lpapa/PapaEvent;)V
+}
+
+public final class papa/PapaEventListener$Companion : papa/PapaEventListener$Registry {
+	public fun install (Lpapa/PapaEventListener;)Ljava/io/Closeable;
+}
+
+public abstract interface class papa/PapaEventListener$Registry {
+	public abstract fun install (Lpapa/PapaEventListener;)Ljava/io/Closeable;
+}
+
+public final class papa/PapaEventLogger : papa/PapaEventListener {
+	public fun <init> ()V
+	public fun onEvent (Lpapa/PapaEvent;)V
+}
+
+public final class papa/PreLaunchState : java/lang/Enum {
+	public static final field ACTIVITY_WAS_STOPPED Lpapa/PreLaunchState;
+	public static final field NO_ACTIVITY_BUT_SAVED_STATE Lpapa/PreLaunchState;
+	public static final field NO_ACTIVITY_NO_SAVED_STATE Lpapa/PreLaunchState;
+	public static final field NO_PROCESS Lpapa/PreLaunchState;
+	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA Lpapa/PreLaunchState;
+	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL Lpapa/PreLaunchState;
+	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE Lpapa/PreLaunchState;
+	public static final field PROCESS_WAS_LAUNCHING_IN_BACKGROUND Lpapa/PreLaunchState;
+	public final fun getLaunchType ()Lpapa/AppLaunchType;
+	public fun toString ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lpapa/PreLaunchState;
+	public static fun values ()[Lpapa/PreLaunchState;
+}
+
+public abstract class papa/TriggerData {
+	public abstract fun getDurationUptimeMillis ()J
+	public abstract fun getName ()Ljava/lang/String;
+}
+
+public final class papa/TriggerData$Found : papa/TriggerData {
+	public fun <init> (Ljava/lang/String;J)V
+	public fun getDurationUptimeMillis ()J
+	public fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/TriggerData$Unknown : papa/TriggerData {
+	public static final field INSTANCE Lpapa/TriggerData$Unknown;
+	public fun getDurationUptimeMillis ()J
+	public fun getName ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+

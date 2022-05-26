@@ -1,13 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.squareup.tart.sample">
+    package="com.example.papa">
 
   <application
-      android:name=".ExampleApplication"
+      android:name="com.example.papa.ExampleApplication"
       android:icon="@mipmap/ic_launcher"
-      android:label="Tart">
+      android:label="Papa">
 
     <activity
-        android:name=".MainActivity"
+        android:name="com.example.papa.MainActivity"
         android:exported="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
       <intent-filter>
@@ -19,10 +19,10 @@
     </activity>
 
     <activity
-        android:name=".TrampolineOnCreateActivity"
+        android:name="com.example.papa.TrampolineOnCreateActivity"
         android:exported="true"
-        android:label="OnCreateTrampolineTart"
-        android:taskAffinity="tart.TrampolineOnCreateActivity"
+        android:label="OnCreateTrampolinePapa"
+        android:taskAffinity="papa.TrampolineOnCreateActivity"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
@@ -31,10 +31,10 @@
     </activity>
 
     <activity
-        android:name=".TrampolineOnResumeActivity"
+        android:name="com.example.papa.TrampolineOnResumeActivity"
         android:exported="true"
-        android:label="OnResumeTrampolineTart"
-        android:taskAffinity="tart.OnResumeTrampolineTart"
+        android:label="OnResumeTrampolinePapa"
+        android:taskAffinity="papa.OnResumeTrampolinePapa"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />

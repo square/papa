@@ -1,8 +1,8 @@
-rootProject.name = "tart"
+rootProject.name = "papa"
 
 include(
-    ":tart",
-    ":tart-dev-receivers",
-    ":tart-safetrace",
+    ":papa",
+    ":papa-dev-receivers",
+    ":papa-safetrace",
     ":sample"
 )
