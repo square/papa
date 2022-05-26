@@ -8,7 +8,7 @@ class TrampolineOnCreateActivity : Activity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    finish()
     startActivity(Intent(this, MainActivity::class.java))
+    finish()
   }
 }
