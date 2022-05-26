@@ -91,6 +91,7 @@ sealed class TartEvent {
         "displayDuration=$displayDurationUptimeMillis ms" +
         (if (stateBeforeInteraction != NoValue) ", stateBeforeInteraction='$stateBeforeInteraction'" else "") +
         (if (stateAfterInteraction != NoValue) ", stateAfterInteraction='$stateAfterInteraction'" else "") +
+        ", startUptimeMillis=$startUptimeMillis" +
         ")"
     }
   }
@@ -145,6 +146,12 @@ sealed class TartEvent {
         "handledElapsed=$deliverDurationUptimeMillis ms, " +
         "frameElapsed=$dislayDurationUptimeMillis ms, " +
         "pressedView='$pressedView')"
+    }
+  }
+
+  class UsageError(val debugMessage: String) : TartEvent() {
+    override fun toString(): String {
+      return "Usage error: $debugMessage"
     }
   }
 }

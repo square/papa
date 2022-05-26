@@ -21,7 +21,6 @@ android {
 dependencies {
   implementation(project(":tart"))
   implementation(Dependencies.AppCompat)
-  implementation(Dependencies.Logcat)
   implementation(Dependencies.Curtains)
   implementation(Dependencies.JankStat)
 }

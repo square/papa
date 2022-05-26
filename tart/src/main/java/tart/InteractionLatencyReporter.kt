@@ -5,8 +5,7 @@ import tart.Interaction.Delayed
 import tart.internal.InteractionLatencyReporterImpl
 
 /**
- * Reports the latency of user interactions to Eventstream 2 (ui_latency catalog), Logcat as well
- * as system traces (in profileable builds).
+ * Reports the latency of user interactions.
  */
 interface InteractionLatencyReporter {
 

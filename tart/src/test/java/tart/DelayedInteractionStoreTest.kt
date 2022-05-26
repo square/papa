@@ -14,7 +14,7 @@ class DelayedInteractionStoreTest {
     class MyInteraction3 : Interaction
 
     val bufferSize = 2
-    val store = DelayedInteractionStore(bufferSize)
+    val store = DelayedInteractionStore({}, bufferSize)
     var canceled = 0
     val endListener: (End) -> Unit = { end ->
       check(end is Cancel)
@@ -35,7 +35,7 @@ class DelayedInteractionStoreTest {
   fun `canceling kicks in when adding new interaction of same class`() {
     class MyInteraction : Interaction
 
-    val store = DelayedInteractionStore()
+    val store = DelayedInteractionStore({}, 100)
 
     var interaction1Canceled = false
     val delayed1 = Delayed(MyInteraction()).apply {

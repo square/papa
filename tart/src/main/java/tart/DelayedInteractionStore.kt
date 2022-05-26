@@ -1,7 +1,8 @@
 package tart
 
 import tart.Interaction.Delayed
-import logcat.logcat
+import tart.TartEvent.UsageError
+import tart.internal.EventSender
 
 /**
  * A concurrent store for interactions which will hold a maximum of [bufferSize] interactions.
@@ -10,7 +11,13 @@ import logcat.logcat
  *
  * All public methods are thread safe.
  */
-class DelayedInteractionStore(private val bufferSize: Int = 100) {
+class DelayedInteractionStore internal constructor(
+  private val eventSender: EventSender,
+  private val bufferSize: Int
+) {
+
+  constructor(bufferSize: Int = 100) : this(EventSender, bufferSize)
+
   // Set an access order map, so we can use LRU strategy to garbage collect. Capacity / load are
   // defaults
   private val delayedInteractions = LinkedHashMap<Class<out Interaction>, Delayed<*>>(
@@ -23,7 +30,7 @@ class DelayedInteractionStore(private val bufferSize: Int = 100) {
   operator fun <T : Interaction> get(interactionClass: Class<T>): Delayed<T> {
     val delayed = delayedInteractions[interactionClass]
     if (delayed == null) {
-      logcat { "Could not find interaction ${interactionClass.name} in DelayedInteractionStore" }
+      eventSender.sendEvent(UsageError("DelayedInteractionStore#get could not find interaction ${interactionClass.name}"))
       return Delayed(null)
     }
     @Suppress("UNCHECKED_CAST")
@@ -37,13 +44,13 @@ class DelayedInteractionStore(private val bufferSize: Int = 100) {
     val interaction = delayed.interaction
 
     if (interaction == null) {
-      logcat { "Delayed interaction tracked isn't backed by real interaction" }
+      eventSender.sendEvent(UsageError("Delayed interaction passed to DelayedInteractionStore#plusAssign isn't backed by real interaction"))
       return
     }
     val key = interaction::class.java
 
     delayedInteractions.remove(key)?.let { previousInteraction ->
-      logcat { "Previous interaction ${key.name} not canceled, canceling now." }
+      eventSender.sendEvent(UsageError("Interaction $${key.name} passed to DelayedInteractionStore#plusAssign already exists in store, canceling the previous one"))
       previousInteraction.cancel()
     }
 

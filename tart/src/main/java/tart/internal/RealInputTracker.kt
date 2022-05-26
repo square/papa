@@ -1,5 +1,6 @@
 package tart.internal
 
+import android.app.Application
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -17,7 +18,6 @@ import curtains.keyEventInterceptors
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
 import curtains.windowAttachCount
-import logcat.logcat
 import tart.DeliveredInput
 import tart.InputTracker
 import tart.SafeTrace
@@ -119,13 +119,8 @@ internal object RealInputTracker : InputTracker {
     }
   }
 
-  internal fun install() {
-    val context = ApplicationHolder.application
-    if (context == null) {
-      logcat { "Application not set, not tracking input events" }
-      return
-    }
-    if (context.resources.getBoolean(R.bool.tart_track_input_events)) {
+  internal fun install(application: Application) {
+    if (application.resources.getBoolean(R.bool.tart_track_input_events)) {
       Curtains.onRootViewsChangedListeners += listener
     }
   }

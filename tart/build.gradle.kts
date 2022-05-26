@@ -50,7 +50,6 @@ dependencies {
 
   implementation(Dependencies.Curtains)
   implementation(Dependencies.AndroidXCore)
-  implementation(Dependencies.Logcat)
 
   testImplementation(Dependencies.JUnit)
   testImplementation(Dependencies.Mockito)
