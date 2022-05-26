@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+Version 0.5
+
+_2022-05-26_
+
+* Library name changed from `square/tart` to `square/papa`
+* APIs entirely rewritten, most things are now done via PapaEventListener.install
+* Removed legacy package.
+* APIs still aren't stable but they're getting closer.
+
 Version 0.4.1
 -----------
 
