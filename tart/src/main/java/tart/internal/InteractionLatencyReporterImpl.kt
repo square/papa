@@ -16,7 +16,7 @@ import tart.InteractionTrigger
 import tart.InteractionTrigger.Custom
 import tart.InteractionTrigger.Input
 import tart.InteractionTrigger.Unknown
-import tart.OkTrace
+import tart.SafeTrace
 import tart.TartEvent.InteractionLatency
 import tart.TartEventListener
 import tart.TriggerData
@@ -106,13 +106,13 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
   }
 
   private fun Interaction.startTrace(startUptimeMillis: Long) {
-    OkTrace.beginAsyncSection {
+    SafeTrace.beginAsyncSection {
       traceName to (startUptimeMillis.rem(Int.MAX_VALUE)).toInt()
     }
   }
 
   private fun Interaction.endTrace(startUptimeMillis: Long) {
-    OkTrace.endAsyncSection {
+    SafeTrace.endAsyncSection {
       traceName to (startUptimeMillis.rem(Int.MAX_VALUE)).toInt()
     }
   }

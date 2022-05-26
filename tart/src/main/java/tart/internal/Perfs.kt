@@ -23,7 +23,7 @@ import tart.AppUpdateStartStatus.NORMAL_START
 import tart.AppVisibilityState
 import tart.AppVisibilityState.INVISIBLE
 import tart.AppVisibilityState.VISIBLE
-import tart.OkTrace
+import tart.SafeTrace
 import tart.PreLaunchState
 import tart.PreLaunchState.ACTIVITY_WAS_STOPPED
 import tart.PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
@@ -268,7 +268,7 @@ internal object Perfs {
             initCalledRealtimeMillis
           )
           if (isTracingLaunch) {
-            OkTrace.endAsyncSection(LAUNCH_TRACE_NAME)
+            SafeTrace.endAsyncSection(LAUNCH_TRACE_NAME)
             isTracingLaunch = false
           }
           TartEventListener.sendEvent(

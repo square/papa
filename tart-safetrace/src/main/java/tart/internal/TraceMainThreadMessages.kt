@@ -3,18 +3,18 @@ package tart.internal
 import android.os.Build.VERSION
 import android.os.Handler
 import android.os.Looper
-import com.squareup.tart.oktrace.R
-import tart.OkTrace
-import tart.OkTraceSetup
+import com.squareup.tart.safetrace.R
+import tart.SafeTrace
+import tart.SafeTraceSetup
 
 internal object TraceMainThreadMessages {
 
   private val traceMainThreadMessages: Boolean
     get() {
-      if (!OkTraceSetup.initDone) {
+      if (!SafeTraceSetup.initDone) {
         return false
       }
-      val resources = OkTraceSetup.application.resources
+      val resources = SafeTraceSetup.application.resources
       return resources.getBoolean(R.bool.tart_trace_main_thread)
     }
 
@@ -50,19 +50,19 @@ internal object TraceMainThreadMessages {
     // that is crashing our UI tests:
     // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/app/UiAutomation.java;l=1365-1371;drc=master
 
-    if (VERSION.SDK_INT != 28 && !enabled && OkTrace.isTraceable && traceMainThreadMessages) {
+    if (VERSION.SDK_INT != 28 && !enabled && SafeTrace.isTraceable && traceMainThreadMessages) {
       enabled = true
       var currentlyTracing = false
       Looper.getMainLooper().setMessageLogging { log ->
         if (!currentlyTracing) {
-          if (OkTrace.isCurrentlyTracing && log.startsWith('>')) {
+          if (SafeTrace.isCurrentlyTracing && log.startsWith('>')) {
             val traceSection = buildSectionLabel(log)
-            OkTrace.beginSection(traceSection)
+            SafeTrace.beginSection(traceSection)
             currentlyTracing = true
           }
         } else {
           currentlyTracing = false
-          OkTrace.endSection()
+          SafeTrace.endSection()
         }
       }
     }

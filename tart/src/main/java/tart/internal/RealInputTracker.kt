@@ -20,9 +20,9 @@ import curtains.windowAttachCount
 import logcat.logcat
 import tart.DeliveredInput
 import tart.InputTracker
-import tart.OkTrace
+import tart.SafeTrace
 import tart.internal.FrozenFrameOnTouchDetector.findPressedView
-import tart.okTrace
+import tart.safeTrace
 
 internal object RealInputTracker : InputTracker {
 
@@ -55,7 +55,7 @@ internal object RealInputTracker : InputTracker {
           }
 
           val setEventForPostedClick = Runnable {
-            OkTrace.endAsyncSection(ON_CLICK_QUEUED_NAME, cookie)
+            SafeTrace.endAsyncSection(ON_CLICK_QUEUED_NAME, cookie)
             motionEventTriggeringClickLocal.set(actionUpEvent)
           }
 
@@ -63,7 +63,7 @@ internal object RealInputTracker : InputTracker {
             handler.post(setEventForPostedClick)
           }
 
-          val dispatchState = okTrace({ MotionEvent.actionToString(motionEvent.action) }) {
+          val dispatchState = safeTrace({ MotionEvent.actionToString(motionEvent.action) }) {
             // Storing in case the action up is immediately triggering a click.
             motionEventTriggeringClickLocal.set(actionUpEvent)
             try {
@@ -77,7 +77,7 @@ internal object RealInputTracker : InputTracker {
           // afterTouchEvent at which point the onClick has been posted, and by posting then we ensure
           // we're clearing the event right after the onclick is handled.
           if (isActionUp) {
-            OkTrace.beginAsyncSection(ON_CLICK_QUEUED_NAME, cookie)
+            SafeTrace.beginAsyncSection(ON_CLICK_QUEUED_NAME, cookie)
             val clearEventForPostedClick = Runnable {
               actionUpEvent!!.event.recycle()
               if (motionEventTriggeringClickLocal.get() === actionUpEvent) {
@@ -106,7 +106,7 @@ internal object RealInputTracker : InputTracker {
           val now = SystemClock.uptimeMillis()
           val input = DeliveredInput(keyEvent, now)
 
-          okTrace({ keyEvent.name }) {
+          safeTrace({ keyEvent.name }) {
             currentKeyEventLocal.set(input)
             try {
               dispatch(keyEvent)

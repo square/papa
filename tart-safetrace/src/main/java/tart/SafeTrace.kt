@@ -2,23 +2,23 @@ package tart
 
 import android.content.pm.ApplicationInfo
 import android.os.Build
-import tart.OkTrace.MAX_LABEL_LENGTH
-import tart.OkTrace.beginSection
-import tart.OkTrace.isCurrentlyTracing
-import tart.OkTrace.isTraceable
+import tart.SafeTrace.MAX_LABEL_LENGTH
+import tart.SafeTrace.beginSection
+import tart.SafeTrace.isCurrentlyTracing
+import tart.SafeTrace.isTraceable
 import tart.internal.TraceMainThreadMessages
 
 /**
  * This is a wrapper for [androidx.tracing.Trace] that should be used instead as [beginSection] and
- * [okTrace] automatically truncate the label at 127 characters instead of crashing.
+ * [safeTrace] automatically truncate the label at 127 characters instead of crashing.
  *
- * [OkTrace] also provides [isTraceable], [isCurrentlyTracing] and [MAX_LABEL_LENGTH].
+ * [SafeTrace] also provides [isTraceable], [isCurrentlyTracing] and [MAX_LABEL_LENGTH].
  *
  * All tracing methods check that [isTraceable] is true before delegating to
  * [androidx.tracing.Trace] which would otherwise default to crashing if the reflection based
  * backport fail.
  */
-object OkTrace {
+object SafeTrace {
 
   /**
    * Whether calls to tracing functions will be forwarded to the Android tracing APIs.
@@ -40,15 +40,17 @@ object OkTrace {
    */
   @JvmStatic
   val isTraceable: Boolean
-    get() = isForcedTraceable || (OkTraceSetup.initDone && isTraceableBuild)
+    get() = isForcedTraceable || (SafeTraceSetup.initDone && isTraceableBuild)
 
   @JvmStatic
   val isCurrentlyTracing: Boolean
     get() = isTraceable && androidx.tracing.Trace.isEnabled()
 
-  // Note: this should not be called if OkTraceAppHolder.application isn't set.
+  /**
+   * Note: this should not be called if [SafeTraceSetup.initDone] is false.
+   */
   private val isTraceableBuild by lazy {
-    val application = OkTraceSetup.application
+    val application = SafeTraceSetup.application
     val applicationInfo = application.applicationInfo
     val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
     val isProfileable = Build.VERSION.SDK_INT >= 29 && applicationInfo.isProfileableByShell

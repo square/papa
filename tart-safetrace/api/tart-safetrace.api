@@ -1,5 +1,5 @@
-public final class tart/OkTrace {
-	public static final field INSTANCE Ltart/OkTrace;
+public final class tart/SafeTrace {
+	public static final field INSTANCE Ltart/SafeTrace;
 	public static final field MAX_LABEL_LENGTH I
 	public static final fun beginAsyncSection (Ljava/lang/String;I)V
 	public static final fun beginAsyncSection (Lkotlin/jvm/functions/Function0;)V
@@ -15,13 +15,13 @@ public final class tart/OkTrace {
 	public static final fun isTraceable ()Z
 }
 
-public final class tart/OkTraceFunctionsKt {
-	public static final fun okTrace (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
-	public static final fun okTrace (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+public final class tart/SafeTraceFunctionsKt {
+	public static final fun safeTrace (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public static final fun safeTrace (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 }
 
-public final class tart/OkTraceSetup {
-	public static final field INSTANCE Ltart/OkTraceSetup;
+public final class tart/SafeTraceSetup {
+	public static final field INSTANCE Ltart/SafeTraceSetup;
 	public final fun init (Landroid/app/Application;)V
 }
 

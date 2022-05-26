@@ -1,8 +1,8 @@
 package tart.internal
 
 import android.app.Application
-import tart.OkTrace
-import tart.OkTraceSetup
+import tart.SafeTrace
+import tart.SafeTraceSetup
 
 /**
  * Automatically set on app start by [tart.legacy.Perfs]
@@ -14,9 +14,9 @@ internal object ApplicationHolder {
 
   fun install(application: Application, isForegroundImportance: Boolean) {
     this.application = application
-    OkTraceSetup.init(application)
+    SafeTraceSetup.init(application)
     if (isForegroundImportance) {
-      OkTrace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME)
+      SafeTrace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME)
     }
     RealInputTracker.install()
     FrozenFrameOnTouchDetector.install()

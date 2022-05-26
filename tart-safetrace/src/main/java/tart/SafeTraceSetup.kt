@@ -3,7 +3,7 @@ package tart
 import android.app.Application
 import tart.internal.TraceMainThreadMessages
 
-object OkTraceSetup {
+object SafeTraceSetup {
 
   @Volatile
   internal lateinit var application: Application

@@ -44,8 +44,8 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
-  api(project(":tart-oktrace"))
 
+  api(project(":tart-safetrace"))
   compileOnly(Dependencies.Build.AndroidXAnnotation)
 
   implementation(Dependencies.Curtains)

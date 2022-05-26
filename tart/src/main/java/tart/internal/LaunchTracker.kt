@@ -2,7 +2,7 @@ package tart.internal
 
 import android.app.Activity
 import android.os.SystemClock
-import tart.OkTrace
+import tart.SafeTrace
 
 internal class LaunchTracker(
   val appLaunchedCallback: (Launch) -> Unit
@@ -54,7 +54,7 @@ internal class LaunchTracker(
     launchInProgress?.let { launch ->
       if (launch.isStale) {
         if (Perfs.isTracingLaunch) {
-          OkTrace.endAsyncSection(Perfs.LAUNCH_TRACE_NAME)
+          SafeTrace.endAsyncSection(Perfs.LAUNCH_TRACE_NAME)
           Perfs.isTracingLaunch = false
         }
         launchInProgress = null
@@ -72,7 +72,7 @@ internal class LaunchTracker(
     if (launchInProgress == null) {
       // Check to handle the cold start case where we're already tracing a launch.
       if (!Perfs.isTracingLaunch) {
-        OkTrace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME)
+        SafeTrace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME)
         Perfs.isTracingLaunch = true
       }
 

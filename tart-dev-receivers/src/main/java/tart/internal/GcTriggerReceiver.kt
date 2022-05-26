@@ -4,14 +4,14 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import tart.okTrace
+import tart.safeTrace
 
 internal class GcTriggerReceiver : BroadcastReceiver() {
   override fun onReceive(
     context: Context,
     intent: Intent
   ) {
-    okTrace("force gc") {
+    safeTrace("force gc") {
       Log.d("GcTriggerReceiver", "Triggering GC")
       gc()
       context.sendBroadcast(Intent("tart.GC_TRIGGERED"))
