@@ -23,4 +23,5 @@ dependencies {
   implementation(Dependencies.AppCompat)
   implementation(Dependencies.Curtains)
   implementation(Dependencies.JankStat)
+  implementation(Dependencies.Material)
 }

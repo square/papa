@@ -10,8 +10,8 @@ import curtains.OnRootViewAddedListener
 import curtains.phoneWindow
 import curtains.windowAttachCount
 import papa.AppStart
-import papa.PapaEventLogger
 import papa.PapaEventListener
+import papa.PapaEventLogger
 import java.util.concurrent.Executors
 
 class ExampleApplication : Application() {
@@ -24,14 +24,17 @@ class ExampleApplication : Application() {
 
     PapaEventListener.install(PapaEventLogger())
 
-    Curtains.onRootViewsChangedListeners += OnRootViewAddedListener { view ->
-      view.phoneWindow?.let { window ->
-        if (view.windowAttachCount == 0) {
-          JankStats.createAndTrack(
-            window = window,
-            executor = Executors.newSingleThreadExecutor()
-          ) { frameData ->
-            Log.d("JankStats", frameData.toString())
+    // Uncomment to try out jankstat
+    if (false) {
+      Curtains.onRootViewsChangedListeners += OnRootViewAddedListener { view ->
+        view.phoneWindow?.let { window ->
+          if (view.windowAttachCount == 0) {
+            JankStats.createAndTrack(
+              window = window,
+              executor = Executors.newSingleThreadExecutor()
+            ) { frameData ->
+              Log.d("JankStats", frameData.toString())
+            }
           }
         }
       }

@@ -42,5 +42,17 @@
       </intent-filter>
     </activity>
 
+    <activity
+        android:name="com.example.papa.TouchLagActivity"
+        android:exported="true"
+        android:label="TouchLag"
+        android:taskAffinity="papa.TouchLagActivity"
+        android:theme="@style/Theme.MaterialComponents">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+
   </application>
 </manifest>

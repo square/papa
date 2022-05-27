@@ -29,6 +29,7 @@ object Dependencies {
   const val AndroidXTracing = "androidx.tracing:tracing-ktx:1.1.0"
   const val Radiography = "com.squareup.radiography:radiography:2.4.1"
   const val JankStat = "androidx.metrics:metrics-performance:1.0.0-alpha01"
+  const val Material = "com.google.android.material:material:1.6.0"
 
   object InstrumentationTests {
     const val Core = "androidx.test:core:${Versions.AndroidXTest}"
