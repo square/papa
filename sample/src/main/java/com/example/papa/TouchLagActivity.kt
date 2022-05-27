@@ -47,10 +47,6 @@ class TouchLagActivity : AppCompatActivity() {
       Thread.sleep(700)
       updateContainerBackgroundColor()
     }
-
-    findViewById<Slider>(R.id.lag_slider).addOnChangeListener { _, value, _ ->
-      Thread.sleep(value.toLong())
-    }
   }
 
   private fun updateContainerBackgroundColor() {
