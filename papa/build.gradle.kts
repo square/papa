@@ -18,8 +18,6 @@ android {
 
   defaultConfig {
     minSdkVersion(21)
-    versionCode = 1
-    versionName = "1.0"
     testInstrumentationRunner = "papa.test.utilities.PapaTestInstrumentationRunner"
   }
 
