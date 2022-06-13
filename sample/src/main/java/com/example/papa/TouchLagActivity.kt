@@ -5,6 +5,8 @@ import android.animation.AnimatorListenerAdapter
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.slider.Slider
+import com.google.android.material.slider.Slider.OnSliderTouchListener
 import papa.Interaction
 import papa.InteractionLatencyReporter
 import papa.InteractionTrigger
