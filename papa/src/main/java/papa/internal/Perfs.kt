@@ -11,7 +11,6 @@ import android.os.Process
 import android.os.StrictMode
 import android.os.SystemClock
 import papa.AndroidComponentEvent
-import papa.AppLaunchType.COLD
 import papa.AppStart
 import papa.AppStart.AppStartData
 import papa.AppStart.NoAppStartData
@@ -23,17 +22,16 @@ import papa.AppUpdateStartStatus.NORMAL_START
 import papa.AppVisibilityState
 import papa.AppVisibilityState.INVISIBLE
 import papa.AppVisibilityState.VISIBLE
-import papa.PapaEvent.AppLaunch
+import papa.AppLaunch
+import papa.LaunchType
+import papa.LaunchType.Cold
+import papa.LaunchType.Cold.PreLaunchState.FIRST_LAUNCH_AFTER_CLEAR_DATA
+import papa.LaunchType.Cold.PreLaunchState.FIRST_LAUNCH_AFTER_INSTALL
+import papa.LaunchType.Cold.PreLaunchState.FIRST_LAUNCH_AFTER_UPGRADE
+import papa.LaunchType.Cold.PreLaunchState.NORMAL
+import papa.LaunchType.Hot
+import papa.LaunchType.Warm
 import papa.PapaEventListener
-import papa.PreLaunchState
-import papa.PreLaunchState.ACTIVITY_WAS_STOPPED
-import papa.PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
-import papa.PreLaunchState.NO_ACTIVITY_NO_SAVED_STATE
-import papa.PreLaunchState.NO_PROCESS
-import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
-import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
-import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
-import papa.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
 import papa.SafeTrace
 import papa.internal.AppUpdateDetector.Companion.trackAppUpgrade
 import papa.internal.LaunchTracker.Launch
@@ -257,10 +255,9 @@ internal object Perfs {
     }
 
     val appLaunchedCallback: (Launch) -> Unit = { launch ->
-      val preLaunchState = computePreLaunchState(launch)
-
+      val launchType = computeLaunchType(launch)
       val (launchStartUptimeMillis, invisibleDurationRealtimeMillis) = computeLaunchTimes(
-        preLaunchState,
+        launchType,
         lastVisibilityChangeCurrentTimeMillis,
         lastAppVisibilityState,
         initCalledUptimeMillis,
@@ -273,7 +270,7 @@ internal object Perfs {
       }
       PapaEventListener.sendEvent(
         AppLaunch(
-          preLaunchState = preLaunchState,
+          launchType = launchType,
           durationUptimeMillis = launch.endUptimeMillis - launchStartUptimeMillis,
           trampolined = launch.trampoline,
           invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
@@ -298,13 +295,13 @@ internal object Perfs {
   }
 
   private fun computeLaunchTimes(
-    preLaunchState: PreLaunchState,
+    launchType: LaunchType,
     lastVisibilityChangeCurrentTimeMillis: Long,
     lastAppVisibilityState: AppVisibilityState?,
     initCalledUptimeMillis: Long,
     launch: Launch,
     initCalledRealtimeMillis: Long
-  ) = if (preLaunchState.launchType == COLD) {
+  ) = if (launchType is Cold) {
     val launchStartUptimeMillis = bindApplicationStartUptimeMillis
     val invisibleDurationRealtimeMillis =
       if (lastVisibilityChangeCurrentTimeMillis != -1L) {
@@ -358,7 +355,7 @@ internal object Perfs {
     launch.startUptimeMillis to invisibleDurationRealtimeMillis
   }
 
-  private fun computePreLaunchState(launch: Launch): PreLaunchState {
+  private fun computeLaunchType(launch: Launch): LaunchType {
     val launchStartedAfterFirstPost = firstPostUptimeMillis?.let {
       launch.startUptimeMillis > it
     } ?: false
@@ -366,10 +363,11 @@ internal object Perfs {
     val preLaunchState = when {
       // launch started after first post => warm or hot launch
       launchStartedAfterFirstPost -> {
+        // TODO Collect all activities involved in transition?
         when (launch.activityStartingTransition) {
-          CREATED_NO_STATE -> NO_ACTIVITY_NO_SAVED_STATE
-          CREATED_WITH_STATE -> NO_ACTIVITY_BUT_SAVED_STATE
-          STARTED -> ACTIVITY_WAS_STOPPED
+          CREATED_NO_STATE -> Warm(savedInstanceState = false, processWasLaunchingInBackground = false)
+          CREATED_WITH_STATE -> Warm(savedInstanceState = true, processWasLaunchingInBackground = false)
+          STARTED -> Hot()
         }
       }
       // launch started before first post AND importance foreground => cold launch
@@ -379,13 +377,14 @@ internal object Perfs {
         when (val updateData = appStartData.appUpdateData) {
           is RealAppUpdateData -> {
             when (updateData.status) {
-              FIRST_START_AFTER_CLEAR_DATA -> NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
-              FIRST_START_AFTER_FRESH_INSTALL -> NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
-              FIRST_START_AFTER_UPGRADE -> NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
-              NORMAL_START -> NO_PROCESS
+              // TODO there's no information on saved Instance state here.
+              FIRST_START_AFTER_CLEAR_DATA -> Cold(FIRST_LAUNCH_AFTER_CLEAR_DATA)
+              FIRST_START_AFTER_FRESH_INSTALL -> Cold(FIRST_LAUNCH_AFTER_INSTALL)
+              FIRST_START_AFTER_UPGRADE -> Cold(FIRST_LAUNCH_AFTER_UPGRADE)
+              NORMAL_START -> Cold(NORMAL)
             }
           }
-          else -> NO_PROCESS
+          else -> Cold(NORMAL)
         }
       }
       // launch started before first post but importance not foreground => lukewarm launch
@@ -394,10 +393,11 @@ internal object Perfs {
         // foreground. This means the process was started for another reason but while
         // starting the process the activity manager then decided to foreground the app.
         // We're therefore classifying this launch as a warm start, which means we'll use
-        // startUptimeMillis as its start time, which could yield much a  time than perceived
+        // startUptimeMillis as its start time, which could surface as more time than perceived
         // by users. Would be nice if we had a way to know when the system changed its
         // mind.
-        PROCESS_WAS_LAUNCHING_IN_BACKGROUND
+        val savedInstanceState = launch.activityStartingTransition == CREATED_WITH_STATE
+        Warm(savedInstanceState = savedInstanceState, processWasLaunchingInBackground = true)
       }
     }
     return preLaunchState
