@@ -43,11 +43,11 @@ internal object FrozenFrameOnTouchDetector {
                 if (handledTime - motionEvent.eventTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
                   val windowTitle = window.attributes.title.toString().substringAfter("/")
                   touchDownWaitingRender = MotionEvent.obtain(motionEvent)
-                  onCurrentOrNextFrameRendered { frameRenderedUptimeNanos ->
+                  onCurrentOrNextFrameRendered { frameRenderedUptime ->
                     val localTouchDownWaitingRender = touchDownWaitingRender!!
                     val sentTime = localTouchDownWaitingRender.eventTime
                     val sentToReceive = handledTime - sentTime
-                    val receiveToFrame = TimeUnit.NANOSECONDS.toMillis(frameRenderedUptimeNanos) - handledTime
+                    val receiveToFrame = frameRenderedUptime.inWholeMilliseconds - handledTime
                     PapaEventListener.sendEvent(
                       FrozenFrameOnTouch(
                         activityName = windowTitle,

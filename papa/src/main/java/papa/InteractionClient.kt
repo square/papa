@@ -45,15 +45,15 @@ class InteractionClient<E : Any> : InteractionBuilder<E>, InteractionEventReport
   }
 
   override fun sendEvent(event: E) {
-    val eventSentUptimeNanos = System.nanoTime()
+    val eventSentUptime = System.nanoTime().nanoseconds
     if (isMainThread) {
       for (engine in interactionEngines) {
-        engine.sendEvent(event, eventSentUptimeNanos, InputTracker.triggerEvent)
+        engine.sendEvent(event, eventSentUptime, InputTracker.triggerEvent)
       }
     } else {
       mainHandler.post {
         for (engine in interactionEngines) {
-          engine.sendEvent(event, eventSentUptimeNanos, null)
+          engine.sendEvent(event, eventSentUptime, null)
         }
       }
     }
@@ -87,7 +87,7 @@ class InteractionEngine<I : Interaction, E : Any>(interactionScope: InteractionS
   private val finishingInteractions = mutableListOf<FinishingInteraction<I>>()
 
   inner class RealRunningInteraction(
-    private val startingEventSentUptimeNanos: Long,
+    private val startingEventSentUptime: Duration,
     private val interactionInput: DeliveredInput<out InputEvent>?,
     private val trace: InteractionTrace,
     override var interaction: I,
@@ -131,7 +131,7 @@ class InteractionEngine<I : Interaction, E : Any>(interactionScope: InteractionS
     }
 
     override fun cancel(reason: String) {
-      val cancelUptimeNanos = System.nanoTime()
+      val cancelUptime = System.nanoTime().nanoseconds
       stopRunning()
       trace.endTrace()
       onCancel(
@@ -139,9 +139,9 @@ class InteractionEngine<I : Interaction, E : Any>(interactionScope: InteractionS
           interaction = interaction,
           cancelReason = reason,
           interactionInput = interactionInput,
-          runningDurationUptime = (cancelUptimeNanos - startingEventSentUptimeNanos).nanoseconds,
+          runningDurationUptime = cancelUptime - startingEventSentUptime,
           frameCount = frameCount,
-          startUptime = startingEventSentUptimeNanos.nanoseconds
+          startUptime = startingEventSentUptime
       )
       )
     }
@@ -149,16 +149,16 @@ class InteractionEngine<I : Interaction, E : Any>(interactionScope: InteractionS
     override fun finishOnFrameRendered(block: (InteractionLatencyResult<I>) -> Unit): FinishingInteraction<I> {
       stopRunning()
       finishingInteractions += this
-      onCurrentOrNextFrameRendered { frameRenderedUptimeNanos ->
+      onCurrentOrNextFrameRendered { frameRenderedUptime ->
         choreographer.removeFrameCallback(this)
         trace.endTrace()
 
         val result = InteractionLatencyResult(
           interaction = interaction,
           interactionInput = interactionInput,
-          displayDurationUptime = (frameRenderedUptimeNanos - startingEventSentUptimeNanos).nanoseconds,
+          displayDurationUptime = (frameRenderedUptime - startingEventSentUptime),
           frameCount = frameCount,
-          startUptime = startingEventSentUptimeNanos.nanoseconds
+          startUptime = startingEventSentUptime
         )
         block(result)
       }
@@ -172,7 +172,7 @@ class InteractionEngine<I : Interaction, E : Any>(interactionScope: InteractionS
 
   fun sendEvent(
     event: E,
-    eventSentUptimeNanos: Long,
+    eventSentUptime: Duration,
     interactionInput: DeliveredInput<out InputEvent>?
   ) {
     val eventClassHierarchy = generateSequence<Class<*>>(event::class.java) {
@@ -199,7 +199,7 @@ class InteractionEngine<I : Interaction, E : Any>(interactionScope: InteractionS
         // If the interaction input trace end isn't taken over yet, end it.
         interactionInput?.takeOverTraceEnd()?.invoke()
         val runningInteraction = RealRunningInteraction(
-          startingEventSentUptimeNanos = eventSentUptimeNanos,
+          startingEventSentUptime = eventSentUptime,
           interactionInput = interactionInput,
           trace = trace,
           interaction = interaction,

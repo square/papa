@@ -423,9 +423,9 @@ internal object Perfs {
       return
     }
     reportedFullDrawn = true
-    onCurrentOrNextFrameRendered { frameRenderedUptimeNanos ->
+    onCurrentOrNextFrameRendered { frameRenderedUptime ->
       appStartData = appStartData.copy(
-        firstFrameAfterFullyDrawnElapsedUptimeMillis = TimeUnit.NANOSECONDS.toMillis(frameRenderedUptimeNanos) - appStartData.processStartUptimeMillis
+        firstFrameAfterFullyDrawnElapsedUptimeMillis = frameRenderedUptime.inWholeMilliseconds - appStartData.processStartUptimeMillis
       )
     }
   }
