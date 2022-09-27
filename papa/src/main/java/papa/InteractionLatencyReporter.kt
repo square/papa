@@ -36,7 +36,7 @@ interface InteractionLatencyReporter {
    * If the returned [Delayed] is garbage collected without having called [Delayed.cancel] or
    * [Delayed.reportUiUpdated], [Delayed.cancel] will be automatically called.
    *
-   * If [trigger] is [InteractionTrigger.Input] then must be called from the main thread, otherwise
+   * If [trigger] is [InteractionTrigger.InputEvent] then must be called from the main thread, otherwise
    * can be called from any thread.
    *
    * [stateBeforeInteraction]: Loggable metadata related to the app state before the interaction.

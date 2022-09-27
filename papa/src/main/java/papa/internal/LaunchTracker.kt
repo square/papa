@@ -3,6 +3,7 @@ package papa.internal
 import android.app.Activity
 import android.os.SystemClock
 import papa.SafeTrace
+import java.util.concurrent.TimeUnit
 
 internal class LaunchTracker(
   val appLaunchedCallback: (Launch) -> Unit
@@ -101,7 +102,7 @@ internal class LaunchTracker(
     // not drawing and another activity is resumed immediately after, whichever activity draws
     // first will end up being declared as the final launched activity.
     resumedActivity.window.onNextPreDraw {
-      onCurrentFrameRendered { frameRenderedUptimeMillis ->
+      onCurrentFrameRendered { frameRenderedUptimeNanos ->
         val launchInProgress = launchInProgress ?: return@onCurrentFrameRendered
         this.launchInProgress = null
 
@@ -118,7 +119,7 @@ internal class LaunchTracker(
             trampoline = activityHash != resumedActivityHash,
             startUptimeMillis = startUptimeMillis,
             startRealtimeMillis = startRealtimeMillis,
-            endUptimeMillis = frameRenderedUptimeMillis,
+            endUptimeMillis = TimeUnit.NANOSECONDS.toMillis(frameRenderedUptimeNanos),
             invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
             activityStartingTransition = activityStartingTransition
           )

@@ -1,6 +1,5 @@
 package papa.internal
 
-import android.os.SystemClock
 import android.view.Choreographer
 
 private val pendingRenderedCallbacks = mutableListOf<(Long) -> Unit>()
@@ -19,7 +18,7 @@ internal fun onCurrentOrNextFrameRendered(callback: (Long) -> Unit) {
  * Note: this is somewhat slow and fragile.
  */
 internal fun isChoreographerDoingFrame(): Boolean {
-  if (!isOnMainThread()) {
+  if (!isMainThread) {
     return false
   }
   val stackTrace = RuntimeException().stackTrace
@@ -56,9 +55,9 @@ internal fun onCurrentFrameRendered(callback: (Long) -> Unit) {
   // top priority and will run prior to the current head if its time that's gone. Async prevents
   // this behavior.
   mainHandler.postAtFrontOfQueueAsync {
-    val frameRenderedUptimeMillis = SystemClock.uptimeMillis()
+    val frameRenderedUptimeNanos = System.nanoTime()
     for (pendingCallback in pendingRenderedCallbacks) {
-      pendingCallback(frameRenderedUptimeMillis)
+      pendingCallback(frameRenderedUptimeNanos)
     }
     pendingRenderedCallbacks.clear()
   }

@@ -14,6 +14,7 @@ import curtains.windowAttachCount
 import papa.PapaEvent.FrozenFrameOnTouch
 import papa.PapaEventListener
 import papa.internal.FrozenFrameOnTouchDetector.install
+import java.util.concurrent.TimeUnit
 
 /**
  * Detects when the interval of time between when a touch event is issued and the next frame is
@@ -42,11 +43,11 @@ internal object FrozenFrameOnTouchDetector {
                 if (handledTime - motionEvent.eventTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
                   val windowTitle = window.attributes.title.toString().substringAfter("/")
                   touchDownWaitingRender = MotionEvent.obtain(motionEvent)
-                  onCurrentOrNextFrameRendered { frameRenderedUptimeMillis ->
+                  onCurrentOrNextFrameRendered { frameRenderedUptimeNanos ->
                     val localTouchDownWaitingRender = touchDownWaitingRender!!
                     val sentTime = localTouchDownWaitingRender.eventTime
                     val sentToReceive = handledTime - sentTime
-                    val receiveToFrame = frameRenderedUptimeMillis - handledTime
+                    val receiveToFrame = TimeUnit.NANOSECONDS.toMillis(frameRenderedUptimeNanos) - handledTime
                     PapaEventListener.sendEvent(
                       FrozenFrameOnTouch(
                         activityName = windowTitle,

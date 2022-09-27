@@ -14,13 +14,14 @@ import papa.Interaction.Delayed.End.UiUpdated
 import papa.InteractionLatencyReporter
 import papa.InteractionTrigger
 import papa.InteractionTrigger.Custom
-import papa.InteractionTrigger.Input
+import papa.InteractionTrigger.InputEvent
 import papa.InteractionTrigger.Unknown
 import papa.SafeTrace
 import papa.PapaEvent.InteractionLatency
 import papa.PapaEventListener
 import papa.TriggerData
 import papa.internal.RealInputTracker.name
+import java.util.concurrent.TimeUnit
 
 internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
 
@@ -83,9 +84,9 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
   ) {
     checkMainThread()
 
-    onCurrentOrNextFrameRendered { frameRenderedUptimeMillis ->
+    onCurrentOrNextFrameRendered { frameRenderedUptimeNanos ->
         endTrace()
-        val durationFromStartUptimeMillis = frameRenderedUptimeMillis - startUptimeMillis
+        val durationFromStartUptimeMillis = TimeUnit.NANOSECONDS.toMillis(frameRenderedUptimeNanos) - startUptimeMillis
 
         val stateAfterInteractionValue = when (stateAfterInteraction) {
           is AppState.Value -> stateAfterInteraction
@@ -121,7 +122,7 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
     get() = "$description Latency"
 
   private fun InteractionTrigger.computeTriggerData(startUptimeMillis: Long) = when (this) {
-    Input -> {
+    InputEvent -> {
       checkMainThread()
       val triggerEvent = inputTracker.triggerEvent
       if (triggerEvent != null) {

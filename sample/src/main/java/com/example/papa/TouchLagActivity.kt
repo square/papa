@@ -20,27 +20,27 @@ class TouchLagActivity : AppCompatActivity() {
 
     findViewById<View>(R.id.no_lag).setOnClickListener {
       InteractionLatencyReporter.reportImmediateInteraction(
-        InteractionTrigger.Input, TouchLagInteraction
+        InteractionTrigger.InputEvent, TouchLagInteraction
       )
       updateContainerBackgroundColor()
     }
     findViewById<View>(R.id.lag_100_ms).setOnClickListener {
       InteractionLatencyReporter.reportImmediateInteraction(
-        InteractionTrigger.Input, TouchLagInteraction
+        InteractionTrigger.InputEvent, TouchLagInteraction
       )
       Thread.sleep(100)
       updateContainerBackgroundColor()
     }
     findViewById<View>(R.id.lag_300_ms).setOnClickListener {
       InteractionLatencyReporter.reportImmediateInteraction(
-        InteractionTrigger.Input, TouchLagInteraction
+        InteractionTrigger.InputEvent, TouchLagInteraction
       )
       Thread.sleep(300)
       updateContainerBackgroundColor()
     }
     findViewById<View>(R.id.lag_700_ms).setOnClickListener {
       InteractionLatencyReporter.reportImmediateInteraction(
-        InteractionTrigger.Input, TouchLagInteraction
+        InteractionTrigger.InputEvent, TouchLagInteraction
       )
       Thread.sleep(700)
       updateContainerBackgroundColor()
