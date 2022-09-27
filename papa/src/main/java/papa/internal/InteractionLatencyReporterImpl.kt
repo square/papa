@@ -84,9 +84,9 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
   ) {
     checkMainThread()
 
-    onCurrentOrNextFrameRendered { frameRenderedUptimeNanos ->
+    onCurrentOrNextFrameRendered { frameRenderedUptime ->
         endTrace()
-        val durationFromStartUptimeMillis = TimeUnit.NANOSECONDS.toMillis(frameRenderedUptimeNanos) - startUptimeMillis
+        val durationFromStartUptimeMillis = frameRenderedUptime.inWholeMilliseconds - startUptimeMillis
 
         val stateAfterInteractionValue = when (stateAfterInteraction) {
           is AppState.Value -> stateAfterInteraction
