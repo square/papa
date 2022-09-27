@@ -43,6 +43,7 @@ import papa.internal.LaunchedActivityStartingTransition.STARTED
 import papa.internal.MyProcess.ErrorRetrievingMyProcessData
 import papa.internal.MyProcess.MyProcessData
 import papa.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLifecycle
+import java.util.concurrent.TimeUnit
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
@@ -124,7 +125,7 @@ internal object Perfs {
     val initCalledCurrentTimeMillis = System.currentTimeMillis()
     val initCalledRealtimeMillis = SystemClock.elapsedRealtime()
     // Should only be init on the main thread, once.
-    if (!isOnMainThread() || initialized) {
+    if (!isMainThread || initialized) {
       return
     }
     if (context !is Application) {
@@ -257,29 +258,29 @@ internal object Perfs {
     }
 
     val appLaunchedCallback: (Launch) -> Unit = { launch ->
-          val preLaunchState = computePreLaunchState(launch)
+      val preLaunchState = computePreLaunchState(launch)
 
-          val (launchStartUptimeMillis, invisibleDurationRealtimeMillis) = computeLaunchTimes(
-            preLaunchState,
-            lastVisibilityChangeCurrentTimeMillis,
-            lastAppVisibilityState,
-            initCalledUptimeMillis,
-            launch,
-            initCalledRealtimeMillis
-          )
-          if (isTracingLaunch) {
-            SafeTrace.endAsyncSection(LAUNCH_TRACE_NAME)
-            isTracingLaunch = false
-          }
-          PapaEventListener.sendEvent(
-            AppLaunch(
-              preLaunchState = preLaunchState,
-              durationUptimeMillis = launch.endUptimeMillis - launchStartUptimeMillis,
-              trampolined = launch.trampoline,
-              invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
-              startUptimeMillis = launchStartUptimeMillis
-            )
-          )
+      val (launchStartUptimeMillis, invisibleDurationRealtimeMillis) = computeLaunchTimes(
+        preLaunchState,
+        lastVisibilityChangeCurrentTimeMillis,
+        lastAppVisibilityState,
+        initCalledUptimeMillis,
+        launch,
+        initCalledRealtimeMillis
+      )
+      if (isTracingLaunch) {
+        SafeTrace.endAsyncSection(LAUNCH_TRACE_NAME)
+        isTracingLaunch = false
+      }
+      PapaEventListener.sendEvent(
+        AppLaunch(
+          preLaunchState = preLaunchState,
+          durationUptimeMillis = launch.endUptimeMillis - launchStartUptimeMillis,
+          trampolined = launch.trampoline,
+          invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
+          startUptimeMillis = launchStartUptimeMillis
+        )
+      )
     }
     application.trackActivityLifecycle(
       { updateAppStartData ->
@@ -404,7 +405,7 @@ internal object Perfs {
   }
 
   internal fun firstComponentInstantiated(componentName: String) {
-    enforceMainThread()
+    checkMainThread()
     if (!initialized) {
       return
     }
@@ -417,14 +418,14 @@ internal object Perfs {
   }
 
   fun reportFullyDrawn() {
-    enforceMainThread()
+    checkMainThread()
     if (!initialized || reportedFullDrawn) {
       return
     }
     reportedFullDrawn = true
-    onCurrentOrNextFrameRendered { frameRenderedUptimeMillis ->
+    onCurrentOrNextFrameRendered { frameRenderedUptimeNanos ->
       appStartData = appStartData.copy(
-        firstFrameAfterFullyDrawnElapsedUptimeMillis = frameRenderedUptimeMillis - appStartData.processStartUptimeMillis
+        firstFrameAfterFullyDrawnElapsedUptimeMillis = TimeUnit.NANOSECONDS.toMillis(frameRenderedUptimeNanos) - appStartData.processStartUptimeMillis
       )
     }
   }
@@ -433,7 +434,7 @@ internal object Perfs {
     eventName: String,
     extra: Any? = null
   ) {
-    enforceMainThread()
+    checkMainThread()
     if (!initialized || eventName in appStartData.customFirstEvents) {
       return
     }
