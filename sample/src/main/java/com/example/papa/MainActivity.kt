@@ -12,11 +12,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import papa.AppState
 import papa.Interaction
-import papa.InteractionClient
-import papa.InteractionEventReporter
+import papa.InteractionEventReceiver
 import papa.InteractionLatencyReporter
+import papa.InteractionRuleClient
 import papa.InteractionTrigger
 import java.util.Date
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : AppCompatActivity() {
 
@@ -24,22 +25,22 @@ class MainActivity : AppCompatActivity() {
 
   class Clicked(override val description: String) : Interaction
 
-  val client = InteractionClient<OnClick>().apply {
-    addInteraction<Clicked> {
+  val client = InteractionRuleClient<OnClick, Any>().apply {
+    addInteractionRule<Clicked> {
       onEvent<OnClick> { event ->
-        start(Clicked(event.element)).finishOnFrameRendered { result ->
+        startInteraction(Clicked(event.element)).finishOnFrameRendered { result ->
           Log.d("MainActivity", "$result")
         }
       }
     }
-    addInteraction<Clicked> {
+    addInteractionRule<Clicked> {
       onEvent<OnClick> { event ->
-        start(Clicked(event.element), onCancel = {
+        startInteraction(Clicked(event.element), onCancel = {
           Log.d("MainActivity", "canceled $it")
-        }, cancelTimeoutMillis = 2000)
+        }, cancelTimeout = 2000.milliseconds)
       }
     }
-  } as InteractionEventReporter<OnClick>
+  } as InteractionEventReceiver<OnClick>
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
