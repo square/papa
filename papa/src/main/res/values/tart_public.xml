@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <public name="papa_track_input_events" type="bool"/>
+  <public name="papa_track_input_events" type="bool" />
 </resources>

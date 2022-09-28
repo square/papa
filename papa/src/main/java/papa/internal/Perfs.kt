@@ -23,7 +23,8 @@ import papa.AppUpdateStartStatus.NORMAL_START
 import papa.AppVisibilityState
 import papa.AppVisibilityState.INVISIBLE
 import papa.AppVisibilityState.VISIBLE
-import papa.SafeTrace
+import papa.PapaEvent.AppLaunch
+import papa.PapaEventListener
 import papa.PreLaunchState
 import papa.PreLaunchState.ACTIVITY_WAS_STOPPED
 import papa.PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
@@ -33,8 +34,7 @@ import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
 import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
 import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
 import papa.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
-import papa.PapaEvent.AppLaunch
-import papa.PapaEventListener
+import papa.SafeTrace
 import papa.internal.AppUpdateDetector.Companion.trackAppUpgrade
 import papa.internal.LaunchTracker.Launch
 import papa.internal.LaunchedActivityStartingTransition.CREATED_NO_STATE
@@ -43,7 +43,6 @@ import papa.internal.LaunchedActivityStartingTransition.STARTED
 import papa.internal.MyProcess.ErrorRetrievingMyProcessData
 import papa.internal.MyProcess.MyProcessData
 import papa.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLifecycle
-import java.util.concurrent.TimeUnit
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.

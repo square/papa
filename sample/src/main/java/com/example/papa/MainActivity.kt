@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
     addInteraction<Clicked> {
       onEvent<OnClick> { event ->
         start(Clicked(event.element), onCancel = {
-          Log.d("MainActivity","canceled $it")
+          Log.d("MainActivity", "canceled $it")
         }, cancelTimeoutMillis = 2000)
       }
     }

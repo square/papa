@@ -14,7 +14,6 @@ import curtains.windowAttachCount
 import papa.PapaEvent.FrozenFrameOnTouch
 import papa.PapaEventListener
 import papa.internal.FrozenFrameOnTouchDetector.install
-import java.util.concurrent.TimeUnit
 
 /**
  * Detects when the interval of time between when a touch event is issued and the next frame is
