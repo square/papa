@@ -3,7 +3,6 @@ package papa.internal
 import android.app.Activity
 import android.os.SystemClock
 import papa.SafeTrace
-import java.util.concurrent.TimeUnit
 
 internal class LaunchTracker(
   val appLaunchedCallback: (Launch) -> Unit

@@ -142,7 +142,7 @@ class InteractionEngine<I : Interaction, E : Any>(interactionScope: InteractionS
           runningDurationUptime = cancelUptime - startingEventSentUptime,
           frameCount = frameCount,
           startUptime = startingEventSentUptime
-      )
+        )
       )
     }
 
@@ -339,7 +339,6 @@ class CanceledInteractionResult<T : Interaction>(
   val totalDurationUptime: Duration
     get() = inputSystemDurationUptime + inputAppDurationUptime + runningDurationUptime
 
-
   override fun toString(): String {
     return "CanceledInteractionResult(" +
       "interaction=$interaction, " +
@@ -412,14 +411,12 @@ class InteractionLatencyResult<T : Interaction>(
   val traceDurationUptime: Duration
     get() = inputAppDurationUptime + displayDurationUptime
 
-
   /**
    * This represents the total time a user has been waiting for the interaction, i.e. this is the
    * real interaction latency.
    */
   val totalDurationUptime: Duration
     get() = inputSystemDurationUptime + inputAppDurationUptime + displayDurationUptime
-
 
   override fun toString(): String {
     return "InteractionLatencyResult(" +
@@ -496,4 +493,5 @@ fun foo() {
 }
 
 fun logToAnalytics(any: Any) {
+  println(any)
 }

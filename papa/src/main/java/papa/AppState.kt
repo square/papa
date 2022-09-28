@@ -12,6 +12,7 @@ sealed class AppState {
         return string
       }
     }
+
     class NumberValue(val number: Number) : Value() {
       override fun toString(): String {
         return number.toString()
@@ -23,6 +24,7 @@ sealed class AppState {
         return value.toString()
       }
     }
+
     object NoValue : Value()
   }
 

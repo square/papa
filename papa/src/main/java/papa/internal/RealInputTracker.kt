@@ -77,9 +77,14 @@ internal object RealInputTracker : InputTracker {
           val actionUpEventHolder = if (isActionUp) {
             val cookie = deliveryUptimeNanos.rem(Int.MAX_VALUE).toInt()
             SafeTrace.beginAsyncSection(TAP_INTERACTION_SECTION, cookie)
-            MotionEventHolder(DeliveredInput(MotionEvent.obtain(motionEvent), deliveryUptimeNanos.nanoseconds, 0) {
-              SafeTrace.endAsyncSection(TAP_INTERACTION_SECTION, cookie)
-            }).also {
+            MotionEventHolder(
+              DeliveredInput(
+                MotionEvent.obtain(motionEvent),
+                deliveryUptimeNanos.nanoseconds,
+                0
+              ) {
+                SafeTrace.endAsyncSection(TAP_INTERACTION_SECTION, cookie)
+              }).also {
               it.startCounting()
             }
           } else {
@@ -110,7 +115,7 @@ internal object RealInputTracker : InputTracker {
           if (isActionUp) {
             val clearEventForPostedClick = Runnable {
               actionUpEventHolder!!.stopCounting()
-              val actionUpEvent =  actionUpEventHolder.input
+              val actionUpEvent = actionUpEventHolder.input
               actionUpEvent.event.recycle()
               actionUpEvent.takeOverTraceEnd()?.invoke()
               if (motionEventTriggeringClickLocal.get() === actionUpEventHolder) {
@@ -131,7 +136,8 @@ internal object RealInputTracker : InputTracker {
             // dispatch state is not pressed (so we run into the else case here, which is good)
             if (viewPressedAfterDispatch is AbsListView) {
               val listViewTapDelay = ViewConfiguration.getPressedStateDuration()
-              val setEventTime = (TimeUnit.NANOSECONDS.toMillis(deliveryUptimeNanos) + listViewTapDelay) - 1
+              val setEventTime =
+                (TimeUnit.NANOSECONDS.toMillis(deliveryUptimeNanos) + listViewTapDelay) - 1
               val clearEventTime = dispatchEnd + listViewTapDelay
               handler.removeCallbacks(setEventForPostedClick)
               handler.postAtTime(setEventForPostedClick, setEventTime)

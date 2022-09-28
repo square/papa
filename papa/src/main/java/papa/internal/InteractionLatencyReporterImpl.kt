@@ -16,12 +16,11 @@ import papa.InteractionTrigger
 import papa.InteractionTrigger.Custom
 import papa.InteractionTrigger.InputEvent
 import papa.InteractionTrigger.Unknown
-import papa.SafeTrace
 import papa.PapaEvent.InteractionLatency
 import papa.PapaEventListener
+import papa.SafeTrace
 import papa.TriggerData
 import papa.internal.RealInputTracker.name
-import java.util.concurrent.TimeUnit
 
 internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
 
@@ -85,24 +84,25 @@ internal class InteractionLatencyReporterImpl : InteractionLatencyReporter {
     checkMainThread()
 
     onCurrentOrNextFrameRendered { frameRenderedUptime ->
-        endTrace()
-        val durationFromStartUptimeMillis = frameRenderedUptime.inWholeMilliseconds - startUptimeMillis
+      endTrace()
+      val durationFromStartUptimeMillis =
+        frameRenderedUptime.inWholeMilliseconds - startUptimeMillis
 
-        val stateAfterInteractionValue = when (stateAfterInteraction) {
-          is AppState.Value -> stateAfterInteraction
-          is ValueOnFrameRendered -> stateAfterInteraction.onFrameRendered()
-        }
+      val stateAfterInteractionValue = when (stateAfterInteraction) {
+        is AppState.Value -> stateAfterInteraction
+        is ValueOnFrameRendered -> stateAfterInteraction.onFrameRendered()
+      }
 
-        PapaEventListener.sendEvent(
-          InteractionLatency(
-            interaction = interaction,
-            stateBeforeInteraction = stateBeforeInteraction,
-            stateAfterInteraction = stateAfterInteractionValue,
-            startUptimeMillis = startUptimeMillis,
-            displayDurationUptimeMillis = durationFromStartUptimeMillis,
-            triggerData = triggerData,
-          )
+      PapaEventListener.sendEvent(
+        InteractionLatency(
+          interaction = interaction,
+          stateBeforeInteraction = stateBeforeInteraction,
+          stateAfterInteraction = stateAfterInteractionValue,
+          startUptimeMillis = startUptimeMillis,
+          displayDurationUptimeMillis = durationFromStartUptimeMillis,
+          triggerData = triggerData,
         )
+      )
     }
   }
 
