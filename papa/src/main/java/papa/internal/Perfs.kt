@@ -422,7 +422,7 @@ internal object Perfs {
       return
     }
     reportedFullDrawn = true
-    onNextFrameRendered { frameRenderedUptimeMillis ->
+    onCurrentOrNextFrameRendered { frameRenderedUptimeMillis ->
       appStartData = appStartData.copy(
         firstFrameAfterFullyDrawnElapsedUptimeMillis = frameRenderedUptimeMillis - appStartData.processStartUptimeMillis
       )

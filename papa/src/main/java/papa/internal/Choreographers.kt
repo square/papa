@@ -3,17 +3,15 @@ package papa.internal
 import android.os.SystemClock
 import android.view.Choreographer
 
-internal fun onNextFrameRendered(callback: (Long) -> Unit) {
-  Choreographer.getInstance().postFrameCallback {
-    onCurrentFrameRendered(callback)
-  }
-}
+private val pendingRenderedCallbacks = mutableListOf<(Long) -> Unit>()
 
 internal fun onCurrentOrNextFrameRendered(callback: (Long) -> Unit) {
   if (isChoreographerDoingFrame()) {
     onCurrentFrameRendered(callback)
   } else {
-    onNextFrameRendered(callback)
+    Choreographer.getInstance().postFrameCallback {
+      onCurrentFrameRendered(callback)
+    }
   }
 }
 
@@ -40,6 +38,11 @@ internal fun isChoreographerDoingFrame(): Boolean {
  * Should be called from within a choreographer frame callback
  */
 internal fun onCurrentFrameRendered(callback: (Long) -> Unit) {
+  val alreadyScheduled = pendingRenderedCallbacks.isNotEmpty()
+  pendingRenderedCallbacks += callback
+  if (alreadyScheduled) {
+    return
+  }
   // The frame callback runs somewhat in the middle of rendering, so by posting at the front
   // of the queue from there we get the timestamp for right when the next frame is done
   // rendering.
@@ -54,6 +57,9 @@ internal fun onCurrentFrameRendered(callback: (Long) -> Unit) {
   // this behavior.
   mainHandler.postAtFrontOfQueueAsync {
     val frameRenderedUptimeMillis = SystemClock.uptimeMillis()
-    callback(frameRenderedUptimeMillis)
+    for (pendingCallback in pendingRenderedCallbacks) {
+      pendingCallback(frameRenderedUptimeMillis)
+    }
+    pendingRenderedCallbacks.clear()
   }
 }
