@@ -128,47 +128,6 @@ public final class papa/AppStart$NoAppStartData : papa/AppStart {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract class papa/AppState {
-	public static final field Companion Lpapa/AppState$Companion;
-}
-
-public final class papa/AppState$Companion {
-	public final fun serializedAsync (Ljava/lang/Object;)Lpapa/AppState$Value$SerializedAsync;
-	public final fun value (Ljava/lang/Number;)Lpapa/AppState$Value$NumberValue;
-	public final fun value (Ljava/lang/String;)Lpapa/AppState$Value$StringValue;
-	public final fun valueOnFrameRendered (Lkotlin/jvm/functions/Function0;)Lpapa/AppState$ValueOnFrameRendered;
-}
-
-public abstract class papa/AppState$Value : papa/AppState {
-}
-
-public final class papa/AppState$Value$NoValue : papa/AppState$Value {
-	public static final field INSTANCE Lpapa/AppState$Value$NoValue;
-}
-
-public final class papa/AppState$Value$NumberValue : papa/AppState$Value {
-	public fun <init> (Ljava/lang/Number;)V
-	public final fun getNumber ()Ljava/lang/Number;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class papa/AppState$Value$SerializedAsync : papa/AppState$Value {
-	public fun <init> (Ljava/lang/Object;)V
-	public final fun getValue ()Ljava/lang/Object;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class papa/AppState$Value$StringValue : papa/AppState$Value {
-	public fun <init> (Ljava/lang/String;)V
-	public final fun getString ()Ljava/lang/String;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class papa/AppState$ValueOnFrameRendered : papa/AppState {
-	public fun <init> (Lkotlin/jvm/functions/Function0;)V
-	public final fun getOnFrameRendered ()Lkotlin/jvm/functions/Function0;
-}
-
 public final class papa/AppTask {
 	public fun <init> (Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Integer;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
@@ -266,13 +225,6 @@ public final class papa/CheckoutApplet : papa/PosInteraction {
 	public fun <init> ()V
 }
 
-public final class papa/DelayedInteractionStore {
-	public fun <init> (I)V
-	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun get (Ljava/lang/Class;)Lpapa/Interaction$Delayed;
-	public final fun plusAssign (Lpapa/Interaction$Delayed;)V
-}
-
 public final class papa/DeliveredInput {
 	public synthetic fun <init> (Landroid/view/InputEvent;JILkotlin/jvm/functions/Function0;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getDeliveryUptime-UwyO8pc ()J
@@ -300,35 +252,6 @@ public final class papa/InputTracker$DefaultImpls {
 	public static fun getTriggerEvent (Lpapa/InputTracker;)Lpapa/DeliveredInput;
 }
 
-public abstract interface class papa/Interaction {
-	public abstract fun getDescription ()Ljava/lang/String;
-}
-
-public final class papa/Interaction$DefaultImpls {
-	public static fun getDescription (Lpapa/Interaction;)Ljava/lang/String;
-}
-
-public final class papa/Interaction$Delayed {
-	public fun <init> (Lpapa/Interaction;)V
-	public final fun cancel ()V
-	public final fun getEndListeners ()Ljava/util/List;
-	public final fun getInteraction ()Lpapa/Interaction;
-	public final fun reportUiUpdated (Lpapa/AppState;)V
-	public static synthetic fun reportUiUpdated$default (Lpapa/Interaction$Delayed;Lpapa/AppState;ILjava/lang/Object;)V
-}
-
-public abstract class papa/Interaction$Delayed$End {
-}
-
-public final class papa/Interaction$Delayed$End$Cancel : papa/Interaction$Delayed$End {
-	public static final field INSTANCE Lpapa/Interaction$Delayed$End$Cancel;
-}
-
-public final class papa/Interaction$Delayed$End$UiUpdated : papa/Interaction$Delayed$End {
-	public fun <init> (Lpapa/AppState;)V
-	public final fun getStateAfterInteraction ()Lpapa/AppState;
-}
-
 public final class papa/InteractionEngine {
 	public fun <init> (Lpapa/InteractionScope;)V
 	public final fun sendEvent-8Mi8wO0 (Ljava/lang/Object;JLpapa/DeliveredInput;)V
@@ -345,22 +268,6 @@ public final class papa/InteractionEngine$RealRunningInteraction : android/view/
 
 public abstract interface class papa/InteractionEventReceiver {
 	public abstract fun sendEvent (Ljava/lang/Object;)V
-}
-
-public abstract interface class papa/InteractionLatencyReporter {
-	public static final field Companion Lpapa/InteractionLatencyReporter$Companion;
-	public abstract fun reportImmediateInteraction (Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;Lpapa/AppState;)V
-	public abstract fun startDelayedInteraction (Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;)Lpapa/Interaction$Delayed;
-}
-
-public final class papa/InteractionLatencyReporter$Companion : papa/InteractionLatencyReporter {
-	public fun reportImmediateInteraction (Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;Lpapa/AppState;)V
-	public fun startDelayedInteraction (Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;)Lpapa/Interaction$Delayed;
-}
-
-public final class papa/InteractionLatencyReporter$DefaultImpls {
-	public static synthetic fun reportImmediateInteraction$default (Lpapa/InteractionLatencyReporter;Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;Lpapa/AppState;ILjava/lang/Object;)V
-	public static synthetic fun startDelayedInteraction$default (Lpapa/InteractionLatencyReporter;Lpapa/InteractionTrigger;Lpapa/Interaction;Lpapa/AppState$Value;ILjava/lang/Object;)Lpapa/Interaction$Delayed;
 }
 
 public final class papa/InteractionLatencyResult {
@@ -494,18 +401,6 @@ public final class papa/PapaEvent$FrozenFrameOnTouch : papa/PapaEvent {
 }
 
 public final class papa/PapaEvent$FrozenFrameOnTouch$Companion {
-}
-
-public final class papa/PapaEvent$InteractionLatency : papa/PapaEvent {
-	public fun <init> (Lpapa/Interaction;Lpapa/TriggerData;JLpapa/AppState$Value;Lpapa/AppState$Value;J)V
-	public final fun getDisplayDurationUptimeMillis ()J
-	public final fun getInteraction ()Lpapa/Interaction;
-	public final fun getStartUptimeMillis ()J
-	public final fun getStateAfterInteraction ()Lpapa/AppState$Value;
-	public final fun getStateBeforeInteraction ()Lpapa/AppState$Value;
-	public final fun getTotalDurationUptimeMillis ()J
-	public final fun getTriggerData ()Lpapa/TriggerData;
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class papa/PapaEvent$UsageError : papa/PapaEvent {

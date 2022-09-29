@@ -3,44 +3,16 @@ package com.example.papa
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import papa.AppState
-import papa.Interaction
-import papa.InteractionEventReceiver
-import papa.InteractionLatencyReporter
-import papa.InteractionRuleClient
-import papa.InteractionTrigger
+import com.example.papa.ExampleApplication.Companion.interactionEventReceiver
 import java.util.Date
-import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : AppCompatActivity() {
-
-  class OnClick(val element: String)
-
-  class Clicked(override val description: String) : Interaction
-
-  val client = InteractionRuleClient<OnClick, Any>().apply {
-    addInteractionRule<Clicked> {
-      onEvent<OnClick> { event ->
-        startInteraction(Clicked(event.element)).finishOnFrameRendered { result ->
-          Log.d("MainActivity", "$result")
-        }
-      }
-    }
-    addInteractionRule<Clicked> {
-      onEvent<OnClick> { event ->
-        startInteraction(Clicked(event.element), onCancel = {
-          Log.d("MainActivity", "canceled $it")
-        }, cancelTimeout = 2000.milliseconds)
-      }
-    }
-  } as InteractionEventReceiver<OnClick>
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -88,17 +60,8 @@ class MainActivity : AppCompatActivity() {
     val date = Date()
     val newText = "Clicked on $element at $date"
     textView.text = newText
-    InteractionLatencyReporter.reportImmediateInteraction(
-      trigger = InteractionTrigger.InputEvent,
-      interaction = UpdateText,
-      stateBeforeInteraction = AppState.value(previousText),
-      stateAfterInteraction = AppState.value(newText)
-    )
-    client.sendEvent(OnClick(element))
-
+    interactionEventReceiver.sendEvent(OnMainActivityButtonClick(element, previousText, newText))
     // val stateHolder = PerformanceMetricsState.getForHierarchy(textView).state!!
     // stateHolder.addState("textview", "updated at $date")
   }
-
-  object UpdateText : Interaction
 }
