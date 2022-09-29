@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+Version 0.6
+
+_2022-09-28_
+
+* Rewrite of the APIs to track interaction latency to facilitate integration in a large codebase ([#38](https://github.com/square/papa/pull/38)). This also starts introducing the Kotlin `Duration` class in the APIs (instead of longs) and started replacing millis measurements with nanos measurements (the accumulated of rounding error led to results that were a few millis off). This also adds tracking of frame count per interaction ([#29](https://github.com/square/papa/issues/29)).
+* Use MessageCompat.setAsynchronous to support API 16+ ([#33](https://github.com/square/papa/pull/33))
+* `onCurrentFrameRendered()` joins multiple calls into a single post ([#35](https://github.com/square/papa/issues/35))
+
 Version 0.5
 
 _2022-05-26_
