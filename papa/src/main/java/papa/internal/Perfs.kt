@@ -23,7 +23,8 @@ import papa.AppUpdateStartStatus.NORMAL_START
 import papa.AppVisibilityState
 import papa.AppVisibilityState.INVISIBLE
 import papa.AppVisibilityState.VISIBLE
-import papa.SafeTrace
+import papa.PapaEvent.AppLaunch
+import papa.PapaEventListener
 import papa.PreLaunchState
 import papa.PreLaunchState.ACTIVITY_WAS_STOPPED
 import papa.PreLaunchState.NO_ACTIVITY_BUT_SAVED_STATE
@@ -33,8 +34,7 @@ import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
 import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
 import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
 import papa.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
-import papa.PapaEvent.AppLaunch
-import papa.PapaEventListener
+import papa.SafeTrace
 import papa.internal.AppUpdateDetector.Companion.trackAppUpgrade
 import papa.internal.LaunchTracker.Launch
 import papa.internal.LaunchedActivityStartingTransition.CREATED_NO_STATE
@@ -124,7 +124,7 @@ internal object Perfs {
     val initCalledCurrentTimeMillis = System.currentTimeMillis()
     val initCalledRealtimeMillis = SystemClock.elapsedRealtime()
     // Should only be init on the main thread, once.
-    if (!isOnMainThread() || initialized) {
+    if (!isMainThread || initialized) {
       return
     }
     if (context !is Application) {
@@ -257,29 +257,29 @@ internal object Perfs {
     }
 
     val appLaunchedCallback: (Launch) -> Unit = { launch ->
-          val preLaunchState = computePreLaunchState(launch)
+      val preLaunchState = computePreLaunchState(launch)
 
-          val (launchStartUptimeMillis, invisibleDurationRealtimeMillis) = computeLaunchTimes(
-            preLaunchState,
-            lastVisibilityChangeCurrentTimeMillis,
-            lastAppVisibilityState,
-            initCalledUptimeMillis,
-            launch,
-            initCalledRealtimeMillis
-          )
-          if (isTracingLaunch) {
-            SafeTrace.endAsyncSection(LAUNCH_TRACE_NAME)
-            isTracingLaunch = false
-          }
-          PapaEventListener.sendEvent(
-            AppLaunch(
-              preLaunchState = preLaunchState,
-              durationUptimeMillis = launch.endUptimeMillis - launchStartUptimeMillis,
-              trampolined = launch.trampoline,
-              invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
-              startUptimeMillis = launchStartUptimeMillis
-            )
-          )
+      val (launchStartUptimeMillis, invisibleDurationRealtimeMillis) = computeLaunchTimes(
+        preLaunchState,
+        lastVisibilityChangeCurrentTimeMillis,
+        lastAppVisibilityState,
+        initCalledUptimeMillis,
+        launch,
+        initCalledRealtimeMillis
+      )
+      if (isTracingLaunch) {
+        SafeTrace.endAsyncSection(LAUNCH_TRACE_NAME)
+        isTracingLaunch = false
+      }
+      PapaEventListener.sendEvent(
+        AppLaunch(
+          preLaunchState = preLaunchState,
+          durationUptimeMillis = launch.endUptimeMillis - launchStartUptimeMillis,
+          trampolined = launch.trampoline,
+          invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
+          startUptimeMillis = launchStartUptimeMillis
+        )
+      )
     }
     application.trackActivityLifecycle(
       { updateAppStartData ->
@@ -404,7 +404,7 @@ internal object Perfs {
   }
 
   internal fun firstComponentInstantiated(componentName: String) {
-    enforceMainThread()
+    checkMainThread()
     if (!initialized) {
       return
     }
@@ -417,14 +417,14 @@ internal object Perfs {
   }
 
   fun reportFullyDrawn() {
-    enforceMainThread()
+    checkMainThread()
     if (!initialized || reportedFullDrawn) {
       return
     }
     reportedFullDrawn = true
-    onCurrentOrNextFrameRendered { frameRenderedUptimeMillis ->
+    onCurrentOrNextFrameRendered { frameRenderedUptime ->
       appStartData = appStartData.copy(
-        firstFrameAfterFullyDrawnElapsedUptimeMillis = frameRenderedUptimeMillis - appStartData.processStartUptimeMillis
+        firstFrameAfterFullyDrawnElapsedUptimeMillis = frameRenderedUptime.inWholeMilliseconds - appStartData.processStartUptimeMillis
       )
     }
   }
@@ -433,7 +433,7 @@ internal object Perfs {
     eventName: String,
     extra: Any? = null
   ) {
-    enforceMainThread()
+    checkMainThread()
     if (!initialized || eventName in appStartData.customFirstEvents) {
       return
     }

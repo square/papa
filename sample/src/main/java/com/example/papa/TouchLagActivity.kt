@@ -5,13 +5,9 @@ import android.animation.AnimatorListenerAdapter
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import papa.Interaction
-import papa.InteractionLatencyReporter
-import papa.InteractionTrigger
+import com.example.papa.ExampleApplication.Companion.interactionEventReceiver
 
 class TouchLagActivity : AppCompatActivity() {
-
-  object TouchLagInteraction : Interaction
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -19,29 +15,23 @@ class TouchLagActivity : AppCompatActivity() {
     setContentView(R.layout.touch_lag)
 
     findViewById<View>(R.id.no_lag).setOnClickListener {
-      InteractionLatencyReporter.reportImmediateInteraction(
-        InteractionTrigger.Input, TouchLagInteraction
-      )
+      interactionEventReceiver.sendEvent(OnTouchLagClick)
       updateContainerBackgroundColor()
     }
     findViewById<View>(R.id.lag_100_ms).setOnClickListener {
-      InteractionLatencyReporter.reportImmediateInteraction(
-        InteractionTrigger.Input, TouchLagInteraction
-      )
+      interactionEventReceiver.sendEvent(OnTouchLagClick)
+
       Thread.sleep(100)
       updateContainerBackgroundColor()
     }
     findViewById<View>(R.id.lag_300_ms).setOnClickListener {
-      InteractionLatencyReporter.reportImmediateInteraction(
-        InteractionTrigger.Input, TouchLagInteraction
-      )
+      interactionEventReceiver.sendEvent(OnTouchLagClick)
+
       Thread.sleep(300)
       updateContainerBackgroundColor()
     }
     findViewById<View>(R.id.lag_700_ms).setOnClickListener {
-      InteractionLatencyReporter.reportImmediateInteraction(
-        InteractionTrigger.Input, TouchLagInteraction
-      )
+      interactionEventReceiver.sendEvent(OnTouchLagClick)
       Thread.sleep(700)
       updateContainerBackgroundColor()
     }

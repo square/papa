@@ -7,12 +7,9 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.metrics.performance.PerformanceMetricsState
-import papa.AppState
-import papa.Interaction
-import papa.InteractionLatencyReporter
-import papa.InteractionTrigger
+import com.example.papa.ExampleApplication.Companion.interactionEventReceiver
 import java.util.Date
 
 class MainActivity : AppCompatActivity() {
@@ -53,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     }
     listView.setOnItemClickListener { _, _, position, _ ->
       trackInteraction(adapter.getItem(position)!!)
+      Toast.makeText(this, "tapped", Toast.LENGTH_SHORT).show()
     }
   }
 
@@ -62,16 +60,8 @@ class MainActivity : AppCompatActivity() {
     val date = Date()
     val newText = "Clicked on $element at $date"
     textView.text = newText
-    InteractionLatencyReporter.reportImmediateInteraction(
-      trigger = InteractionTrigger.Input,
-      interaction = UpdateText,
-      stateBeforeInteraction = AppState.value(previousText),
-      stateAfterInteraction = AppState.value(newText)
-    )
-
-    val stateHolder = PerformanceMetricsState.getForHierarchy(textView).state!!
-    stateHolder.addState("textview", "updated at $date")
+    interactionEventReceiver.sendEvent(OnMainActivityButtonClick(element, previousText, newText))
+    // val stateHolder = PerformanceMetricsState.getForHierarchy(textView).state!!
+    // stateHolder.addState("textview", "updated at $date")
   }
-
-  object UpdateText : Interaction
 }

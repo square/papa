@@ -1,6 +1,5 @@
 package papa
 
-import papa.AppState.Value.NoValue
 import papa.PapaEvent.FrozenFrameOnTouch.Companion.FROZEN_FRAME_THRESHOLD
 
 sealed class PapaEvent {
@@ -63,35 +62,6 @@ sealed class PapaEvent {
         "trampolined=$trampolined, " +
         "backgroundDuration=$invisibleDurationRealtimeMillis ms, " +
         "startUptimeMillis=$startUptimeMillis" +
-        ")"
-    }
-  }
-
-  class InteractionLatency(
-    val interaction: Interaction,
-    val triggerData: TriggerData,
-    /**
-     * The time from when the interaction started to be reported to when a frame was rendered
-     * after the interaction end.
-     */
-    val displayDurationUptimeMillis: Long,
-    val stateBeforeInteraction: AppState.Value,
-    val stateAfterInteraction: AppState.Value,
-    val startUptimeMillis: Long
-  ) : PapaEvent() {
-
-    val totalDurationUptimeMillis: Long
-      get() = triggerData.durationUptimeMillis + displayDurationUptimeMillis
-
-    override fun toString(): String {
-      return "InteractionLatency(" +
-        "interaction='${interaction.description}', " +
-        "totalDuration=$totalDurationUptimeMillis ms, " +
-        "trigger=$triggerData, " +
-        "displayDuration=$displayDurationUptimeMillis ms" +
-        (if (stateBeforeInteraction != NoValue) ", stateBeforeInteraction='$stateBeforeInteraction'" else "") +
-        (if (stateAfterInteraction != NoValue) ", stateAfterInteraction='$stateAfterInteraction'" else "") +
-        ", startUptimeMillis=$startUptimeMillis" +
         ")"
     }
   }

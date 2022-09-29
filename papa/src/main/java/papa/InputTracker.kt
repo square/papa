@@ -4,6 +4,9 @@ import android.view.InputEvent
 import android.view.KeyEvent
 import android.view.MotionEvent
 import papa.internal.RealInputTracker
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.DurationUnit.MILLISECONDS
 
 interface InputTracker {
 
@@ -34,7 +37,40 @@ interface InputTracker {
   companion object : InputTracker by RealInputTracker
 }
 
-class DeliveredInput<T : InputEvent>(
-  val event: T,
-  val deliveryUptimeMillis: Long
-)
+/**
+ * [InputEventType] is either a [MotionEvent] or a [KeyEvent].
+ */
+class DeliveredInput<InputEventType : InputEvent>(
+  val event: InputEventType,
+  val deliveryUptime: Duration,
+  val framesSinceDelivery: Int,
+  private var endTrace: ((() -> Unit))?
+) {
+
+  val eventUptime: Duration
+    get() = event.eventTime.milliseconds
+
+  fun takeOverTraceEnd(): (() -> Unit)? {
+    val transferedEndTrace = endTrace
+    endTrace = null
+    return transferedEndTrace
+  }
+
+  internal fun increaseFrameCount(): DeliveredInput<InputEventType> {
+    val copy = DeliveredInput(
+      event = event,
+      deliveryUptime = deliveryUptime,
+      framesSinceDelivery = framesSinceDelivery + 1,
+      endTrace = endTrace
+    )
+    endTrace = null
+    return copy
+  }
+
+  override fun toString(): String {
+    return "DeliveredInput(" +
+      "event=$event, " +
+      "deliveryUptime=${deliveryUptime.toString(MILLISECONDS)}, " +
+      "framesSinceDelivery=$framesSinceDelivery)"
+  }
+}

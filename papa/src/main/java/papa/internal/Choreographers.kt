@@ -1,11 +1,12 @@
 package papa.internal
 
-import android.os.SystemClock
 import android.view.Choreographer
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.nanoseconds
 
-private val pendingRenderedCallbacks = mutableListOf<(Long) -> Unit>()
+private val pendingRenderedCallbacks = mutableListOf<(Duration) -> Unit>()
 
-internal fun onCurrentOrNextFrameRendered(callback: (Long) -> Unit) {
+internal fun onCurrentOrNextFrameRendered(callback: (Duration) -> Unit) {
   if (isChoreographerDoingFrame()) {
     onCurrentFrameRendered(callback)
   } else {
@@ -19,7 +20,7 @@ internal fun onCurrentOrNextFrameRendered(callback: (Long) -> Unit) {
  * Note: this is somewhat slow and fragile.
  */
 internal fun isChoreographerDoingFrame(): Boolean {
-  if (!isOnMainThread()) {
+  if (!isMainThread) {
     return false
   }
   val stackTrace = RuntimeException().stackTrace
@@ -37,7 +38,7 @@ internal fun isChoreographerDoingFrame(): Boolean {
 /**
  * Should be called from within a choreographer frame callback
  */
-internal fun onCurrentFrameRendered(callback: (Long) -> Unit) {
+internal fun onCurrentFrameRendered(callback: (Duration) -> Unit) {
   val alreadyScheduled = pendingRenderedCallbacks.isNotEmpty()
   pendingRenderedCallbacks += callback
   if (alreadyScheduled) {
@@ -56,9 +57,9 @@ internal fun onCurrentFrameRendered(callback: (Long) -> Unit) {
   // top priority and will run prior to the current head if its time that's gone. Async prevents
   // this behavior.
   mainHandler.postAtFrontOfQueueAsync {
-    val frameRenderedUptimeMillis = SystemClock.uptimeMillis()
+    val frameRenderedUptime = System.nanoTime().nanoseconds
     for (pendingCallback in pendingRenderedCallbacks) {
-      pendingCallback(frameRenderedUptimeMillis)
+      pendingCallback(frameRenderedUptime)
     }
     pendingRenderedCallbacks.clear()
   }

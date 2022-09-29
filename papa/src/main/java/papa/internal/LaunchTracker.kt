@@ -101,7 +101,7 @@ internal class LaunchTracker(
     // not drawing and another activity is resumed immediately after, whichever activity draws
     // first will end up being declared as the final launched activity.
     resumedActivity.window.onNextPreDraw {
-      onCurrentFrameRendered { frameRenderedUptimeMillis ->
+      onCurrentFrameRendered { frameRenderedUptime ->
         val launchInProgress = launchInProgress ?: return@onCurrentFrameRendered
         this.launchInProgress = null
 
@@ -118,7 +118,7 @@ internal class LaunchTracker(
             trampoline = activityHash != resumedActivityHash,
             startUptimeMillis = startUptimeMillis,
             startRealtimeMillis = startRealtimeMillis,
-            endUptimeMillis = frameRenderedUptimeMillis,
+            endUptimeMillis = frameRenderedUptime.inWholeMilliseconds,
             invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
             activityStartingTransition = activityStartingTransition
           )

@@ -7,8 +7,8 @@ import android.os.Build
 import android.os.SystemClock
 import papa.AppTask
 import papa.internal.MyProcess.Companion.findMyProcessInfo
-import papa.internal.MyProcess.MyProcessData
 import papa.internal.MyProcess.ErrorRetrievingMyProcessData
+import papa.internal.MyProcess.MyProcessData
 
 /**
  * [findMyProcessInfo] captures and returns information about the current process as
@@ -43,11 +43,14 @@ internal sealed class MyProcess {
               }
             }
             val processIds = runningProcesses.map { it.pid }
-            return ErrorRetrievingMyProcessData(RuntimeException(
-              "ActivityManager.getRunningAppProcesses() returned $processIds, " +
-                "no process matching myPid() $myPid")
+            return ErrorRetrievingMyProcessData(
+              RuntimeException(
+                "ActivityManager.getRunningAppProcesses() returned $processIds, " +
+                  "no process matching myPid() $myPid"
+              )
             )
-          } ?: ErrorRetrievingMyProcessData(RuntimeException("ActivityManager.getRunningAppProcesses() returned null"))
+          }
+            ?: ErrorRetrievingMyProcessData(RuntimeException("ActivityManager.getRunningAppProcesses() returned null"))
         } catch (exception: SecurityException) {
           // This is a known possible error for isolated processes.
           // https://github.com/square/leakcanary/issues/948
