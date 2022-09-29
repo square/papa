@@ -1,7 +1,6 @@
 package papa
 
 import android.os.SystemClock
-import android.util.Log
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import android.view.InputEvent
@@ -433,76 +432,4 @@ class InteractionLatencyResult<InteractionType : Any>(
       "totalDuration=${totalDurationUptime.toString(MILLISECONDS)}" +
       ")"
   }
-}
-
-object OpenCheckoutApplet : PosInteraction
-
-class Navigation(val destination: Any) : PosInteractionEvent
-
-class CheckoutApplet : PosInteraction
-
-object TapItem : PosInteractionEvent {
-  val itemId = ""
-}
-
-object ItemVisibleInCart : PosInteractionEvent {
-  val itemId = ""
-}
-
-class AddItemToCart(val itemId: String) : PosInteraction
-
-interface PosInteractionEvent
-interface PosInteraction
-
-object KeypadVisible : PosInteractionEvent
-object UserPressedBack : PosInteractionEvent
-
-fun foo() {
-
-  val client = InteractionRuleClient<PosInteractionEvent, PosInteraction>()
-
-  client.sendEvent(KeypadVisible)
-  client.sendEvent(Navigation(Any()))
-
-  val configuredRule = client.addInteractionRule<OpenCheckoutApplet> {
-    onEvent<Navigation> { navigation ->
-      if (navigation.destination is CheckoutApplet) {
-        cancelRunningInteractions()
-        startInteraction(OpenCheckoutApplet, onCancel = {
-          Log.d("event canceled", it.cancelReason)
-        })
-      }
-    }
-    onEvent<UserPressedBack> {
-      runningInteractions().singleOrNull()?.cancel("user pressed back")
-    }
-    onEvent<KeypadVisible> {
-      runningInteractions().singleOrNull()?.finishOnFrameRendered { result ->
-        logToAnalytics(result)
-      }
-    }
-  }
-
-  client.addInteractionRule<AddItemToCart> {
-    onEvent<TapItem> { tapItem ->
-      startInteraction(AddItemToCart(tapItem.itemId))
-    }
-    onEvent<ItemVisibleInCart> { itemVisibleInCart ->
-      val addItemToCart = runningInteractions().firstOrNull {
-        it.interaction.itemId == itemVisibleInCart.itemId
-      }
-      addItemToCart?.let { interaction ->
-        interaction.finishOnFrameRendered { result ->
-          logToAnalytics(result)
-        }
-      }
-    }
-  }
-
-  // when we don't need this rule anymore
-  configuredRule.remove()
-}
-
-fun logToAnalytics(any: Any) {
-  println(any)
 }
