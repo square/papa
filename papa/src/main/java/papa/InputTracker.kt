@@ -37,8 +37,11 @@ interface InputTracker {
   companion object : InputTracker by RealInputTracker
 }
 
-class DeliveredInput<T : InputEvent>(
-  val event: T,
+/**
+ * [InputEventType] is either a [MotionEvent] or a [KeyEvent].
+ */
+class DeliveredInput<InputEventType : InputEvent>(
+  val event: InputEventType,
   val deliveryUptime: Duration,
   val framesSinceDelivery: Int,
   private var endTrace: ((() -> Unit))?
@@ -53,7 +56,7 @@ class DeliveredInput<T : InputEvent>(
     return transferedEndTrace
   }
 
-  internal fun increaseFrameCount(): DeliveredInput<T> {
+  internal fun increaseFrameCount(): DeliveredInput<InputEventType> {
     val copy = DeliveredInput(
       event = event,
       deliveryUptime = deliveryUptime,

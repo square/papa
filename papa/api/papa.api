@@ -306,23 +306,6 @@ public final class papa/InteractionTrace$Companion {
 	public final fun fromNow (Ljava/lang/String;)Lpapa/InteractionTrace;
 }
 
-public abstract class papa/InteractionTrigger {
-}
-
-public final class papa/InteractionTrigger$Custom : papa/InteractionTrigger {
-	public fun <init> (Ljava/lang/String;J)V
-	public final fun getName ()Ljava/lang/String;
-	public final fun getTriggerStartUptimeMillis ()J
-}
-
-public final class papa/InteractionTrigger$InputEvent : papa/InteractionTrigger {
-	public static final field INSTANCE Lpapa/InteractionTrigger$InputEvent;
-}
-
-public final class papa/InteractionTrigger$Unknown : papa/InteractionTrigger {
-	public static final field INSTANCE Lpapa/InteractionTrigger$Unknown;
-}
-
 public abstract interface class papa/OnEventScope {
 	public abstract fun cancelRunningInteractions (Ljava/lang/String;)V
 	public abstract fun finishingInteractions ()Lkotlin/sequences/Sequence;
