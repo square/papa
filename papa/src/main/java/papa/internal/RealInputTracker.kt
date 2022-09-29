@@ -24,7 +24,6 @@ import papa.InputTracker
 import papa.SafeTrace
 import papa.internal.FrozenFrameOnTouchDetector.findPressedView
 import papa.safeTrace
-import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.nanoseconds
 
 internal object RealInputTracker : InputTracker {
@@ -35,6 +34,13 @@ internal object RealInputTracker : InputTracker {
   override val currentKeyEvent: DeliveredInput<KeyEvent>?
     get() = currentKeyEventLocal.get()
 
+  /**
+   * The thread locals here aren't in charge of actually holding the event holder for the duration
+   * of its lifecycle, but instead of holding the event in specific time spans (wrapping onClick
+   * callback invocations) so that we can reach back here from an onClick and capture the event but
+   * also ensure that if we reach back outside of an onClick sandwich we actually find nothing
+   * event if overall the EventHolder is still hanging out in memory.
+   */
   private val motionEventTriggeringClickLocal = ThreadLocal<MotionEventHolder>()
   private val currentKeyEventLocal = ThreadLocal<DeliveredInput<KeyEvent>>()
 
@@ -71,16 +77,21 @@ internal object RealInputTracker : InputTracker {
         window.touchEventInterceptors += TouchEventInterceptor { motionEvent, dispatch ->
           // Note: what if we get 2 taps in a single dispatch loop? Then we're simply posting the
           // following: (recordTouch, onClick, clearTouch, recordTouch, onClick, clearTouch).
-          val deliveryUptimeNanos = System.nanoTime()
+          val deliveryUptime = System.nanoTime().nanoseconds
           val isActionUp = motionEvent.action == MotionEvent.ACTION_UP
 
+          //  We wrap the event in a holder so that we can actually replace the event within the
+          //  holder. Why replace it? Because we want to increase the frame count over time, but we
+          //  want to do that by swapping an immutable event, so that if we capture such event at
+          //  time N and then the count gets updated at N + 1, the count update isn't reflected in
+          //  the code that captured the event a time N.
           val actionUpEventHolder = if (isActionUp) {
-            val cookie = deliveryUptimeNanos.rem(Int.MAX_VALUE).toInt()
+            val cookie = deliveryUptime.inWholeMilliseconds.rem(Int.MAX_VALUE).toInt()
             SafeTrace.beginAsyncSection(TAP_INTERACTION_SECTION, cookie)
             MotionEventHolder(
               DeliveredInput(
                 MotionEvent.obtain(motionEvent),
-                deliveryUptimeNanos.nanoseconds,
+                deliveryUptime,
                 0
               ) {
                 SafeTrace.endAsyncSection(TAP_INTERACTION_SECTION, cookie)
@@ -124,21 +135,19 @@ internal object RealInputTracker : InputTracker {
             }
 
             val dispatchEnd = SystemClock.uptimeMillis()
-            // AbsListView subclasses post clicks with a delay.
-            // https://issuetracker.google.com/issues/232962097
-
             val viewPressedAfterDispatch = safeTrace("findPressedView()") {
               (window.decorView as? ViewGroup)?.findPressedView()
             }
-
+            // AbsListView subclasses post clicks with a delay.
+            // https://issuetracker.google.com/issues/232962097
             // Note: If a listview has no long press item listener, then long press are delivered
             // as a click on UP. In that case the delivery is immediate (no delay) and the post
             // dispatch state is not pressed (so we run into the else case here, which is good)
             if (viewPressedAfterDispatch is AbsListView) {
-              val listViewTapDelay = ViewConfiguration.getPressedStateDuration()
+              val listViewTapDelayMillis = ViewConfiguration.getPressedStateDuration()
               val setEventTime =
-                (TimeUnit.NANOSECONDS.toMillis(deliveryUptimeNanos) + listViewTapDelay) - 1
-              val clearEventTime = dispatchEnd + listViewTapDelay
+                (deliveryUptime.inWholeMilliseconds + listViewTapDelayMillis) - 1
+              val clearEventTime = dispatchEnd + listViewTapDelayMillis
               handler.removeCallbacks(setEventForPostedClick)
               handler.postAtTime(setEventForPostedClick, setEventTime)
               handler.postAtTime(clearEventForPostedClick, clearEventTime)
