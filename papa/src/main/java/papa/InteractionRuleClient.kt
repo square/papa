@@ -53,7 +53,9 @@ class InteractionRuleClient<EventType : Any, ParentInteractionType : Any> : Inte
     } else {
       mainHandler.post {
         for (engine in interactionEngines) {
-          engine.sendEvent(event, eventSentUptime, null)
+          // interactionInput is null as the event was sent from a background thread so there's
+          // no way the event can be tied back to an input event.
+          engine.sendEvent(event, eventSentUptime, interactionInput = null)
         }
       }
     }
@@ -95,11 +97,7 @@ class InteractionEngine<InteractionType : Any, ParentEventType : Any>(interactio
     private val onCancel: (CanceledInteractionResult<InteractionType>) -> Unit
   ) : RunningInteraction<InteractionType>, FinishingInteraction<InteractionType>, FrameCallback {
 
-    private var frameCount: Int = if (isChoreographerDoingFrame()) {
-      1
-    } else {
-      0
-    }
+    private var frameCount: Int = if (isChoreographerDoingFrame()) 1 else 0
 
     /**
      * Note: this must implement [Runnable]. A lambda would compile fine but then be wrapped into

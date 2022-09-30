@@ -44,7 +44,7 @@ class DeliveredInput<InputEventType : InputEvent>(
   val event: InputEventType,
   val deliveryUptime: Duration,
   val framesSinceDelivery: Int,
-  private var endTrace: ((() -> Unit))?
+  private var endTrace: (() -> Unit)?
 ) {
 
   val eventUptime: Duration
