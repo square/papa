@@ -69,8 +69,9 @@ class DeliveredInput<InputEventType : InputEvent>(
 
   override fun toString(): String {
     return "DeliveredInput(" +
-      "event=$event, " +
       "deliveryUptime=${deliveryUptime.toString(MILLISECONDS)}, " +
-      "framesSinceDelivery=$framesSinceDelivery)"
+      "framesSinceDelivery=$framesSinceDelivery, " +
+      "event=$event" +
+      ")"
   }
 }

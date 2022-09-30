@@ -7,7 +7,6 @@ import android.view.InputEvent
 import papa.TrackedInteraction.FinishingInteraction
 import papa.TrackedInteraction.RunningInteraction
 import papa.internal.checkMainThread
-import papa.internal.isChoreographerDoingFrame
 import papa.internal.isMainThread
 import papa.internal.mainHandler
 import papa.internal.onCurrentOrNextFrameRendered
@@ -16,46 +15,55 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.DurationUnit.MILLISECONDS
 
-interface InteractionRuleBuilder<EventType : Any, ParentInteractionType : Any> {
+interface InteractionRuleBuilder<ParentInteractionType : Any, EventType : Any> {
   fun <InteractionType : ParentInteractionType> addInteractionRule(block: InteractionScope<InteractionType, EventType>.() -> Unit): RemovableInteraction
+}
+
+fun interface InteractionResultListener<InteractionType : Any, EventType : Any> {
+  fun onInteractionResult(result: InteractionResult<InteractionType, EventType>)
 }
 
 fun interface RemovableInteraction {
   fun remove()
 }
 
-interface InteractionEventReceiver<EventType> {
+interface InteractionEventSink<EventType> {
   fun sendEvent(event: EventType)
 }
 
-class InteractionRuleClient<EventType : Any, ParentInteractionType : Any> : InteractionRuleBuilder<EventType, ParentInteractionType>, InteractionEventReceiver<EventType> {
+class InteractionRuleClient<ParentInteractionType : Any, EventType : Any>(
+  private val resultListener: InteractionResultListener<ParentInteractionType, EventType>
+) : InteractionRuleBuilder<ParentInteractionType, EventType>, InteractionEventSink<EventType> {
 
-  private val interactionEngines = mutableListOf<InteractionEngine<*, EventType>>()
+  private val interactionEngines = mutableListOf<InteractionEngine<*, *, EventType>>()
 
   override fun <InteractionType : ParentInteractionType> addInteractionRule(block: InteractionScope<InteractionType, EventType>.() -> Unit): RemovableInteraction {
     checkMainThread()
-    val engine = InteractionScope<InteractionType, EventType>().apply {
+    val interactionScope = InteractionScope<InteractionType, EventType>().apply {
       block()
-    }.buildInteractionEngine()
+    }
+    val engine = InteractionEngine(resultListener, interactionScope)
     interactionEngines += engine
     return RemovableInteraction {
       checkMainThread()
+      engine.cancelRunningInteractions("Rule removed")
       interactionEngines -= engine
     }
   }
 
   override fun sendEvent(event: EventType) {
     val eventSentUptime = System.nanoTime().nanoseconds
+    val sentEvent = SentEvent(eventSentUptime, event)
     if (isMainThread) {
       for (engine in interactionEngines) {
-        engine.sendEvent(event, eventSentUptime, InputTracker.triggerEvent)
+        engine.sendEvent(sentEvent, InputTracker.triggerEvent)
       }
     } else {
       mainHandler.post {
         for (engine in interactionEngines) {
           // interactionInput is null as the event was sent from a background thread so there's
           // no way the event can be tied back to an input event.
-          engine.sendEvent(event, eventSentUptime, interactionInput = null)
+          engine.sendEvent(sentEvent, interactionInput = null)
         }
       }
     }
@@ -69,35 +77,39 @@ annotation class RuleMarker
 class InteractionScope<InteractionType : Any, ParentEventType : Any> {
 
   // Public because onEvent is inline (to capture the reified event type).
-  val onEventCallbacks = mutableListOf<Pair<Class<out ParentEventType>, OnEventScope<InteractionType>.(ParentEventType) -> Unit>>()
+  val onEventCallbacks =
+    mutableListOf<Pair<Class<out ParentEventType>, OnEventScope<InteractionType>.(ParentEventType) -> Unit>>()
 
   @RuleMarker
   inline fun <reified EventType : ParentEventType> onEvent(noinline block: OnEventScope<InteractionType>.(EventType) -> Unit) {
     @Suppress("UNCHECKED_CAST")
     onEventCallbacks.add(EventType::class.java to (block as OnEventScope<InteractionType>.(ParentEventType) -> Unit))
   }
-
-  internal fun buildInteractionEngine(): InteractionEngine<*, ParentEventType> =
-    InteractionEngine(this)
 }
 
-class InteractionEngine<InteractionType : Any, ParentEventType : Any>(interactionScope: InteractionScope<InteractionType, ParentEventType>) {
+private class InteractionEngine<ParentInteractionType : Any, InteractionType : ParentInteractionType, ParentEventType : Any>(
+  private val resultListener: InteractionResultListener<ParentInteractionType, ParentEventType>,
+  interactionScope: InteractionScope<InteractionType, ParentEventType>
+) {
 
   private val onEventCallbacks: List<Pair<Class<out ParentEventType>, OnEventScope<InteractionType>.(ParentEventType) -> Unit>>
 
   private val runningInteractions = mutableListOf<RunningInteraction<InteractionType>>()
   private val finishingInteractions = mutableListOf<FinishingInteraction<InteractionType>>()
 
+  private var eventInScope: SentEvent<ParentEventType>? = null
+
   inner class RealRunningInteraction(
-    private val startingEventSentUptime: Duration,
+    private val start: SentEvent<ParentEventType>,
     private val interactionInput: DeliveredInput<out InputEvent>?,
     private val trace: InteractionTrace,
     override var interaction: InteractionType,
-    cancelTimeout: Duration,
-    private val onCancel: (CanceledInteractionResult<InteractionType>) -> Unit
+    cancelTimeout: Duration
   ) : RunningInteraction<InteractionType>, FinishingInteraction<InteractionType>, FrameCallback {
 
-    private var frameCount: Int = if (isChoreographerDoingFrame()) 1 else 0
+    private var frameCountSinceStart: Int = 0
+
+    private lateinit var end: SentEvent<ParentEventType>
 
     /**
      * Note: this must implement [Runnable]. A lambda would compile fine but then be wrapped into
@@ -111,7 +123,7 @@ class InteractionEngine<InteractionType : Any, ParentEventType : Any>(interactio
     private val choreographer = Choreographer.getInstance()
 
     override fun doFrame(frameTimeNanos: Long) {
-      frameCount++
+      frameCountSinceStart++
       choreographer.postFrameCallback(this)
     }
 
@@ -129,38 +141,50 @@ class InteractionEngine<InteractionType : Any, ParentEventType : Any>(interactio
     }
 
     override fun cancel(reason: String) {
-      val cancelUptime = System.nanoTime().nanoseconds
+      val end = eventInScope
+      val cancelUptime = end?.uptime ?: System.nanoTime().nanoseconds
       stopRunning()
       trace.endTrace()
-      onCancel(
-        CanceledInteractionResult(
-          interaction = interaction,
-          cancelReason = reason,
-          interactionInput = interactionInput,
-          runningDurationUptime = cancelUptime - startingEventSentUptime,
-          frameCount = frameCount,
-          startUptime = startingEventSentUptime
+      resultListener.onInteractionResult(
+        InteractionResult.Canceled(
+          data = InteractionResultDataPayload(
+            interaction = interaction,
+            interactionInput = interactionInput,
+            runningFrameCount = frameCountSinceStart,
+            start = start,
+          ),
+          end = end,
+          cancelUptime = cancelUptime,
+          cancelReason = reason
         )
       )
     }
 
-    override fun finishOnFrameRendered(block: (InteractionLatencyResult<InteractionType>) -> Unit): FinishingInteraction<InteractionType> {
+    override fun finish(): FinishingInteraction<InteractionType> {
       stopRunning()
       finishingInteractions += this
+      updateEndEvent()
       onCurrentOrNextFrameRendered { frameRenderedUptime ->
         choreographer.removeFrameCallback(this)
         trace.endTrace()
-
-        val result = InteractionLatencyResult(
-          interaction = interaction,
-          interactionInput = interactionInput,
-          displayDurationUptime = (frameRenderedUptime - startingEventSentUptime),
-          frameCount = frameCount,
-          startUptime = startingEventSentUptime
+        resultListener.onInteractionResult(
+          InteractionResult.Finished(
+            data = InteractionResultDataPayload(
+              interaction = interaction,
+              interactionInput = interactionInput,
+              runningFrameCount = frameCountSinceStart,
+              start = start,
+            ),
+            end = end,
+            endFrameRenderedUptime = frameRenderedUptime
+          )
         )
-        block(result)
       }
       return this
+    }
+
+    override fun updateEndEvent() {
+      end = eventInScope!!
     }
   }
 
@@ -169,11 +193,10 @@ class InteractionEngine<InteractionType : Any, ParentEventType : Any>(interactio
   }
 
   fun sendEvent(
-    event: ParentEventType,
-    eventSentUptime: Duration,
+    sentEvent: SentEvent<ParentEventType>,
     interactionInput: DeliveredInput<out InputEvent>?
   ) {
-    val eventClassHierarchy = generateSequence<Class<*>>(event::class.java) {
+    val eventClassHierarchy = generateSequence<Class<*>>(sentEvent.event::class.java) {
       it.superclass
     }.toList()
 
@@ -185,35 +208,40 @@ class InteractionEngine<InteractionType : Any, ParentEventType : Any>(interactio
       override val interactionInput = interactionInput
 
       override fun cancelRunningInteractions(reason: String) {
-        runningInteractions().forEach { it.cancel(reason) }
+        this@InteractionEngine.cancelRunningInteractions(reason)
       }
 
       override fun startInteraction(
         interaction: InteractionType,
         trace: InteractionTrace,
         cancelTimeout: Duration,
-        onCancel: (CanceledInteractionResult<InteractionType>) -> Unit
       ): RunningInteraction<InteractionType> {
         // If the interaction input trace end isn't taken over yet, end it.
         interactionInput?.takeOverTraceEnd()?.invoke()
         val runningInteraction = RealRunningInteraction(
-          startingEventSentUptime = eventSentUptime,
+          start = sentEvent,
           interactionInput = interactionInput,
           trace = trace,
           interaction = interaction,
-          cancelTimeout,
-          onCancel
+          cancelTimeout
         )
         runningInteractions += runningInteraction
         return runningInteraction
       }
     }
 
+    eventInScope = sentEvent
     onEventCallbacks.filter { (callbackEventClass, _) ->
       callbackEventClass in eventClassHierarchy
     }.forEach { (_, callback) ->
-      realEventScope.callback(event)
+      realEventScope.callback(sentEvent.event)
     }
+    eventInScope = null
+  }
+
+  fun cancelRunningInteractions(reason: String) {
+    // Copy list as cancel mutates the backing list.
+    runningInteractions.toList().asSequence().forEach { it.cancel(reason) }
   }
 }
 
@@ -233,7 +261,6 @@ interface OnEventScope<InteractionType : Any> {
     interaction: InteractionType,
     trace: InteractionTrace = InteractionTrace.fromInputDelivered(interaction, interactionInput),
     cancelTimeout: Duration = 1.minutes,
-    onCancel: (CanceledInteractionResult<InteractionType>) -> Unit = { }
   ): RunningInteraction<InteractionType>
 }
 
@@ -271,163 +298,110 @@ sealed interface TrackedInteraction<InteractionType : Any> {
 
   interface RunningInteraction<InteractionType : Any> : TrackedInteraction<InteractionType> {
     fun cancel(reason: String = CANCEL_REASON_NOT_PROVIDED)
-    fun finishOnFrameRendered(block: (InteractionLatencyResult<InteractionType>) -> Unit): FinishingInteraction<InteractionType>
+    fun finish(): FinishingInteraction<InteractionType>
   }
 
-  interface FinishingInteraction<InteractionType : Any> : TrackedInteraction<InteractionType>
+  interface FinishingInteraction<InteractionType : Any> : TrackedInteraction<InteractionType> {
+    /**
+     * Updates the end event of this interaction to be the current event.
+     */
+    fun updateEndEvent()
+  }
 }
 
-class CanceledInteractionResult<InteractionType>(
-  val interaction: InteractionType,
-
-  val cancelReason: String,
+interface InteractionResultData<InteractionType : Any, EventType : Any> {
+  val interaction: InteractionType
 
   /**
    * Interaction input that was automatically detected when the interaction started to be tracked,
    * if any.
    */
-  val interactionInput: DeliveredInput<out InputEvent>?,
+  val interactionInput: DeliveredInput<out InputEvent>?
 
   /**
-   * The time from [startUptime] to when the interaction was canceled.
+   * The number of frames that were rendered between the [start] and [end]
    */
-  val runningDurationUptime: Duration,
+  val runningFrameCount: Int
 
-  /**
-   * The number of frames that were rendered between the interaction start and when the
-   * interaction was canceled.
-   *
-   */
-  val frameCount: Int,
-
-  /**
-   * The uptime when the starting event was sent.
-   */
-  val startUptime: Duration
-
-) {
-  val totalFrameCount: Int
-    get() = (interactionInput?.framesSinceDelivery ?: 0) + frameCount
-
-  /**
-   * The time from [InputEvent.getEventTime] to [DeliveredInput.deliveryUptime] if
-   * [interactionInput] is not null, 0 otherwise.
-   *
-   * This represents the time from when an input event was detected by the system to when the
-   * input event was handled by an app window.
-   */
-  val inputSystemDurationUptime: Duration
-    get() = interactionInput?.run { deliveryUptime - eventUptime }
-      ?: Duration.ZERO
-
-  /**
-   * The time from [DeliveredInput.deliveryUptime] to [startUptime] if
-   * [interactionInput] is not null, 0 otherwise.
-   *
-   * This represents the time from when an input event was handled by an app window to when the
-   * starting event of this interaction was sent.
-   */
-  val inputAppDurationUptime: Duration
-    get() = interactionInput?.run { startUptime - deliveryUptime } ?: Duration.ZERO
-
-  /**
-   * This represents the total time a user has been waiting for the interaction until it was
-   * canceled.
-   */
-  val totalDurationUptime: Duration
-    get() = inputSystemDurationUptime + inputAppDurationUptime + runningDurationUptime
-
-  override fun toString(): String {
-    return "CanceledInteractionResult(" +
-      "interaction=$interaction, " +
-      "cancelReason=$cancelReason, " +
-      "interactionInput=$interactionInput, " +
-      "runningDuration=${runningDurationUptime.toString(MILLISECONDS)}, " +
-      "frameCount=$frameCount, " +
-      "totalFrameCount=$totalFrameCount, " +
-      "startUptime=${startUptime.toString(MILLISECONDS)}, " +
-      "inputSystemDuration=${inputSystemDurationUptime.toString(MILLISECONDS)}, " +
-      "inputAppDuration=${inputAppDurationUptime.toString(MILLISECONDS)}, " +
-      "totalDuration=${totalDurationUptime.toString(MILLISECONDS)}" +
-      ")"
-  }
+  val start: SentEvent<EventType>
 }
 
-class InteractionLatencyResult<InteractionType : Any>(
-  val interaction: InteractionType,
-  /**
-   * Interaction input that was automatically detected when the interaction started to be tracked,
-   * if any.
-   */
-  val interactionInput: DeliveredInput<out InputEvent>?,
+class SentEvent<EventType : Any>(
+  val uptime: Duration,
+  val event: EventType
+)
+
+class InteractionResultDataPayload<InteractionType : Any, EventType : Any>(
+  override val interaction: InteractionType,
+  override val interactionInput: DeliveredInput<out InputEvent>?,
+  override val runningFrameCount: Int,
+  override val start: SentEvent<EventType>,
+) : InteractionResultData<InteractionType, EventType>
+
+sealed class InteractionResult<InteractionType : Any, EventType : Any>(
+  data: InteractionResultData<InteractionType, EventType>
+) : InteractionResultData<InteractionType, EventType> by data {
 
   /**
-   * The time from [startUptime] to when a frame was rendered after the interaction end.
+   * An interaction that was started and then canceled.
    */
-  val displayDurationUptime: Duration,
+  class Canceled<InteractionType : Any, EventType : Any>(
+    data: InteractionResultData<InteractionType, EventType>,
+    val cancelReason: String,
+    val end: SentEvent<EventType>?,
+    val cancelUptime: Duration
+  ) : InteractionResult<InteractionType, EventType>(data) {
+    val startToCancel: Duration
+      get() = cancelUptime - start.uptime
+  }
 
   /**
-   * The number of frames that were rendered between the interaction start and the frame of the
-   * interaction end. Always >= 1. [frameCount] is equal to 1 for single frame interactions.
+   * An interaction that was started, finished and the UI change was visible to the user
+   * (frame rendered).
    */
-  val frameCount: Int,
-
-  /**
-   * The uptime when the starting event was sent.
-   */
-  val startUptime: Duration
-) {
-
-  val totalFrameCount: Int
-    get() = (interactionInput?.framesSinceDelivery ?: 0) + frameCount
-
-  /**
-   * The time from [InputEvent.getEventTime] to [DeliveredInput.deliveryUptime] if
-   * [interactionInput] is not null, 0 otherwise.
-   *
-   * This represents the time from when an input event was detected by the system to when the
-   * input event was handled by an app window.
-   */
-  val inputSystemDurationUptime: Duration
-    get() = interactionInput?.run { deliveryUptime - eventUptime }
-      ?: Duration.ZERO
-
-  /**
-   * The time from [DeliveredInput.deliveryUptime] to [startUptime] if
-   * [interactionInput] is not null, 0 otherwise.
-   *
-   * This represents the time from when an input event was handled by an app window to when the
-   * starting event of this interaction was sent.
-   */
-  val inputAppDurationUptime: Duration
-    get() = interactionInput?.run { startUptime - deliveryUptime } ?: Duration.ZERO
-
-  /**
-   * This represents the interaction time as it would be reported in a system trace, assuming
-   * the interaction was started with the default [InteractionTrace.fromInputDelivered].
-   */
-  val traceDurationUptime: Duration
-    get() = inputAppDurationUptime + displayDurationUptime
-
-  /**
-   * This represents the total time a user has been waiting for the interaction, i.e. this is the
-   * real interaction latency.
-   */
-  val totalDurationUptime: Duration
-    get() = inputSystemDurationUptime + inputAppDurationUptime + displayDurationUptime
+  class Finished<InteractionType : Any, EventType : Any>(
+    data: InteractionResultData<InteractionType, EventType>,
+    val end: SentEvent<EventType>,
+    val endFrameRenderedUptime: Duration
+  ) : InteractionResult<InteractionType, EventType>(data) {
+    val startToEndFrameRendered: Duration
+      get() = endFrameRenderedUptime - start.uptime
+  }
 
   override fun toString(): String {
-    return "InteractionLatencyResult(" +
-      "interaction=$interaction, " +
-      "interactionInput=$interactionInput, " +
-      "displayDuration=${displayDurationUptime.toString(MILLISECONDS)}, " +
-      "frameCount=$frameCount, " +
-      "totalFrameCount=$totalFrameCount, " +
-      "startUptime=${startUptime.toString(MILLISECONDS)}, " +
-      "inputSystemDuration=${inputSystemDurationUptime.toString(MILLISECONDS)}, " +
-      "inputAppDuration=${inputAppDurationUptime.toString(MILLISECONDS)}, " +
-      "traceDuration=${traceDurationUptime.toString(MILLISECONDS)}, " +
-      "totalDuration=${totalDurationUptime.toString(MILLISECONDS)}" +
-      ")"
+    return buildString {
+      append("InteractionResult.${this@InteractionResult::class.java.simpleName}")
+      append("(")
+      append("interaction=$interaction, ")
+      append(
+        when (this@InteractionResult) {
+          is Canceled<*, *> -> "cancelReason=\"$cancelReason\", startToCancel=${
+            startToCancel.toString(MILLISECONDS)
+          }, "
+          is Finished<*, *> -> "startToEndFrameRendered=${
+            startToEndFrameRendered.toString(MILLISECONDS)
+          }, "
+        }
+      )
+      append("runningFrameCount=$runningFrameCount, ")
+      append("start.event=${start.event}, ")
+      append(
+        when (this@InteractionResult) {
+          is Canceled<*, *> -> "end.event=${end?.event}, "
+          is Finished<*, *> -> "end.event=${end.event}, "
+        }
+      )
+      interactionInput?.let {
+        append(
+          "inputToStart=${
+            (start.uptime - it.eventUptime).toString(
+              MILLISECONDS
+            )
+          }, "
+        )
+      }
+      append("interactionInput=$interactionInput")
+      append(")")
+    }
   }
 }

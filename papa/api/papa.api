@@ -201,21 +201,6 @@ public final class papa/AppVisibilityState : java/lang/Enum {
 	public static fun values ()[Lpapa/AppVisibilityState;
 }
 
-public final class papa/CanceledInteractionResult {
-	public synthetic fun <init> (Ljava/lang/Object;Ljava/lang/String;Lpapa/DeliveredInput;JIJLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getCancelReason ()Ljava/lang/String;
-	public final fun getFrameCount ()I
-	public final fun getInputAppDurationUptime-UwyO8pc ()J
-	public final fun getInputSystemDurationUptime-UwyO8pc ()J
-	public final fun getInteraction ()Ljava/lang/Object;
-	public final fun getInteractionInput ()Lpapa/DeliveredInput;
-	public final fun getRunningDurationUptime-UwyO8pc ()J
-	public final fun getStartUptime-UwyO8pc ()J
-	public final fun getTotalDurationUptime-UwyO8pc ()J
-	public final fun getTotalFrameCount ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class papa/DeliveredInput {
 	public synthetic fun <init> (Landroid/view/InputEvent;JILkotlin/jvm/functions/Function0;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getDeliveryUptime-UwyO8pc ()J
@@ -243,45 +228,59 @@ public final class papa/InputTracker$DefaultImpls {
 	public static fun getTriggerEvent (Lpapa/InputTracker;)Lpapa/DeliveredInput;
 }
 
-public final class papa/InteractionEngine {
-	public fun <init> (Lpapa/InteractionScope;)V
-	public final fun sendEvent-8Mi8wO0 (Ljava/lang/Object;JLpapa/DeliveredInput;)V
-}
-
-public final class papa/InteractionEngine$RealRunningInteraction : android/view/Choreographer$FrameCallback, papa/TrackedInteraction$FinishingInteraction, papa/TrackedInteraction$RunningInteraction {
-	public synthetic fun <init> (Lpapa/InteractionEngine;JLpapa/DeliveredInput;Lpapa/InteractionTrace;Ljava/lang/Object;JLkotlin/jvm/functions/Function1;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun cancel (Ljava/lang/String;)V
-	public fun doFrame (J)V
-	public fun finishOnFrameRendered (Lkotlin/jvm/functions/Function1;)Lpapa/TrackedInteraction$FinishingInteraction;
-	public fun getInteraction ()Ljava/lang/Object;
-	public fun setInteraction (Ljava/lang/Object;)V
-}
-
-public abstract interface class papa/InteractionEventReceiver {
+public abstract interface class papa/InteractionEventSink {
 	public abstract fun sendEvent (Ljava/lang/Object;)V
 }
 
-public final class papa/InteractionLatencyResult {
-	public synthetic fun <init> (Ljava/lang/Object;Lpapa/DeliveredInput;JIJLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getDisplayDurationUptime-UwyO8pc ()J
-	public final fun getFrameCount ()I
-	public final fun getInputAppDurationUptime-UwyO8pc ()J
-	public final fun getInputSystemDurationUptime-UwyO8pc ()J
-	public final fun getInteraction ()Ljava/lang/Object;
-	public final fun getInteractionInput ()Lpapa/DeliveredInput;
-	public final fun getStartUptime-UwyO8pc ()J
-	public final fun getTotalDurationUptime-UwyO8pc ()J
-	public final fun getTotalFrameCount ()I
-	public final fun getTraceDurationUptime-UwyO8pc ()J
+public abstract class papa/InteractionResult : papa/InteractionResultData {
+	public synthetic fun <init> (Lpapa/InteractionResultData;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getInteraction ()Ljava/lang/Object;
+	public fun getInteractionInput ()Lpapa/DeliveredInput;
+	public fun getRunningFrameCount ()I
+	public fun getStart ()Lpapa/SentEvent;
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/InteractionResult$Canceled : papa/InteractionResult {
+	public synthetic fun <init> (Lpapa/InteractionResultData;Ljava/lang/String;Lpapa/SentEvent;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCancelReason ()Ljava/lang/String;
+	public final fun getCancelUptime-UwyO8pc ()J
+	public final fun getEnd ()Lpapa/SentEvent;
+	public final fun getStartToCancel-UwyO8pc ()J
+}
+
+public final class papa/InteractionResult$Finished : papa/InteractionResult {
+	public synthetic fun <init> (Lpapa/InteractionResultData;Lpapa/SentEvent;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEnd ()Lpapa/SentEvent;
+	public final fun getEndFrameRenderedUptime-UwyO8pc ()J
+	public final fun getStartToEndFrameRendered-UwyO8pc ()J
+}
+
+public abstract interface class papa/InteractionResultData {
+	public abstract fun getInteraction ()Ljava/lang/Object;
+	public abstract fun getInteractionInput ()Lpapa/DeliveredInput;
+	public abstract fun getRunningFrameCount ()I
+	public abstract fun getStart ()Lpapa/SentEvent;
+}
+
+public final class papa/InteractionResultDataPayload : papa/InteractionResultData {
+	public fun <init> (Ljava/lang/Object;Lpapa/DeliveredInput;ILpapa/SentEvent;)V
+	public fun getInteraction ()Ljava/lang/Object;
+	public fun getInteractionInput ()Lpapa/DeliveredInput;
+	public fun getRunningFrameCount ()I
+	public fun getStart ()Lpapa/SentEvent;
+}
+
+public abstract interface class papa/InteractionResultListener {
+	public abstract fun onInteractionResult (Lpapa/InteractionResult;)V
 }
 
 public abstract interface class papa/InteractionRuleBuilder {
 	public abstract fun addInteractionRule (Lkotlin/jvm/functions/Function1;)Lpapa/RemovableInteraction;
 }
 
-public final class papa/InteractionRuleClient : papa/InteractionEventReceiver, papa/InteractionRuleBuilder {
-	public fun <init> ()V
+public final class papa/InteractionRuleClient : papa/InteractionEventSink, papa/InteractionRuleBuilder {
+	public fun <init> (Lpapa/InteractionResultListener;)V
 	public fun addInteractionRule (Lkotlin/jvm/functions/Function1;)Lpapa/RemovableInteraction;
 	public fun sendEvent (Ljava/lang/Object;)V
 }
@@ -311,12 +310,12 @@ public abstract interface class papa/OnEventScope {
 	public abstract fun finishingInteractions ()Lkotlin/sequences/Sequence;
 	public abstract fun getInteractionInput ()Lpapa/DeliveredInput;
 	public abstract fun runningInteractions ()Lkotlin/sequences/Sequence;
-	public abstract fun startInteraction-exY8QGI (Ljava/lang/Object;Lpapa/InteractionTrace;JLkotlin/jvm/functions/Function1;)Lpapa/TrackedInteraction$RunningInteraction;
+	public abstract fun startInteraction-SxA4cEA (Ljava/lang/Object;Lpapa/InteractionTrace;J)Lpapa/TrackedInteraction$RunningInteraction;
 }
 
 public final class papa/OnEventScope$DefaultImpls {
 	public static synthetic fun cancelRunningInteractions$default (Lpapa/OnEventScope;Ljava/lang/String;ILjava/lang/Object;)V
-	public static synthetic fun startInteraction-exY8QGI$default (Lpapa/OnEventScope;Ljava/lang/Object;Lpapa/InteractionTrace;JLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lpapa/TrackedInteraction$RunningInteraction;
+	public static synthetic fun startInteraction-SxA4cEA$default (Lpapa/OnEventScope;Ljava/lang/Object;Lpapa/InteractionTrace;JILjava/lang/Object;)Lpapa/TrackedInteraction$RunningInteraction;
 }
 
 public abstract class papa/PapaEvent {
@@ -403,17 +402,24 @@ public abstract interface class papa/RemovableInteraction {
 public abstract interface annotation class papa/RuleMarker : java/lang/annotation/Annotation {
 }
 
+public final class papa/SentEvent {
+	public synthetic fun <init> (JLjava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEvent ()Ljava/lang/Object;
+	public final fun getUptime-UwyO8pc ()J
+}
+
 public abstract interface class papa/TrackedInteraction {
 	public abstract fun getInteraction ()Ljava/lang/Object;
 	public abstract fun setInteraction (Ljava/lang/Object;)V
 }
 
 public abstract interface class papa/TrackedInteraction$FinishingInteraction : papa/TrackedInteraction {
+	public abstract fun updateEndEvent ()V
 }
 
 public abstract interface class papa/TrackedInteraction$RunningInteraction : papa/TrackedInteraction {
 	public abstract fun cancel (Ljava/lang/String;)V
-	public abstract fun finishOnFrameRendered (Lkotlin/jvm/functions/Function1;)Lpapa/TrackedInteraction$FinishingInteraction;
+	public abstract fun finish ()Lpapa/TrackedInteraction$FinishingInteraction;
 }
 
 public final class papa/TrackedInteraction$RunningInteraction$DefaultImpls {
