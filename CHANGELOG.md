@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+Version 0.7
+_2022-10-03_
+
+* More rewrite of the interaction latency APIs. Adds reporting of start & end events, centralizes the handling of the ending of the interactions.
+* Removing a rule cancels any interaction in flight:.
+
 Version 0.6
 
 _2022-09-28_
