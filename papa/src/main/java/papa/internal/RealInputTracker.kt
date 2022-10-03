@@ -36,10 +36,10 @@ internal object RealInputTracker : InputTracker {
 
   /**
    * The thread locals here aren't in charge of actually holding the event holder for the duration
-   * of its lifecycle, but instead of holding the event in specific time spans (wrapping onClick
-   * callback invocations) so that we can reach back here from an onClick and capture the event but
-   * also ensure that if we reach back outside of an onClick sandwich we actually find nothing
-   * event if overall the EventHolder is still hanging out in memory.
+   * of its lifecycle. Instead, they are exposing the event during specific time spans (sandwiching
+   * onClick callback invocations) so that we can reach back here from an onClick and capture the
+   * event. The sandwiching also also ensures that if we reach back outside of an onClick sandwich
+   * we actually find nothing even if overall the EventHolder is still hanging out in memory.
    */
   private val motionEventTriggeringClickLocal = ThreadLocal<MotionEventHolder>()
   private val currentKeyEventLocal = ThreadLocal<DeliveredInput<KeyEvent>>()
@@ -55,7 +55,7 @@ internal object RealInputTracker : InputTracker {
       // if this event is consumed as part of the frame we did the increment in.
       // There's a slight edge case: if the event consumption triggered in between doFrame and
       // the post at front of queue, the count would be short by 1. We can live with this, it's
-      // unlikely to happen unless and even is triggered from a postAtFront.
+      // unlikely to happen unless an event is triggered from a postAtFront.
       mainHandler.postAtFrontOfQueueAsync {
         input = input.increaseFrameCount()
       }
@@ -84,7 +84,7 @@ internal object RealInputTracker : InputTracker {
           //  holder. Why replace it? Because we want to increase the frame count over time, but we
           //  want to do that by swapping an immutable event, so that if we capture such event at
           //  time N and then the count gets updated at N + 1, the count update isn't reflected in
-          //  the code that captured the event a time N.
+          //  the code that captured the event at time N.
           val actionUpEventHolder = if (isActionUp) {
             val cookie = deliveryUptime.inWholeMilliseconds.rem(Int.MAX_VALUE).toInt()
             SafeTrace.beginAsyncSection(TAP_INTERACTION_SECTION, cookie)

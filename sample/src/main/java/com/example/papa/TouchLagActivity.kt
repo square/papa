@@ -5,7 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.example.papa.ExampleApplication.Companion.interactionEventReceiver
+import com.example.papa.ExampleApplication.Companion.interactionEventSink
 
 class TouchLagActivity : AppCompatActivity() {
 
@@ -15,23 +15,23 @@ class TouchLagActivity : AppCompatActivity() {
     setContentView(R.layout.touch_lag)
 
     findViewById<View>(R.id.no_lag).setOnClickListener {
-      interactionEventReceiver.sendEvent(OnTouchLagClick)
+      interactionEventSink.sendEvent(OnTouchLagClick)
       updateContainerBackgroundColor()
     }
     findViewById<View>(R.id.lag_100_ms).setOnClickListener {
-      interactionEventReceiver.sendEvent(OnTouchLagClick)
+      interactionEventSink.sendEvent(OnTouchLagClick)
 
       Thread.sleep(100)
       updateContainerBackgroundColor()
     }
     findViewById<View>(R.id.lag_300_ms).setOnClickListener {
-      interactionEventReceiver.sendEvent(OnTouchLagClick)
+      interactionEventSink.sendEvent(OnTouchLagClick)
 
       Thread.sleep(300)
       updateContainerBackgroundColor()
     }
     findViewById<View>(R.id.lag_700_ms).setOnClickListener {
-      interactionEventReceiver.sendEvent(OnTouchLagClick)
+      interactionEventSink.sendEvent(OnTouchLagClick)
       Thread.sleep(700)
       updateContainerBackgroundColor()
     }

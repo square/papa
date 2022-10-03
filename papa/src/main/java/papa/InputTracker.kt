@@ -44,7 +44,7 @@ class DeliveredInput<InputEventType : InputEvent>(
   val event: InputEventType,
   val deliveryUptime: Duration,
   val framesSinceDelivery: Int,
-  private var endTrace: ((() -> Unit))?
+  private var endTrace: (() -> Unit)?
 ) {
 
   val eventUptime: Duration
@@ -69,8 +69,9 @@ class DeliveredInput<InputEventType : InputEvent>(
 
   override fun toString(): String {
     return "DeliveredInput(" +
-      "event=$event, " +
       "deliveryUptime=${deliveryUptime.toString(MILLISECONDS)}, " +
-      "framesSinceDelivery=$framesSinceDelivery)"
+      "framesSinceDelivery=$framesSinceDelivery, " +
+      "event=$event" +
+      ")"
   }
 }

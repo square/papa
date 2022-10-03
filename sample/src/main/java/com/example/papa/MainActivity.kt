@@ -9,7 +9,7 @@ import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.example.papa.ExampleApplication.Companion.interactionEventReceiver
+import com.example.papa.ExampleApplication.Companion.interactionEventSink
 import java.util.Date
 
 class MainActivity : AppCompatActivity() {
@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
     val date = Date()
     val newText = "Clicked on $element at $date"
     textView.text = newText
-    interactionEventReceiver.sendEvent(OnMainActivityButtonClick(element, previousText, newText))
+    interactionEventSink.sendEvent(OnMainActivityButtonClick(element, previousText, newText))
     // val stateHolder = PerformanceMetricsState.getForHierarchy(textView).state!!
     // stateHolder.addState("textview", "updated at $date")
   }

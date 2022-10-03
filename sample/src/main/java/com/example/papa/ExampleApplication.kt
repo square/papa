@@ -11,8 +11,7 @@ import curtains.OnRootViewAddedListener
 import curtains.phoneWindow
 import curtains.windowAttachCount
 import papa.AppStart
-import papa.InteractionEventReceiver
-import papa.InteractionLatencyResult
+import papa.InteractionEventSink
 import papa.InteractionRuleClient
 import papa.PapaEventListener
 import papa.PapaEventLogger
@@ -21,12 +20,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class ExampleApplication : Application() {
 
-  private val logInteractionResult: (InteractionLatencyResult<out UiInteraction>) -> Unit =
-    { result ->
-      Log.d("ExampleApplication", "${result.interaction.name}: $result")
-    }
-
-  private val interactionRuleClient = InteractionRuleClient<InteractionEvent, UiInteraction>()
+  private val interactionRuleClient = InteractionRuleClient<UiInteraction, InteractionEvent> { result ->
+    Log.d("ExampleApplication", "$result")
+  }
 
   override fun onCreate() {
     super.onCreate()
@@ -39,20 +35,18 @@ class ExampleApplication : Application() {
 
     interactionRuleClient.apply {
       addInteractionRule<UpdateTextInteraction> {
-        onEvent<OnMainActivityButtonClick> { event ->
-          startInteraction(UpdateTextInteraction(event)).finishOnFrameRendered(logInteractionResult)
+        onEvent<OnMainActivityButtonClick> {
+          startInteraction(UpdateTextInteraction).finish()
         }
       }
       addInteractionRule<NeverFinishedInteraction> {
         onEvent<OnMainActivityButtonClick> {
-          startInteraction(NeverFinishedInteraction, onCancel = {
-            Log.d("ExampleApplication", "canceled: $it")
-          }, cancelTimeout = 2000.milliseconds)
+          startInteraction(NeverFinishedInteraction, cancelTimeout = 2000.milliseconds)
         }
       }
       addInteractionRule<TouchLagInteraction> {
         onEvent<OnTouchLagClick> {
-          startInteraction(TouchLagInteraction).finishOnFrameRendered(logInteractionResult)
+          startInteraction(TouchLagInteraction).finish()
         }
       }
     }
@@ -75,7 +69,7 @@ class ExampleApplication : Application() {
   }
 
   companion object {
-    val Context.interactionEventReceiver: InteractionEventReceiver<InteractionEvent>
+    val Context.interactionEventSink: InteractionEventSink<InteractionEvent>
       get() {
         val app = applicationContext as ExampleApplication
         return app.interactionRuleClient
