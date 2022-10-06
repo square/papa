@@ -1,13 +1,5 @@
 package com.example.papa
 
-interface UiInteraction
-
-object TouchLagInteraction : UiInteraction
-
-object UpdateTextInteraction : UiInteraction
-
-object NeverFinishedInteraction : UiInteraction
-
 interface InteractionEvent
 
 data class OnMainActivityButtonClick(

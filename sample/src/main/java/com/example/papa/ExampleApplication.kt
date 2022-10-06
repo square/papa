@@ -20,7 +20,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class ExampleApplication : Application() {
 
-  private val interactionRuleClient = InteractionRuleClient<UiInteraction, InteractionEvent> { result ->
+  private val interactionRuleClient = InteractionRuleClient<InteractionEvent> { result ->
     Log.d("ExampleApplication", "$result")
   }
 
@@ -34,19 +34,19 @@ class ExampleApplication : Application() {
     PapaEventListener.install(PapaEventLogger())
 
     interactionRuleClient.apply {
-      addInteractionRule<UpdateTextInteraction> {
+      addInteractionRule {
         onEvent<OnMainActivityButtonClick> {
-          startInteraction(UpdateTextInteraction).finish()
+          startInteraction().finish()
         }
       }
-      addInteractionRule<NeverFinishedInteraction> {
+      addInteractionRule {
         onEvent<OnMainActivityButtonClick> {
-          startInteraction(NeverFinishedInteraction, cancelTimeout = 2000.milliseconds)
+          startInteraction(cancelTimeout = 2000.milliseconds)
         }
       }
-      addInteractionRule<TouchLagInteraction> {
+      addInteractionRule {
         onEvent<OnTouchLagClick> {
-          startInteraction(TouchLagInteraction).finish()
+          startInteraction().finish()
         }
       }
     }
