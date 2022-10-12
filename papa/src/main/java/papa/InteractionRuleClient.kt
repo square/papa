@@ -92,7 +92,7 @@ private class InteractionEngine<ParentEventType : Any>(
   interactionScope: InteractionScope<ParentEventType>
 ) {
 
-  private val onEventCallbacks: List<Pair<Class<out ParentEventType>, OnEventScope<ParentEventType, ParentEventType>.() -> Unit>>
+  private val onEventCallbacks: Map<Class<out ParentEventType>, List<OnEventScope<ParentEventType, ParentEventType>.() -> Unit>>
 
   private val runningInteractions = mutableListOf<RunningInteraction<ParentEventType>>()
   private val finishingInteractions = mutableListOf<FinishingInteraction<ParentEventType>>()
@@ -188,16 +188,23 @@ private class InteractionEngine<ParentEventType : Any>(
   }
 
   init {
-    onEventCallbacks = interactionScope.onEventCallbacks.toList()
+    val eventCallbackPairs = interactionScope.onEventCallbacks.toList()
+    // A lazy map where each key is a concrete event type. Every time it gets asked about a new
+    // event type, it figures out which callbacks are assignable from that event type then builds
+    // and caches that list.
+    onEventCallbacks =
+      mutableMapOf<
+        Class<out ParentEventType>,
+        List<OnEventScope<ParentEventType, ParentEventType>.() -> Unit>
+        >().withDefault { eventType ->
+        eventCallbackPairs.filter { it.first.isAssignableFrom(eventType) }.map { it.second }
+      }
   }
 
   fun sendEvent(
     sentEvent: SentEvent<ParentEventType>,
     interactionInput: DeliveredInput<out InputEvent>?
   ) {
-    val eventClassHierarchy = generateSequence<Class<*>>(sentEvent.event::class.java) {
-      it.superclass
-    }.toList()
 
     val realEventScope = object : OnEventScope<ParentEventType, ParentEventType> {
       override fun runningInteractions() = runningInteractions.toList()
@@ -226,9 +233,7 @@ private class InteractionEngine<ParentEventType : Any>(
     }
 
     eventInScope = sentEvent
-    onEventCallbacks.filter { (callbackEventClass, _) ->
-      callbackEventClass in eventClassHierarchy
-    }.forEach { (_, callback) ->
+    onEventCallbacks.getValue(sentEvent.event::class.java).forEach { callback ->
       realEventScope.callback()
     }
     eventInScope = null
