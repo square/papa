@@ -1,8 +1,14 @@
 Change Log
 ==========
 
+Version 0.9
+_2022-10-12_
+
+* Add support for registering against event interfaces
+
 Version 0.8
 _2022-10-06_
+
 * Even more rewrite of the interaction latency APIs! Interactions are now just a list of events (no more start & end, no more interaction type)
 
 Version 0.7
