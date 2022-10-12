@@ -1,9 +1,10 @@
 Change Log
 ==========
 
-Version 0.9
+Version 0.10
 _2022-10-12_
 
+* bugfix: never cleared finishing interactions
 * Add support for registering against event interfaces
 
 Version 0.8
