@@ -162,8 +162,9 @@ private class InteractionEngine<ParentEventType : Any>(
       finishingInteractions += this
       recordEvent()
       onCurrentOrNextFrameRendered { frameRenderedUptime ->
-        choreographer.removeFrameCallback(this)
         trace.endTrace()
+        choreographer.removeFrameCallback(this)
+        finishingInteractions -= this
         val eventsCopy = events.toList()
         resultListener.onInteractionResult(
           InteractionResult.Finished(
