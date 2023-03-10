@@ -107,7 +107,7 @@ private class InteractionEngine<ParentEventType : Any>(
 
     private var frameCountSinceStart: Int = 0
 
-    override val events = mutableListOf<SentEvent<ParentEventType>>()
+    override val sentEvents = mutableListOf<SentEvent<ParentEventType>>()
 
     /**
      * Note: this must implement [Runnable]. A lambda would compile fine but then be wrapped into
@@ -133,7 +133,7 @@ private class InteractionEngine<ParentEventType : Any>(
 
     private fun stopRunning() {
       check(runningInteractions.remove(this)) {
-        "Interaction started by ${events.first()} and ended by ${events.last()} is not running."
+        "Interaction started by ${sentEvents.first()} and ended by ${sentEvents.last()} is not running."
       }
       mainHandler.removeCallbacks(cancelOnTimeout)
       choreographer.removeFrameCallback(this)
@@ -143,7 +143,7 @@ private class InteractionEngine<ParentEventType : Any>(
       val cancelUptime = eventInScope?.uptime ?: System.nanoTime().nanoseconds
       stopRunning()
       trace.endTrace()
-      val eventsCopy = events.toList()
+      val eventsCopy = sentEvents.toList()
       resultListener.onInteractionResult(
         InteractionResult.Canceled(
           data = InteractionResultDataPayload(
@@ -165,7 +165,7 @@ private class InteractionEngine<ParentEventType : Any>(
         trace.endTrace()
         choreographer.removeFrameCallback(this)
         finishingInteractions -= this
-        val eventsCopy = events.toList()
+        val eventsCopy = sentEvents.toList()
         resultListener.onInteractionResult(
           InteractionResult.Finished(
             data = InteractionResultDataPayload(
@@ -182,8 +182,8 @@ private class InteractionEngine<ParentEventType : Any>(
 
     override fun recordEvent() {
       val recordedSentEvent = eventInScope!!
-      if (events.lastOrNull()?.event !== recordedSentEvent.event) {
-        events += recordedSentEvent
+      if (sentEvents.lastOrNull()?.event !== recordedSentEvent.event) {
+        sentEvents += recordedSentEvent
       }
     }
   }
@@ -294,7 +294,7 @@ fun interface InteractionTrace {
 
 sealed interface TrackedInteraction<EventType : Any> {
 
-  val events: List<SentEvent<EventType>>
+  val sentEvents: List<SentEvent<EventType>>
 
   /**
    * Adds the current event instance to the list of events (if not already added).
