@@ -252,11 +252,9 @@ private class InteractionEngine<ParentEventType : Any>(
 
   fun cancelRunningInteractions(reason: String) {
     // Copy list as cancel mutates the backing list.
-    runningInteractions.toList().asSequence().forEach { it.cancel(reason) }
+    runningInteractions.toList().forEach { it.cancel(reason) }
   }
 }
-
-const val CANCEL_REASON_NOT_PROVIDED = "reason not provided"
 
 @RuleMarker
 interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
@@ -271,6 +269,37 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
     trace: InteractionTrace = InteractionTrace.fromInputDelivered(event, interactionInput),
     cancelTimeout: Duration = 1.minutes,
   ): RunningInteraction<ParentEventType>
+
+  /**
+   * A utility method to record an interaction that is started by the current event and is also
+   * immediately finished. This mean the interaction duration will be measured as the sending of
+   * the event until the next frame.
+   */
+  fun startSingleFrameInteraction(
+  trace: InteractionTrace = InteractionTrace.fromInputDelivered(event, interactionInput),
+  ): FinishingInteraction<ParentEventType> {
+    return startInteraction(trace).finish()
+  }
+
+  /**
+   * A utility method to cancel a single interaction and derive the reason from the event from
+   * which cancel was called.
+   */
+  fun RunningInteraction<ParentEventType>.cancel() {
+    cancel(event.toString())
+  }
+
+  /**
+   * A utility method to cancel all running interactions **for the current interaction rule**. This
+   * does not cancel interactions started by other rules. This method is useful when a particular
+   * rule wants to ensure only a single interaction is running at any given time.
+   */
+  fun cancelRunningInteractions(
+    reason: String = event.toString()
+  ) {
+    // Copy list as cancel mutates the backing list.
+    runningInteractions().forEach { it.cancel(reason) }
+  }
 }
 
 fun interface InteractionTrace {
@@ -308,7 +337,7 @@ interface TrackedInteraction<EventType : Any> {
 }
 
 interface RunningInteraction<EventType : Any> : TrackedInteraction<EventType> {
-  fun cancel(reason: String = CANCEL_REASON_NOT_PROVIDED)
+  fun cancel(reason: String)
   fun finish(): FinishingInteraction<EventType>
 
   /**
