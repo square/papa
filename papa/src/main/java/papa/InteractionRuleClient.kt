@@ -83,7 +83,9 @@ class InteractionScope<ParentEventType : Any> {
   @RuleMarker
   inline fun <reified EventType : ParentEventType> onEvent(noinline block: OnEventScope<ParentEventType, EventType>.() -> Unit) {
     @Suppress("UNCHECKED_CAST")
-    onEventCallbacks.add(EventType::class.java to (block as OnEventScope<ParentEventType, ParentEventType>.() -> Unit))
+    onEventCallbacks.add(
+      EventType::class.java to (block as OnEventScope<ParentEventType, ParentEventType>.() -> Unit)
+    )
   }
 }
 
