@@ -4,8 +4,6 @@ import android.os.SystemClock
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import android.view.InputEvent
-import papa.TrackedInteraction.FinishingInteraction
-import papa.TrackedInteraction.RunningInteraction
 import papa.internal.checkMainThread
 import papa.internal.isMainThread
 import papa.internal.mainHandler
@@ -32,10 +30,16 @@ interface InteractionEventSink<EventType> {
 }
 
 class InteractionRuleClient<EventType : Any>(
-  private val resultListener: InteractionResultListener<EventType>
+  private val resultListener: InteractionResultListener<EventType>,
 ) : InteractionRuleBuilder<EventType>, InteractionEventSink<EventType> {
 
   private val interactionEngines = mutableListOf<InteractionEngine<EventType>>()
+
+  val trackedInteractions: List<TrackedInteraction<EventType>>
+    get() {
+      checkMainThread()
+      return interactionEngines.flatMap { it.trackedInteractions }
+    }
 
   override fun addInteractionRule(block: InteractionScope<EventType>.() -> Unit): RemovableInteraction {
     checkMainThread()
@@ -99,10 +103,13 @@ private class InteractionEngine<ParentEventType : Any>(
   private val runningInteractions = mutableListOf<RunningInteraction<ParentEventType>>()
   private val finishingInteractions = mutableListOf<FinishingInteraction<ParentEventType>>()
 
+  val trackedInteractions: List<TrackedInteraction<ParentEventType>>
+    get() = runningInteractions + finishingInteractions
+
   private var eventInScope: SentEvent<ParentEventType>? = null
 
   inner class RealRunningInteraction(
-    private val interactionInput: DeliveredInput<out InputEvent>?,
+    override val interactionInput: DeliveredInput<out InputEvent>?,
     private val trace: InteractionTrace,
     cancelTimeout: Duration
   ) : RunningInteraction<ParentEventType>, FinishingInteraction<ParentEventType>, FrameCallback {
@@ -178,6 +185,7 @@ private class InteractionEngine<ParentEventType : Any>(
             endFrameRenderedUptime = frameRenderedUptime
           )
         )
+
       }
       return this
     }
@@ -294,22 +302,22 @@ fun interface InteractionTrace {
   }
 }
 
-sealed interface TrackedInteraction<EventType : Any> {
-
+interface TrackedInteraction<EventType : Any> {
   val sentEvents: List<SentEvent<EventType>>
+  val interactionInput: DeliveredInput<out InputEvent>?
+}
+
+interface RunningInteraction<EventType : Any> : TrackedInteraction<EventType> {
+  fun cancel(reason: String = CANCEL_REASON_NOT_PROVIDED)
+  fun finish(): FinishingInteraction<EventType>
 
   /**
    * Adds the current event instance to the list of events (if not already added).
    */
   fun recordEvent()
-
-  interface RunningInteraction<EventType : Any> : TrackedInteraction<EventType> {
-    fun cancel(reason: String = CANCEL_REASON_NOT_PROVIDED)
-    fun finish(): FinishingInteraction<EventType>
-  }
-
-  interface FinishingInteraction<EventType : Any> : TrackedInteraction<EventType>
 }
+
+interface FinishingInteraction<EventType : Any> : TrackedInteraction<EventType>
 
 interface InteractionResultData<EventType : Any> {
   /**
