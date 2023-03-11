@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.papa">
 
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+
   <application
       android:name="com.example.papa.ExampleApplication"
       android:icon="@mipmap/ic_launcher"

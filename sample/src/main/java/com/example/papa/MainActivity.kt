@@ -1,5 +1,7 @@
 package com.example.papa
 
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -10,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.papa.ExampleApplication.Companion.interactionEventSink
+import com.example.papa.ExampleApplication.Companion.interactionOverlay
 import java.util.Date
 
 class MainActivity : AppCompatActivity() {
@@ -25,11 +28,28 @@ class MainActivity : AppCompatActivity() {
     }, 1000)
   }
 
+  override fun onResume() {
+    super.onResume()
+    interactionOverlay.show()
+  }
+
+  override fun onPause() {
+    super.onPause()
+    interactionOverlay.dismiss()
+  }
+
   private fun doneLoading() {
     setContentView(R.layout.main)
 
     findViewById<View>(R.id.finish_activity).setOnClickListener {
       finish()
+    }
+
+    findViewById<View>(R.id.draw_permission_button).setOnClickListener {
+      if (VERSION.SDK_INT >= VERSION_CODES.M) {
+        val intent = interactionOverlay.newManageOverlayIntent()
+        startActivityForResult(intent, 1)
+      }
     }
 
     findViewById<View>(R.id.freeze_ui).setOnClickListener {

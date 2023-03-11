@@ -20,6 +20,7 @@ android {
 
 dependencies {
   implementation(project(":papa"))
+  implementation(project(":papa-dev"))
   implementation(Dependencies.AppCompat)
   implementation(Dependencies.Curtains)
   implementation(Dependencies.JankStat)

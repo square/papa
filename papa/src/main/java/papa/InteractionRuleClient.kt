@@ -4,8 +4,6 @@ import android.os.SystemClock
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import android.view.InputEvent
-import papa.TrackedInteraction.FinishingInteraction
-import papa.TrackedInteraction.RunningInteraction
 import papa.internal.checkMainThread
 import papa.internal.isMainThread
 import papa.internal.mainHandler
@@ -32,10 +30,16 @@ interface InteractionEventSink<EventType> {
 }
 
 class InteractionRuleClient<EventType : Any>(
-  private val resultListener: InteractionResultListener<EventType>
+  private val resultListener: InteractionResultListener<EventType>,
 ) : InteractionRuleBuilder<EventType>, InteractionEventSink<EventType> {
 
   private val interactionEngines = mutableListOf<InteractionEngine<EventType>>()
+
+  val trackedInteractions: List<TrackedInteraction<EventType>>
+    get() {
+      checkMainThread()
+      return interactionEngines.flatMap { it.trackedInteractions }
+    }
 
   override fun addInteractionRule(block: InteractionScope<EventType>.() -> Unit): RemovableInteraction {
     checkMainThread()
@@ -83,7 +87,9 @@ class InteractionScope<ParentEventType : Any> {
   @RuleMarker
   inline fun <reified EventType : ParentEventType> onEvent(noinline block: OnEventScope<ParentEventType, EventType>.() -> Unit) {
     @Suppress("UNCHECKED_CAST")
-    onEventCallbacks.add(EventType::class.java to (block as OnEventScope<ParentEventType, ParentEventType>.() -> Unit))
+    onEventCallbacks.add(
+      EventType::class.java to (block as OnEventScope<ParentEventType, ParentEventType>.() -> Unit)
+    )
   }
 }
 
@@ -97,17 +103,20 @@ private class InteractionEngine<ParentEventType : Any>(
   private val runningInteractions = mutableListOf<RunningInteraction<ParentEventType>>()
   private val finishingInteractions = mutableListOf<FinishingInteraction<ParentEventType>>()
 
+  val trackedInteractions: List<TrackedInteraction<ParentEventType>>
+    get() = runningInteractions + finishingInteractions
+
   private var eventInScope: SentEvent<ParentEventType>? = null
 
   inner class RealRunningInteraction(
-    private val interactionInput: DeliveredInput<out InputEvent>?,
+    override val interactionInput: DeliveredInput<out InputEvent>?,
     private val trace: InteractionTrace,
     cancelTimeout: Duration
   ) : RunningInteraction<ParentEventType>, FinishingInteraction<ParentEventType>, FrameCallback {
 
     private var frameCountSinceStart: Int = 0
 
-    override val events = mutableListOf<SentEvent<ParentEventType>>()
+    override val sentEvents = mutableListOf<SentEvent<ParentEventType>>()
 
     /**
      * Note: this must implement [Runnable]. A lambda would compile fine but then be wrapped into
@@ -133,7 +142,7 @@ private class InteractionEngine<ParentEventType : Any>(
 
     private fun stopRunning() {
       check(runningInteractions.remove(this)) {
-        "Interaction started by ${events.first()} and ended by ${events.last()} is not running."
+        "Interaction started by ${sentEvents.first()} and ended by ${sentEvents.last()} is not running."
       }
       mainHandler.removeCallbacks(cancelOnTimeout)
       choreographer.removeFrameCallback(this)
@@ -143,7 +152,7 @@ private class InteractionEngine<ParentEventType : Any>(
       val cancelUptime = eventInScope?.uptime ?: System.nanoTime().nanoseconds
       stopRunning()
       trace.endTrace()
-      val eventsCopy = events.toList()
+      val eventsCopy = sentEvents.toList()
       resultListener.onInteractionResult(
         InteractionResult.Canceled(
           data = InteractionResultDataPayload(
@@ -165,7 +174,7 @@ private class InteractionEngine<ParentEventType : Any>(
         trace.endTrace()
         choreographer.removeFrameCallback(this)
         finishingInteractions -= this
-        val eventsCopy = events.toList()
+        val eventsCopy = sentEvents.toList()
         resultListener.onInteractionResult(
           InteractionResult.Finished(
             data = InteractionResultDataPayload(
@@ -182,8 +191,8 @@ private class InteractionEngine<ParentEventType : Any>(
 
     override fun recordEvent() {
       val recordedSentEvent = eventInScope!!
-      if (events.lastOrNull()?.event !== recordedSentEvent.event) {
-        events += recordedSentEvent
+      if (sentEvents.lastOrNull()?.event !== recordedSentEvent.event) {
+        sentEvents += recordedSentEvent
       }
     }
   }
@@ -242,11 +251,9 @@ private class InteractionEngine<ParentEventType : Any>(
 
   fun cancelRunningInteractions(reason: String) {
     // Copy list as cancel mutates the backing list.
-    runningInteractions.toList().asSequence().forEach { it.cancel(reason) }
+    runningInteractions.toList().forEach { it.cancel(reason) }
   }
 }
-
-const val CANCEL_REASON_NOT_PROVIDED = "reason not provided"
 
 @RuleMarker
 interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
@@ -261,6 +268,39 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
     trace: InteractionTrace = InteractionTrace.fromInputDelivered(event, interactionInput),
     cancelTimeout: Duration = 1.minutes,
   ): RunningInteraction<ParentEventType>
+
+  /**
+   * A utility method to record an interaction that is started by the current event and is also
+   * immediately finished. This mean the interaction duration will be measured as the sending of
+   * the event until the next frame.
+   */
+  fun startSingleFrameInteraction(
+    trace: InteractionTrace = InteractionTrace.fromInputDelivered(event, interactionInput),
+  ): FinishingInteraction<ParentEventType> {
+    return startInteraction(trace).finish()
+  }
+
+  /**
+   * A utility method to cancel a single interaction and derive the reason from the event from
+   * which cancel was called.
+   */
+  fun RunningInteraction<ParentEventType>.cancel() {
+    cancel(event.toString())
+  }
+
+  /**
+   * A utility method to cancel all running interactions **for the current interaction rule**. This
+   * does not cancel interactions started by other rules. This method is useful when a particular
+   * rule wants to ensure only a single interaction is running at any given time.
+   */
+  fun cancelRunningInteractions(
+    reason: String = event.toString()
+  ) {
+    // Copy list as cancel mutates the backing list.
+    for (interaction in runningInteractions()) {
+      interaction.cancel(reason)
+    }
+  }
 }
 
 fun interface InteractionTrace {
@@ -292,22 +332,22 @@ fun interface InteractionTrace {
   }
 }
 
-sealed interface TrackedInteraction<EventType : Any> {
+interface TrackedInteraction<EventType : Any> {
+  val sentEvents: List<SentEvent<EventType>>
+  val interactionInput: DeliveredInput<out InputEvent>?
+}
 
-  val events: List<SentEvent<EventType>>
+interface RunningInteraction<EventType : Any> : TrackedInteraction<EventType> {
+  fun cancel(reason: String)
+  fun finish(): FinishingInteraction<EventType>
 
   /**
    * Adds the current event instance to the list of events (if not already added).
    */
   fun recordEvent()
-
-  interface RunningInteraction<EventType : Any> : TrackedInteraction<EventType> {
-    fun cancel(reason: String = CANCEL_REASON_NOT_PROVIDED)
-    fun finish(): FinishingInteraction<EventType>
-  }
-
-  interface FinishingInteraction<EventType : Any> : TrackedInteraction<EventType>
 }
+
+interface FinishingInteraction<EventType : Any> : TrackedInteraction<EventType>
 
 interface InteractionResultData<EventType : Any> {
   /**
