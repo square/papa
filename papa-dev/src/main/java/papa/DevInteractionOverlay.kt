@@ -118,8 +118,8 @@ class DevInteractionOverlay<EventType : Any>(
       return
     }
 
-    val windowType =
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
+     val windowType = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
+        @Suppress("DEPRECATION")
         LayoutParams.TYPE_PHONE
       else
         LayoutParams.TYPE_APPLICATION_OVERLAY
