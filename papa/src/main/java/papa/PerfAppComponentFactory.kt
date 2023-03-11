@@ -1,4 +1,4 @@
-package papa.internal
+package papa
 
 import android.app.Activity
 import android.app.AppComponentFactory
@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.SystemClock
 import androidx.annotation.RequiresApi
+import papa.internal.Perfs
 
 /**
  * Tracks the time at which the classloader, application and first components are created on app
@@ -21,7 +22,7 @@ import androidx.annotation.RequiresApi
  */
 @Suppress("unused")
 @RequiresApi(28)
-internal class PerfAppComponentFactory(
+class PerfAppComponentFactory(
   private val delegate: AppComponentFactory = androidx.core.app.AppComponentFactory()
 ) : AppComponentFactory() {
 

@@ -4,7 +4,7 @@
     package="com.squareup.papa">
 
   <application
-      android:appComponentFactory="papa.internal.PerfAppComponentFactory"
+      android:appComponentFactory="papa.PerfAppComponentFactory"
       tools:replace="android:appComponentFactory"
       tools:targetApi="p">
     <provider
