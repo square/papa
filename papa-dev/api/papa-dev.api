@@ -1,0 +1,6 @@
+public final class papa/DevInteractionOverlay {
+	public fun <init> (Landroid/content/Context;Lkotlin/jvm/functions/Function0;)V
+	public final fun dismiss ()V
+	public final fun show ()V
+}
+

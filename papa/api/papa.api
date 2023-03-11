@@ -211,6 +211,9 @@ public final class papa/DeliveredInput {
 	public fun toString ()Ljava/lang/String;
 }
 
+public abstract interface class papa/FinishingInteraction : papa/TrackedInteraction {
+}
+
 public abstract interface class papa/InputTracker {
 	public static final field Companion Lpapa/InputTracker$Companion;
 	public abstract fun getCurrentKeyEvent ()Lpapa/DeliveredInput;
@@ -277,11 +280,8 @@ public abstract interface class papa/InteractionRuleBuilder {
 public final class papa/InteractionRuleClient : papa/InteractionEventSink, papa/InteractionRuleBuilder {
 	public fun <init> (Lpapa/InteractionResultListener;)V
 	public fun addInteractionRule (Lkotlin/jvm/functions/Function1;)Lpapa/RemovableInteraction;
+	public final fun getTrackedInteractions ()Ljava/util/List;
 	public fun sendEvent (Ljava/lang/Object;)V
-}
-
-public final class papa/InteractionRuleClientKt {
-	public static final field CANCEL_REASON_NOT_PROVIDED Ljava/lang/String;
 }
 
 public final class papa/InteractionScope {
@@ -300,15 +300,23 @@ public final class papa/InteractionTrace$Companion {
 }
 
 public abstract interface class papa/OnEventScope {
+	public abstract fun cancel (Lpapa/RunningInteraction;)V
+	public abstract fun cancelRunningInteractions (Ljava/lang/String;)V
 	public abstract fun finishingInteractions ()Ljava/util/List;
 	public abstract fun getEvent ()Ljava/lang/Object;
 	public abstract fun getInteractionInput ()Lpapa/DeliveredInput;
 	public abstract fun runningInteractions ()Ljava/util/List;
-	public abstract fun startInteraction-HG0u8IE (Lpapa/InteractionTrace;J)Lpapa/TrackedInteraction$RunningInteraction;
+	public abstract fun startInteraction-HG0u8IE (Lpapa/InteractionTrace;J)Lpapa/RunningInteraction;
+	public abstract fun startSingleFrameInteraction (Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
 }
 
 public final class papa/OnEventScope$DefaultImpls {
-	public static synthetic fun startInteraction-HG0u8IE$default (Lpapa/OnEventScope;Lpapa/InteractionTrace;JILjava/lang/Object;)Lpapa/TrackedInteraction$RunningInteraction;
+	public static fun cancel (Lpapa/OnEventScope;Lpapa/RunningInteraction;)V
+	public static fun cancelRunningInteractions (Lpapa/OnEventScope;Ljava/lang/String;)V
+	public static synthetic fun cancelRunningInteractions$default (Lpapa/OnEventScope;Ljava/lang/String;ILjava/lang/Object;)V
+	public static synthetic fun startInteraction-HG0u8IE$default (Lpapa/OnEventScope;Lpapa/InteractionTrace;JILjava/lang/Object;)Lpapa/RunningInteraction;
+	public static fun startSingleFrameInteraction (Lpapa/OnEventScope;Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
+	public static synthetic fun startSingleFrameInteraction$default (Lpapa/OnEventScope;Lpapa/InteractionTrace;ILjava/lang/Object;)Lpapa/FinishingInteraction;
 }
 
 public abstract class papa/PapaEvent {
@@ -373,6 +381,22 @@ public final class papa/PapaEventLogger : papa/PapaEventListener {
 	public fun onEvent (Lpapa/PapaEvent;)V
 }
 
+public final class papa/PerfAppComponentFactory : android/app/AppComponentFactory {
+	public static final field Companion Lpapa/PerfAppComponentFactory$Companion;
+	public fun <init> ()V
+	public fun <init> (Landroid/app/AppComponentFactory;)V
+	public synthetic fun <init> (Landroid/app/AppComponentFactory;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun instantiateActivity (Ljava/lang/ClassLoader;Ljava/lang/String;Landroid/content/Intent;)Landroid/app/Activity;
+	public fun instantiateApplication (Ljava/lang/ClassLoader;Ljava/lang/String;)Landroid/app/Application;
+	public fun instantiateClassLoader (Ljava/lang/ClassLoader;Landroid/content/pm/ApplicationInfo;)Ljava/lang/ClassLoader;
+	public fun instantiateProvider (Ljava/lang/ClassLoader;Ljava/lang/String;)Landroid/content/ContentProvider;
+	public fun instantiateReceiver (Ljava/lang/ClassLoader;Ljava/lang/String;Landroid/content/Intent;)Landroid/content/BroadcastReceiver;
+	public fun instantiateService (Ljava/lang/ClassLoader;Ljava/lang/String;Landroid/content/Intent;)Landroid/app/Service;
+}
+
+public final class papa/PerfAppComponentFactory$Companion {
+}
+
 public final class papa/PreLaunchState : java/lang/Enum {
 	public static final field ACTIVITY_WAS_STOPPED Lpapa/PreLaunchState;
 	public static final field NO_ACTIVITY_BUT_SAVED_STATE Lpapa/PreLaunchState;
@@ -395,6 +419,12 @@ public abstract interface class papa/RemovableInteraction {
 public abstract interface annotation class papa/RuleMarker : java/lang/annotation/Annotation {
 }
 
+public abstract interface class papa/RunningInteraction : papa/TrackedInteraction {
+	public abstract fun cancel (Ljava/lang/String;)V
+	public abstract fun finish ()Lpapa/FinishingInteraction;
+	public abstract fun recordEvent ()V
+}
+
 public final class papa/SentEvent {
 	public synthetic fun <init> (JLjava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getEvent ()Ljava/lang/Object;
@@ -402,20 +432,8 @@ public final class papa/SentEvent {
 }
 
 public abstract interface class papa/TrackedInteraction {
-	public abstract fun getEvents ()Ljava/util/List;
-	public abstract fun recordEvent ()V
-}
-
-public abstract interface class papa/TrackedInteraction$FinishingInteraction : papa/TrackedInteraction {
-}
-
-public abstract interface class papa/TrackedInteraction$RunningInteraction : papa/TrackedInteraction {
-	public abstract fun cancel (Ljava/lang/String;)V
-	public abstract fun finish ()Lpapa/TrackedInteraction$FinishingInteraction;
-}
-
-public final class papa/TrackedInteraction$RunningInteraction$DefaultImpls {
-	public static synthetic fun cancel$default (Lpapa/TrackedInteraction$RunningInteraction;Ljava/lang/String;ILjava/lang/Object;)V
+	public abstract fun getInteractionInput ()Lpapa/DeliveredInput;
+	public abstract fun getSentEvents ()Ljava/util/List;
 }
 
 public abstract class papa/TriggerData {
