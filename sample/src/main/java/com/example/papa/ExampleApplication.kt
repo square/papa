@@ -11,6 +11,7 @@ import curtains.OnRootViewAddedListener
 import curtains.phoneWindow
 import curtains.windowAttachCount
 import papa.AppStart
+import papa.DevInteractionOverlay
 import papa.InteractionEventSink
 import papa.InteractionRuleClient
 import papa.PapaEventListener
@@ -22,6 +23,12 @@ class ExampleApplication : Application() {
 
   private val interactionRuleClient = InteractionRuleClient<InteractionEvent> { result ->
     Log.d("ExampleApplication", "$result")
+  }
+
+  private val interactionOverlay by lazy {
+    DevInteractionOverlay(this) {
+      interactionRuleClient.trackedInteractions
+    }
   }
 
   override fun onCreate() {
@@ -73,6 +80,12 @@ class ExampleApplication : Application() {
       get() {
         val app = applicationContext as ExampleApplication
         return app.interactionRuleClient
+      }
+
+    val Context.interactionOverlay: DevInteractionOverlay<InteractionEvent>
+      get() {
+        val app = applicationContext as ExampleApplication
+        return app.interactionOverlay
       }
   }
 }
