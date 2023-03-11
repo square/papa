@@ -185,7 +185,6 @@ private class InteractionEngine<ParentEventType : Any>(
             endFrameRenderedUptime = frameRenderedUptime
           )
         )
-
       }
       return this
     }
@@ -276,7 +275,7 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
    * the event until the next frame.
    */
   fun startSingleFrameInteraction(
-  trace: InteractionTrace = InteractionTrace.fromInputDelivered(event, interactionInput),
+    trace: InteractionTrace = InteractionTrace.fromInputDelivered(event, interactionInput),
   ): FinishingInteraction<ParentEventType> {
     return startInteraction(trace).finish()
   }
