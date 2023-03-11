@@ -1,14 +1,10 @@
 package com.example.papa
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
-import android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
@@ -51,7 +47,7 @@ class MainActivity : AppCompatActivity() {
 
     findViewById<View>(R.id.draw_permission_button).setOnClickListener {
       if (VERSION.SDK_INT >= VERSION_CODES.M) {
-        val intent = Intent(ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+        val intent = interactionOverlay.newManageOverlayIntent()
         startActivityForResult(intent, 1)
       }
     }

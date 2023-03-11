@@ -1,6 +1,13 @@
-public final class papa/DevInteractionOverlay {
+public final class papa/InteractionOverlayView : android/view/View {
 	public fun <init> (Landroid/content/Context;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class papa/WindowOverlay {
+	public fun <init> (Landroid/content/Context;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Landroid/content/Context;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun canDrawOverlays ()Z
 	public final fun dismiss ()V
+	public final fun newManageOverlayIntent ()Landroid/content/Intent;
 	public final fun show ()V
 }
 

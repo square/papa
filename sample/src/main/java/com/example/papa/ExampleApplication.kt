@@ -11,11 +11,12 @@ import curtains.OnRootViewAddedListener
 import curtains.phoneWindow
 import curtains.windowAttachCount
 import papa.AppStart
-import papa.DevInteractionOverlay
 import papa.InteractionEventSink
+import papa.InteractionOverlayView
 import papa.InteractionRuleClient
 import papa.PapaEventListener
 import papa.PapaEventLogger
+import papa.WindowOverlay
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -26,8 +27,10 @@ class ExampleApplication : Application() {
   }
 
   private val interactionOverlay by lazy {
-    DevInteractionOverlay(this) {
-      interactionRuleClient.trackedInteractions
+    WindowOverlay(this) { context ->
+      InteractionOverlayView(context) {
+        interactionRuleClient.trackedInteractions
+      }
     }
   }
 
@@ -82,7 +85,7 @@ class ExampleApplication : Application() {
         return app.interactionRuleClient
       }
 
-    val Context.interactionOverlay: DevInteractionOverlay<InteractionEvent>
+    val Context.interactionOverlay: WindowOverlay
       get() {
         val app = applicationContext as ExampleApplication
         return app.interactionOverlay

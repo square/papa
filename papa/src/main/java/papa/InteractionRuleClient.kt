@@ -297,7 +297,9 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
     reason: String = event.toString()
   ) {
     // Copy list as cancel mutates the backing list.
-    runningInteractions().forEach { it.cancel(reason) }
+    for (interaction in runningInteractions()) {
+      interaction.cancel(reason)
+    }
   }
 }
 
