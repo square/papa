@@ -56,7 +56,7 @@ internal object TraceMainThreadMessages {
       Looper.getMainLooper().setMessageLogging { log ->
         if (!currentlyTracing) {
           if (SafeTrace.isCurrentlyTracing && log.startsWith('>')) {
-            val traceSection = buildSectionLabel(log)
+            val traceSection = SafeTraceSetup.mainThreadSectionNameMapper(log)
             SafeTrace.beginSection(traceSection)
             currentlyTracing = true
           }
@@ -68,31 +68,4 @@ internal object TraceMainThreadMessages {
     }
   }
 
-  private fun buildSectionLabel(log: String): String {
-    // Pattern is ">>>>> Dispatching to " + msg.target + " " + msg.callback + ": " + msg.what
-    val logNoPrefix = log.removePrefix(">>>>> Dispatching to ")
-    val indexOfWhat = logNoPrefix.lastIndexOf(": ")
-    val indexOfCallback = logNoPrefix.indexOf("} ")
-
-    val targetHandler = logNoPrefix.substring(0, indexOfCallback + 1)
-    val what = logNoPrefix.substring(indexOfWhat + 2)
-
-    val callback = logNoPrefix.substring(indexOfCallback + 2, indexOfWhat)
-
-    if (callback == "null") {
-      return "$targetHandler $what"
-    }
-
-    val continuationString = "Continuation at "
-    val indexOfContinuation = callback.indexOf(continuationString)
-    val callbackNoContinuation = if (indexOfContinuation != -1) {
-      callback.substring(indexOfContinuation + continuationString.length)
-    } else {
-      callback
-    }
-
-    // We're shuffling the string around because it gets truncating and callback
-    // is usually more interesting.
-    return "$callbackNoContinuation $targetHandler $what"
-  }
 }
