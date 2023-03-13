@@ -16,7 +16,9 @@ object SafeTraceSetup {
     TraceMainThreadMessages.enableMainThreadMessageTracing()
   }
 
-  var mainThreadSectionNameMapper: (String) -> String = :: cleanUpMainThreadSectionName
+  var mainThreadSectionNameMapper: SectionNameMapper = SectionNameMapper {
+    cleanUpMainThreadSectionName(it)
+  }
 
   /**
    * Cleans up a log string that matches the following pattern:

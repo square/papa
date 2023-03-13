@@ -56,7 +56,7 @@ internal object TraceMainThreadMessages {
       Looper.getMainLooper().setMessageLogging { log ->
         if (!currentlyTracing) {
           if (SafeTrace.isCurrentlyTracing && log.startsWith('>')) {
-            val traceSection = SafeTraceSetup.mainThreadSectionNameMapper(log)
+            val traceSection = SafeTraceSetup.mainThreadSectionNameMapper.mapSectionName(log)
             SafeTrace.beginSection(traceSection)
             currentlyTracing = true
           }
@@ -67,5 +67,4 @@ internal object TraceMainThreadMessages {
       }
     }
   }
-
 }
