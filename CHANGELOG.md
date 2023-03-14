@@ -1,16 +1,16 @@
 Change Log
 ==========
 
-Version 0.11
-_2023-03-13_
+Version 0.12
+_2023-03-14_
 
 * Add `EventFrameLabeler` to leverage with `SafeTrace` and `WindowOverlay` to make it easy to match frames in Perfetto & on screen.
 * Add `WindowOverlay` in `papa-dev` to facilitate drawing on top of the app windows.
 * Add support for customization of the main thread section names (`SafeTraceSetup.mainThreadSectionNameMapper`)
 * Make PerfAppComponentFactory public
 * Rename papa-dev-receivers to papa-dev
-* Add `OnEventScope.startSingleFrameInteraction()`, `OnEventScope.cancel()` and `OnEventScope.cancelRunningInteractions()`
-* Add InteractionRuleClient.trackedInteractions``
+* Add `OnEventScope.recordSingleFrameInteraction()`, `OnEventScope.cancel()` and `OnEventScope.cancelRunningInteractions()`
+* Add `InteractionRuleClient.trackedInteractions`
 * Rename `RunningInteraction.events` to `RunningInteraction.sentEvents`
 
 Version 0.10
