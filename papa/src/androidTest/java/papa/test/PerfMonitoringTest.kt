@@ -178,18 +178,13 @@ class PerfMonitoringTest {
 
   private fun dismissCheckForUpdates() {
     val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-    val checkForUpdate = uiDevice.wait(Until.hasObject(By.text("Check for update")), 500)
-    // null or boolean
-    if (checkForUpdate == true) {
-      val deprecationDialog = uiDevice.wait(
-        Until.findObject(
-          By.pkg("android").depth(0)
-        ), 1000
-      )
-
-      check(deprecationDialog != null)
-
-      val okButton = deprecationDialog.findObject(By.text("OK"))
+    val deprecationDialog = uiDevice.wait(
+      Until.findObject(
+        By.pkg("android").depth(0)
+      ), 500
+    )
+    if (deprecationDialog != null) {
+      val okButton = deprecationDialog.findObject(By.text("OK"))!!
       okButton.click()
     }
   }
