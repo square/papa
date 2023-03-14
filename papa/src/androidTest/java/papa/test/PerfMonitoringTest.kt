@@ -14,6 +14,9 @@ import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.squareup.papa.test.R
@@ -21,10 +24,6 @@ import curtains.TouchEventInterceptor
 import curtains.touchEventInterceptors
 import org.hamcrest.Matcher
 import org.junit.Test
-import radiography.Radiography
-import radiography.ScannableView.AndroidView
-import radiography.ViewStateRenderer
-import radiography.ViewStateRenderers.DefaultsIncludingPii
 import papa.AndroidComponentEvent
 import papa.AppStart.AppStartData
 import papa.PapaEvent.FrozenFrameOnTouch
@@ -33,6 +32,10 @@ import papa.internal.Perfs
 import papa.internal.isChoreographerDoingFrame
 import papa.internal.mainHandler
 import papa.test.utilities.TestActivity
+import radiography.Radiography
+import radiography.ScannableView.AndroidView
+import radiography.ViewStateRenderer
+import radiography.ViewStateRenderers.DefaultsIncludingPii
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.SECONDS
@@ -49,6 +52,7 @@ class PerfMonitoringTest {
 
   @Test fun firstActivity() {
     ActivityScenario.launch(TestActivity::class.java).use {
+      dismissCheckForUpdates()
       // Our activity isn't actually first when testing, oh well.
       val firstActivity = "androidx.test.core.app.InstrumentationActivityInvoker\$BootstrapActivity"
       assertThat(appStart.firstActivityOnCreate!!.name).isEqualTo(
@@ -107,7 +111,7 @@ class PerfMonitoringTest {
     val onTouchEventViewHierarchies = CopyOnWriteArrayList<String>()
 
     ActivityScenario.launch(TestActivity::class.java).use { scenario ->
-
+      dismissCheckForUpdates()
       scenario.onActivity { activity ->
         val dialog = AlertDialog.Builder(activity)
           // The standard dialog buttons are in a scrollview.
@@ -123,11 +127,12 @@ class PerfMonitoringTest {
           dispatch(motionEvent).apply {
             onTouchEventViewHierarchies += "############\n" +
               "Touch event was $motionEvent\n" +
-              Radiography.scan(viewStateRenderers = DefaultsIncludingPii + ViewStateRenderer { view ->
-                if (view is AndroidView) {
-                  append("pressed:${view.view.isPressed}")
-                }
-              })
+              Radiography.scan(
+                viewStateRenderers = DefaultsIncludingPii + ViewStateRenderer { view ->
+                  if (view is AndroidView) {
+                    append("pressed:${view.view.isPressed}")
+                  }
+                })
           }
         }
       }
@@ -169,6 +174,24 @@ class PerfMonitoringTest {
     }
     check(frameCallbackLatch.await(10, SECONDS))
     assertThat(isChoreographerDoingFrame).isFalse()
+  }
+
+  private fun dismissCheckForUpdates() {
+    val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    val checkForUpdate = uiDevice.wait(Until.hasObject(By.text("Check for update")), 500)
+    // null or boolean
+    if (checkForUpdate == true) {
+      val deprecationDialog = uiDevice.wait(
+        Until.findObject(
+          By.pkg("android").depth(0)
+        ), 1000
+      )
+
+      check(deprecationDialog != null)
+
+      val okButton = deprecationDialog.findObject(By.text("OK"))
+      okButton.click()
+    }
   }
 
   private fun reportFrozenFrame(): () -> FrozenFrameOnTouch {
