@@ -274,7 +274,7 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
    * immediately finished. This mean the interaction duration will be measured as the sending of
    * the event until the next frame.
    */
-  fun startSingleFrameInteraction(
+  fun recordSingleFrameInteraction(
     trace: InteractionTrace = InteractionTrace.fromInputDelivered(event, interactionInput),
   ): FinishingInteraction<ParentEventType> {
     return startInteraction(trace).finish()
@@ -335,16 +335,18 @@ fun interface InteractionTrace {
 interface TrackedInteraction<EventType : Any> {
   val sentEvents: List<SentEvent<EventType>>
   val interactionInput: DeliveredInput<out InputEvent>?
+
+  /**
+   * Adds the current event instance to the list of events (if not already added).
+   * Useful for both [RunningInteraction] & [FinishingInteraction] (to record new events
+   * that are relevant and happen after calling finish but before the next frame)
+   */
+  fun recordEvent()
 }
 
 interface RunningInteraction<EventType : Any> : TrackedInteraction<EventType> {
   fun cancel(reason: String)
   fun finish(): FinishingInteraction<EventType>
-
-  /**
-   * Adds the current event instance to the list of events (if not already added).
-   */
-  fun recordEvent()
 }
 
 interface FinishingInteraction<EventType : Any> : TrackedInteraction<EventType>

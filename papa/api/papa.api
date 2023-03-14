@@ -305,18 +305,18 @@ public abstract interface class papa/OnEventScope {
 	public abstract fun finishingInteractions ()Ljava/util/List;
 	public abstract fun getEvent ()Ljava/lang/Object;
 	public abstract fun getInteractionInput ()Lpapa/DeliveredInput;
+	public abstract fun recordSingleFrameInteraction (Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
 	public abstract fun runningInteractions ()Ljava/util/List;
 	public abstract fun startInteraction-HG0u8IE (Lpapa/InteractionTrace;J)Lpapa/RunningInteraction;
-	public abstract fun startSingleFrameInteraction (Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
 }
 
 public final class papa/OnEventScope$DefaultImpls {
 	public static fun cancel (Lpapa/OnEventScope;Lpapa/RunningInteraction;)V
 	public static fun cancelRunningInteractions (Lpapa/OnEventScope;Ljava/lang/String;)V
 	public static synthetic fun cancelRunningInteractions$default (Lpapa/OnEventScope;Ljava/lang/String;ILjava/lang/Object;)V
+	public static fun recordSingleFrameInteraction (Lpapa/OnEventScope;Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
+	public static synthetic fun recordSingleFrameInteraction$default (Lpapa/OnEventScope;Lpapa/InteractionTrace;ILjava/lang/Object;)Lpapa/FinishingInteraction;
 	public static synthetic fun startInteraction-HG0u8IE$default (Lpapa/OnEventScope;Lpapa/InteractionTrace;JILjava/lang/Object;)Lpapa/RunningInteraction;
-	public static fun startSingleFrameInteraction (Lpapa/OnEventScope;Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
-	public static synthetic fun startSingleFrameInteraction$default (Lpapa/OnEventScope;Lpapa/InteractionTrace;ILjava/lang/Object;)Lpapa/FinishingInteraction;
 }
 
 public abstract class papa/PapaEvent {
@@ -422,7 +422,6 @@ public abstract interface annotation class papa/RuleMarker : java/lang/annotatio
 public abstract interface class papa/RunningInteraction : papa/TrackedInteraction {
 	public abstract fun cancel (Ljava/lang/String;)V
 	public abstract fun finish ()Lpapa/FinishingInteraction;
-	public abstract fun recordEvent ()V
 }
 
 public final class papa/SentEvent {
@@ -434,6 +433,7 @@ public final class papa/SentEvent {
 public abstract interface class papa/TrackedInteraction {
 	public abstract fun getInteractionInput ()Lpapa/DeliveredInput;
 	public abstract fun getSentEvents ()Ljava/util/List;
+	public abstract fun recordEvent ()V
 }
 
 public abstract class papa/TriggerData {
