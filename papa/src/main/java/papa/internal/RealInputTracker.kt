@@ -25,6 +25,8 @@ import papa.SafeTrace
 import papa.internal.FrozenFrameOnTouchDetector.findPressedView
 import papa.safeTrace
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 internal object RealInputTracker : InputTracker {
 
@@ -38,7 +40,7 @@ internal object RealInputTracker : InputTracker {
    * The thread locals here aren't in charge of actually holding the event holder for the duration
    * of its lifecycle. Instead, they are exposing the event during specific time spans (sandwiching
    * onClick callback invocations) so that we can reach back here from an onClick and capture the
-   * event. The sandwiching also also ensures that if we reach back outside of an onClick sandwich
+   * event. The sandwiching also ensures that if we reach back outside of an onClick sandwich
    * we actually find nothing even if overall the EventHolder is still hanging out in memory.
    */
   private val motionEventTriggeringClickLocal = ThreadLocal<MotionEventHolder>()
@@ -85,14 +87,19 @@ internal object RealInputTracker : InputTracker {
           //  want to do that by swapping an immutable event, so that if we capture such event at
           //  time N and then the count gets updated at N + 1, the count update isn't reflected in
           //  the code that captured the event at time N.
+          val deliveryUptimeMillis = deliveryUptime.inWholeMilliseconds
           val actionUpEventHolder = if (isActionUp) {
-            val cookie = deliveryUptime.inWholeMilliseconds.rem(Int.MAX_VALUE).toInt()
+            val cookie = deliveryUptimeMillis.rem(Int.MAX_VALUE).toInt()
             SafeTrace.beginAsyncSection(TAP_INTERACTION_SECTION, cookie)
+            val event = MotionEvent.obtain(motionEvent)
+            // if eventTime is after delivery uptime, use deliveryUptimeMillis for DeliveredInput's uptime.
+            val uptime = if (event.eventTime > deliveryUptimeMillis) deliveryUptimeMillis else event.eventTime
             MotionEventHolder(
               DeliveredInput(
-                MotionEvent.obtain(motionEvent),
-                deliveryUptime,
-                0
+                event = event,
+                deliveryUptime = deliveryUptime,
+                eventUptime = uptime.toDuration(DurationUnit.MILLISECONDS),
+                framesSinceDelivery = 0
               ) {
                 SafeTrace.endAsyncSection(TAP_INTERACTION_SECTION, cookie)
               }).also {
@@ -146,7 +153,7 @@ internal object RealInputTracker : InputTracker {
             if (viewPressedAfterDispatch is AbsListView) {
               val listViewTapDelayMillis = ViewConfiguration.getPressedStateDuration()
               val setEventTime =
-                (deliveryUptime.inWholeMilliseconds + listViewTapDelayMillis) - 1
+                (deliveryUptimeMillis + listViewTapDelayMillis) - 1
               val clearEventTime = dispatchEnd + listViewTapDelayMillis
               handler.removeCallbacks(setEventForPostedClick)
               handler.postAtTime(setEventForPostedClick, setEventTime)
@@ -160,9 +167,17 @@ internal object RealInputTracker : InputTracker {
         window.keyEventInterceptors += KeyEventInterceptor { keyEvent, dispatch ->
           val traceSectionName = keyEvent.traceSectionName
           val now = System.nanoTime()
+          val deliveryUptimeMillis = now.nanoseconds.inWholeMilliseconds
           val cookie = now.rem(Int.MAX_VALUE).toInt()
           SafeTrace.beginAsyncSection(traceSectionName, cookie)
-          val input = DeliveredInput(keyEvent, now.nanoseconds, 0) {
+          // if eventTime is after delivery uptime, use deliveryUptimeMillis for DeliveredInput's uptime.
+          val uptime = if (keyEvent.eventTime > deliveryUptimeMillis) deliveryUptimeMillis else keyEvent.eventTime
+          val input = DeliveredInput(
+            event = keyEvent,
+            deliveryUptime = now.nanoseconds,
+            eventUptime = uptime.toDuration(DurationUnit.MILLISECONDS),
+            framesSinceDelivery = 0
+          ) {
             SafeTrace.endAsyncSection(traceSectionName, cookie)
           }
           currentKeyEventLocal.set(input)
