@@ -5,7 +5,6 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import papa.internal.RealInputTracker
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.DurationUnit.MILLISECONDS
 
 interface InputTracker {
@@ -43,12 +42,10 @@ interface InputTracker {
 class DeliveredInput<InputEventType : InputEvent>(
   val event: InputEventType,
   val deliveryUptime: Duration,
+  val eventUptime: Duration,
   val framesSinceDelivery: Int,
   private var endTrace: (() -> Unit)?
 ) {
-
-  val eventUptime: Duration
-    get() = event.eventTime.milliseconds
 
   fun takeOverTraceEnd(): (() -> Unit)? {
     val transferedEndTrace = endTrace
@@ -60,6 +57,7 @@ class DeliveredInput<InputEventType : InputEvent>(
     val copy = DeliveredInput(
       event = event,
       deliveryUptime = deliveryUptime,
+      eventUptime = eventUptime,
       framesSinceDelivery = framesSinceDelivery + 1,
       endTrace = endTrace
     )
@@ -70,6 +68,7 @@ class DeliveredInput<InputEventType : InputEvent>(
   override fun toString(): String {
     return "DeliveredInput(" +
       "deliveryUptime=${deliveryUptime.toString(MILLISECONDS)}, " +
+      "eventUptime=${eventUptime.toString(MILLISECONDS)}, " +
       "framesSinceDelivery=$framesSinceDelivery, " +
       "event=$event" +
       ")"

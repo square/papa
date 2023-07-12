@@ -202,7 +202,7 @@ public final class papa/AppVisibilityState : java/lang/Enum {
 }
 
 public final class papa/DeliveredInput {
-	public synthetic fun <init> (Landroid/view/InputEvent;JILkotlin/jvm/functions/Function0;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Landroid/view/InputEvent;JJILkotlin/jvm/functions/Function0;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getDeliveryUptime-UwyO8pc ()J
 	public final fun getEvent ()Landroid/view/InputEvent;
 	public final fun getEventUptime-UwyO8pc ()J
