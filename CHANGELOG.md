@@ -1,5 +1,9 @@
 Change Log
 ==========
+Version 0.13
+_2023-03-24_
+
+* bugfix: prevent negative values from being recorded for interaction durations. if eventTime is after delivery uptime, use deliveryUptimeMillis for DeliveredInput's uptime.
 
 Version 0.12
 _2023-03-14_
