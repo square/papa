@@ -57,7 +57,6 @@ internal object Perfs {
 
   // String value kept for backward compat reasons
   private const val LAST_VISIBILITY_CHANGE_CURRENT_MILLIS = "lastResumedCurrentMillis"
-  private const val LAST_ALIVE_CURRENT_MILLIS = "lastAliveCurrentMillis"
 
   @Volatile
   private var initialized = false
@@ -199,14 +198,7 @@ internal object Perfs {
           initCalledCurrentTimeMillis - lastTime
         }
       }
-    val lastAppAliveElapsedTimeMillis =
-      prefs.getLong(LAST_ALIVE_CURRENT_MILLIS, -1).let { lastTime ->
-        if (lastTime == -1L) {
-          null
-        } else {
-          initCalledCurrentTimeMillis - lastTime
-        }
-      }
+
     val processInfo = myProcessInfo.info
     appStartData = AppStartData(
       processStartRealtimeMillis = myProcessInfo.processStartRealtimeMillis,
@@ -221,23 +213,14 @@ internal object Perfs {
       startImportanceReasonComponent = processInfo.importanceReasonComponent?.toShortString(),
       lastAppVisibilityState = lastAppVisibilityState,
       lastVisibilityChangeElapsedTimeMillis = lastVisibilityChangeElapsedTimeMillis,
-      lastAppAliveElapsedTimeMillis = lastAppAliveElapsedTimeMillis,
+      // TODO : https://github.com/square/papa/issues/58 - use ApplicationExitInfo to retrieve this value.
+      lastAppAliveElapsedTimeMillis = 0,
       appTasks = myProcessInfo.appTasks,
       classLoaderInstantiatedElapsedUptimeMillis =
       classLoaderInstantiatedUptimeMillis?.let { it - processStartUptimeMillis },
       applicationInstantiatedElapsedUptimeMillis =
       applicationInstantiatedUptimeMillis?.let { it - processStartUptimeMillis }
     )
-
-    object : Runnable {
-      override fun run() {
-        prefs.edit()
-          // We can't use SystemClock.uptimeMillis() as the device might restart in between.
-          .putLong(LAST_ALIVE_CURRENT_MILLIS, System.currentTimeMillis())
-          .apply()
-        handler.postDelayed(this, 1000)
-      }
-    }.apply { run() }
 
     Looper.myQueue()
       .addIdleHandler {
