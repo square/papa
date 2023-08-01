@@ -1,5 +1,10 @@
 Change Log
 ==========
+Version 0.14
+_2023-08-04_
+
+* bugfix: remove the 1 second post delay to compute the lastAliveCurrentMillis value, which can cause excessive reads/writes to disk.
+
 Version 0.13
 _2023-03-24_
 
