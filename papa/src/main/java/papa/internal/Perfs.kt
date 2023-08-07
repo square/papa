@@ -3,6 +3,7 @@ package papa.internal
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 import android.app.Application
+import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import android.os.Handler
@@ -198,6 +199,14 @@ internal object Perfs {
           initCalledCurrentTimeMillis - lastTime
         }
       }
+    val lastAppAliveElapsedTimeMillis = if (Build.VERSION.SDK_INT >= 30) {
+      val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+      val applicationExitInfos: List<ApplicationExitInfo> = activityManager.getHistoricalProcessExitReasons(null, 0, 0)
+      // On first run, applicationExitInfos list will be empty. Return 0 in this case.  
+      applicationExitInfos.firstOrNull()?.let {
+        initCalledCurrentTimeMillis - it.timestamp
+      } ?: 0
+    } else 0
 
     val processInfo = myProcessInfo.info
     appStartData = AppStartData(
@@ -213,8 +222,7 @@ internal object Perfs {
       startImportanceReasonComponent = processInfo.importanceReasonComponent?.toShortString(),
       lastAppVisibilityState = lastAppVisibilityState,
       lastVisibilityChangeElapsedTimeMillis = lastVisibilityChangeElapsedTimeMillis,
-      // TODO : https://github.com/square/papa/issues/58 - use ApplicationExitInfo to retrieve this value.
-      lastAppAliveElapsedTimeMillis = 0,
+      lastAppAliveElapsedTimeMillis = lastAppAliveElapsedTimeMillis,
       appTasks = myProcessInfo.appTasks,
       classLoaderInstantiatedElapsedUptimeMillis =
       classLoaderInstantiatedUptimeMillis?.let { it - processStartUptimeMillis },
