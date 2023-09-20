@@ -1,10 +1,12 @@
 package papa.internal
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.StrictMode
 import android.os.SystemClock
 import papa.AppStart.AppStartData
 import papa.AppUpdateData.ErrorRetrievingAppUpdateData
@@ -200,10 +202,21 @@ internal class AppUpdateDetector private constructor(
     }
   }
 
+  /**
+   * Records the timestamp of a crash in the application and stores it in shared preferences.
+   * The write operation is performed synchronously to ensure it is completed before the
+   * process terminates in the event of a crash.
+   */
+  @SuppressLint("ApplySharedPref")
   private fun onAppCrashing() {
-    preferences.edit()
-      .putLong(CRASH_REALTIME_KEY, SystemClock.elapsedRealtime())
-      .commit()
+    val oldPolicy = StrictMode.allowThreadDiskReads()
+    try {
+      preferences.edit()
+        .putLong(CRASH_REALTIME_KEY, SystemClock.elapsedRealtime())
+        .commit()
+    } finally {
+      StrictMode.setThreadPolicy(oldPolicy)
+    }
   }
 
   companion object {
