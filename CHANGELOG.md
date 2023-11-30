@@ -1,5 +1,10 @@
 Change Log
 ==========
+Version 0.15
+_2023-011-30_
+
+* bugfix: Allow thread disk reads temporarily at onAppCrashing() function
+
 Version 0.14
 _2023-08-04_
 
