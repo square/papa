@@ -42,6 +42,16 @@ internal class LaunchTracker(
     }
 
     /**
+     * No more timeout once we've entered onResume(), we'll wait for the first
+     * frame forever and consider that one launch.
+     * If we get any other lifecycle callback after this, we'll reinstate the timeout.
+     */
+    fun clearLastLifecycleChangeTimeOnResume() {
+      lastLifecycleChangeDoneUptimeMillis = null
+      mainHandler.removeCallbacks(updateLastLifecycleChangeUptimeMillis)
+    }
+
+    /**
      * Stale if the last lifecycle update for the launch in progress was done more than 500ms
      * ago.
      */
@@ -96,6 +106,7 @@ internal class LaunchTracker(
     if (launchInProgress == null) {
       return
     }
+    launchInProgress!!.clearLastLifecycleChangeTimeOnResume()
 
     // We're ending the launch of first frame post draw of this activity. If the activity ends up
     // not drawing and another activity is resumed immediately after, whichever activity draws

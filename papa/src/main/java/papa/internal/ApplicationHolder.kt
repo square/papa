@@ -15,6 +15,7 @@ internal object ApplicationHolder {
   fun install(application: Application, isForegroundImportance: Boolean) {
     this.application = application
     SafeTraceSetup.init(application)
+    // TODO Look into setting Perfs.isTracingLaunch = true, probs forgot.
     if (isForegroundImportance) {
       SafeTrace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME)
     }
