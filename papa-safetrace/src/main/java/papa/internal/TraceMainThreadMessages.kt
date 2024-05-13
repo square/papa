@@ -55,7 +55,12 @@ internal object TraceMainThreadMessages {
       var currentlyTracing = false
       Looper.getMainLooper().setMessageLogging { log ->
         if (!currentlyTracing) {
-          if (SafeTrace.isCurrentlyTracing && log.startsWith('>')) {
+          if (SafeTrace.isCurrentlyTracing &&
+            // The printer is called before (>> prefix) and after (<< prefix) every message.
+            log.startsWith('>') &&
+            // Don't add a trace section for Choreographer#doFrame, as that messes up
+            // Macrobenchmark: https://issuetracker.google.com/issues/340206285
+            "android.view.Choreographer\$FrameDisplayEventReceiver" !in log) {
             val traceSection = SafeTraceSetup.mainThreadSectionNameMapper.mapSectionName(log)
             SafeTrace.beginSection(traceSection)
             currentlyTracing = true
