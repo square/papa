@@ -45,7 +45,7 @@ class DeliveredInput<InputEventType : InputEvent>(
   val eventUptime: Duration,
   val framesSinceDelivery: Int,
   private var endTrace: (() -> Unit)?
-) {
+) : InteractionStartInput {
 
   fun takeOverTraceEnd(): (() -> Unit)? {
     val transferedEndTrace = endTrace
@@ -64,6 +64,9 @@ class DeliveredInput<InputEventType : InputEvent>(
     endTrace = null
     return copy
   }
+
+  override val inputUptime: Duration
+    get() = eventUptime
 
   override fun toString(): String {
     return "DeliveredInput(" +
