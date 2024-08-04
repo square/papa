@@ -1,7 +1,13 @@
 Change Log
 ==========
+
+Version 0.16
+_2024-08_04_
+
+* Add support for custom startInteraction start input events [#66](https://github.com/square/papa/pull/66).
+
 Version 0.15
-_2023-011-30_
+_2023-11-30_
 
 * bugfix: Allow thread disk reads temporarily at onAppCrashing() function
 
