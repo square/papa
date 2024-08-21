@@ -1,8 +1,8 @@
 Change Log
 ==========
 
-Version 0.17
-_2024-08_04_
+Version 0.18
+_2024-08_21_
 
 * Add support for custom startInteraction start input events [#66](https://github.com/square/papa/pull/66).
 
