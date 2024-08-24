@@ -18,7 +18,7 @@ internal object ApplicationHolder {
     if (isForegroundImportance) {
       SafeTrace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME)
     }
-    RealInputTracker.install(application)
+    InputTracker.install(application)
     FrozenFrameOnTouchDetector.install()
   }
 }
