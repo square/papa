@@ -46,25 +46,22 @@ brew install gh
 
 ## Releasing
 
-* Create a local release branch from `main`
+* Create a local release branch from `main` and update `VERSION_NAME` in `gradle.properties` (removing `-SNAPSHOT`):
 ```bash
-git checkout main
-git pull
-git checkout -b release_{NEW_VERSION}
-```
-
-* Update `VERSION_NAME` in `gradle.properties` (remove `-SNAPSHOT`)
-```gradle
+git checkout main && \
+git pull && \
+git checkout -b release_{NEW_VERSION} && \
 sed -i '' 's/VERSION_NAME={PREVIOUS_NEW_VERSION}-SNAPSHOT/VERSION_NAME={NEW_VERSION}/' gradle.properties
 ```
 
+
 * Update the changelog
-```
+```bash
 mate CHANGELOG.md
 ```
 
 * Update the released version in the readme
-```
+```bash
 mate README.md
 ```
 
@@ -74,10 +71,15 @@ mate README.md
 git commit -am "Prepare {NEW_VERSION} release" && \
 ./gradlew clean && \
 ./gradlew build && \
+./gradlew connectedCheck && \
 git tag v{NEW_VERSION} && \
 git push origin v{NEW_VERSION} && \
-./gradlew publish --no-daemon --no-parallel && \
-./gradlew closeAndReleaseRepository && \
+gh workflow run publish-release.yml --ref v{NEW_VERSION}
+```
+
+* Wait for the GitHub workflow to finish running then finish the release:
+
+```bash
 git checkout main && \
 git pull && \
 git merge --no-ff --no-edit release_{NEW_VERSION} && \
