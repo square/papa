@@ -62,7 +62,7 @@ jobs:
 
   snapshot-deployment:
     if: github.repository == 'square/papa' && github.event_name == 'push'
-    needs: [ build, instrumentation-tests ]
+    needs: [ build ] #, instrumentation-tests ] UI tests setup is currently broken.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
