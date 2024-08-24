@@ -4,7 +4,7 @@ import android.app.Application
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.view.Choreographer
+import android.view.InputEvent
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewConfiguration
@@ -19,59 +19,18 @@ import curtains.keyEventInterceptors
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
 import curtains.windowAttachCount
-import papa.DeliveredInput
-import papa.InputTracker
+import papa.InteractionTrigger
+import papa.MainThreadTriggerStack
 import papa.SafeTrace
 import papa.internal.FrozenFrameOnTouchDetector.findPressedView
 import papa.safeTrace
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
-internal object RealInputTracker : InputTracker {
-
-  override val motionEventTriggeringClick: DeliveredInput<MotionEvent>?
-    get() = motionEventTriggeringClickLocal.get()?.input
-
-  override val currentKeyEvent: DeliveredInput<KeyEvent>?
-    get() = currentKeyEventLocal.get()
-
-  /**
-   * The thread locals here aren't in charge of actually holding the event holder for the duration
-   * of its lifecycle. Instead, they are exposing the event during specific time spans (sandwiching
-   * onClick callback invocations) so that we can reach back here from an onClick and capture the
-   * event. The sandwiching also ensures that if we reach back outside of an onClick sandwich
-   * we actually find nothing even if overall the EventHolder is still hanging out in memory.
-   */
-  private val motionEventTriggeringClickLocal = ThreadLocal<MotionEventHolder>()
-  private val currentKeyEventLocal = ThreadLocal<DeliveredInput<KeyEvent>>()
+internal object InputTracker {
 
   private val handler = Handler(Looper.getMainLooper())
-
-  class MotionEventHolder(var input: DeliveredInput<MotionEvent>) : Choreographer.FrameCallback {
-
-    private val choreographer = Choreographer.getInstance()
-
-    override fun doFrame(frameTimeNanos: Long) {
-      // We increase the counter right after the frame callback. This means we don't count a frame
-      // if this event is consumed as part of the frame we did the increment in.
-      // There's a slight edge case: if the event consumption triggered in between doFrame and
-      // the post at front of queue, the count would be short by 1. We can live with this, it's
-      // unlikely to happen unless an event is triggered from a postAtFront.
-      mainHandler.postAtFrontOfQueueAsync {
-        input = input.increaseFrameCount()
-      }
-      choreographer.postFrameCallback(this)
-    }
-
-    fun startCounting() {
-      choreographer.postFrameCallback(this)
-    }
-
-    fun stopCounting() {
-      choreographer.removeFrameCallback(this)
-    }
-  }
 
   private val listener = OnRootViewAddedListener { view ->
     view.phoneWindow?.let { window ->
@@ -79,7 +38,8 @@ internal object RealInputTracker : InputTracker {
         window.touchEventInterceptors += TouchEventInterceptor { motionEvent, dispatch ->
           // Note: what if we get 2 taps in a single dispatch loop? Then we're simply posting the
           // following: (recordTouch, onClick, clearTouch, recordTouch, onClick, clearTouch).
-          val deliveryUptime = System.nanoTime().nanoseconds
+          val deliveryUptimeNanos = System.nanoTime()
+          val deliveryUptime = deliveryUptimeNanos.nanoseconds
           val isActionUp = motionEvent.action == MotionEvent.ACTION_UP
 
           //  We wrap the event in a holder so that we can actually replace the event within the
@@ -87,43 +47,45 @@ internal object RealInputTracker : InputTracker {
           //  want to do that by swapping an immutable event, so that if we capture such event at
           //  time N and then the count gets updated at N + 1, the count update isn't reflected in
           //  the code that captured the event at time N.
-          val deliveryUptimeMillis = deliveryUptime.inWholeMilliseconds
-          val actionUpEventHolder = if (isActionUp) {
-            val cookie = deliveryUptimeMillis.rem(Int.MAX_VALUE).toInt()
+          val actionUpTrigger = if (isActionUp) {
+            val cookie = deliveryUptimeNanos.rem(Int.MAX_VALUE).toInt()
             SafeTrace.beginAsyncSection(TAP_INTERACTION_SECTION, cookie)
-            val event = MotionEvent.obtain(motionEvent)
-            // if eventTime is after delivery uptime, use deliveryUptimeMillis for DeliveredInput's uptime.
-            val uptime = if (event.eventTime > deliveryUptimeMillis) deliveryUptimeMillis else event.eventTime
-            MotionEventHolder(
-              DeliveredInput(
-                event = event,
-                deliveryUptime = deliveryUptime,
-                eventUptime = uptime.toDuration(DurationUnit.MILLISECONDS),
-                framesSinceDelivery = 0
-              ) {
+            val eventUptime = motionEvent.eventTime.milliseconds
+            // Event bugfix: if event time is after delivery time, use delivery time as trigger time.
+            val triggerUptime = if (eventUptime > deliveryUptime) deliveryUptime else eventUptime
+
+            InteractionTrigger(
+              triggerUptime = triggerUptime,
+              name = "tap",
+              interactionTrace = {
                 SafeTrace.endAsyncSection(TAP_INTERACTION_SECTION, cookie)
-              }).also {
-              it.startCounting()
-            }
+              },
+              payload = InputEventTrigger(
+                // Making a copy as motionEvent will get cleared once dispatched.
+                inputEvent = MotionEvent.obtain(motionEvent),
+                deliveryUptime = deliveryUptimeNanos.nanoseconds
+              )
+            )
           } else {
             null
           }
 
           val setEventForPostedClick = Runnable {
-            motionEventTriggeringClickLocal.set(actionUpEventHolder)
+            MainThreadTriggerStack.pushTriggeredBy(actionUpTrigger!!)
           }
 
-          if (actionUpEventHolder != null) {
+          if (actionUpTrigger != null) {
             handler.post(setEventForPostedClick)
           }
 
           val dispatchState = safeTrace({ MotionEvent.actionToString(motionEvent.action) }) {
-            // Storing in case the action up is immediately triggering a click.
-            motionEventTriggeringClickLocal.set(actionUpEventHolder)
-            try {
+            if (actionUpTrigger != null) {
+              // In case the action up is immediately triggering a click (e.g. Compose)
+              MainThreadTriggerStack.triggeredBy(actionUpTrigger, endTraceAfterBlock = false) {
+                dispatch(motionEvent)
+              }
+            } else {
               dispatch(motionEvent)
-            } finally {
-              motionEventTriggeringClickLocal.set(null)
             }
           }
 
@@ -132,13 +94,8 @@ internal object RealInputTracker : InputTracker {
           // we're clearing the event right after the onclick is handled.
           if (isActionUp) {
             val clearEventForPostedClick = Runnable {
-              actionUpEventHolder!!.stopCounting()
-              val actionUpEvent = actionUpEventHolder.input
-              actionUpEvent.event.recycle()
-              actionUpEvent.takeOverTraceEnd()?.invoke()
-              if (motionEventTriggeringClickLocal.get() === actionUpEventHolder) {
-                motionEventTriggeringClickLocal.set(null)
-              }
+              actionUpTrigger!!.takeOverInteractionTrace()?.endTrace()
+              MainThreadTriggerStack.popTriggeredBy(actionUpTrigger)
             }
 
             val dispatchEnd = SystemClock.uptimeMillis()
@@ -153,7 +110,7 @@ internal object RealInputTracker : InputTracker {
             if (viewPressedAfterDispatch is AbsListView) {
               val listViewTapDelayMillis = ViewConfiguration.getPressedStateDuration()
               val setEventTime =
-                (deliveryUptimeMillis + listViewTapDelayMillis) - 1
+                (deliveryUptime.inWholeMilliseconds + listViewTapDelayMillis) - 1
               val clearEventTime = dispatchEnd + listViewTapDelayMillis
               handler.removeCallbacks(setEventForPostedClick)
               handler.postAtTime(setEventForPostedClick, setEventTime)
@@ -165,27 +122,29 @@ internal object RealInputTracker : InputTracker {
           dispatchState
         }
         window.keyEventInterceptors += KeyEventInterceptor { keyEvent, dispatch ->
+          val deliveryUptimeNanos = System.nanoTime()
           val traceSectionName = keyEvent.traceSectionName
-          val now = System.nanoTime()
-          val deliveryUptimeMillis = now.nanoseconds.inWholeMilliseconds
-          val cookie = now.rem(Int.MAX_VALUE).toInt()
+          val cookie = deliveryUptimeNanos.rem(Int.MAX_VALUE).toInt()
           SafeTrace.beginAsyncSection(traceSectionName, cookie)
-          // if eventTime is after delivery uptime, use deliveryUptimeMillis for DeliveredInput's uptime.
-          val uptime = if (keyEvent.eventTime > deliveryUptimeMillis) deliveryUptimeMillis else keyEvent.eventTime
-          val input = DeliveredInput(
-            event = keyEvent,
-            deliveryUptime = now.nanoseconds,
-            eventUptime = uptime.toDuration(DurationUnit.MILLISECONDS),
-            framesSinceDelivery = 0
-          ) {
-            SafeTrace.endAsyncSection(traceSectionName, cookie)
-          }
-          currentKeyEventLocal.set(input)
-          try {
+          val deliveryUptime = deliveryUptimeNanos.nanoseconds
+          val eventUptime = keyEvent.eventTime.milliseconds
+
+          // Event bugfix: if event time is after delivery time, use delivery time as trigger time.
+          val triggerUptime = if (eventUptime > deliveryUptime) deliveryUptime else eventUptime
+
+          val trigger = InteractionTrigger(
+            triggerUptime = triggerUptime,
+            name = "key ${keyEvent.name}",
+            interactionTrace = {
+              SafeTrace.endAsyncSection(traceSectionName, cookie)
+            },
+            payload = InputEventTrigger(
+              inputEvent = keyEvent,
+              deliveryUptime = deliveryUptimeNanos.nanoseconds
+            )
+          )
+          MainThreadTriggerStack.triggeredBy(trigger, endTraceAfterBlock = true) {
             dispatch(keyEvent)
-          } finally {
-            currentKeyEventLocal.set(null)
-            input.takeOverTraceEnd()?.invoke()
           }
         }
       }
@@ -217,3 +176,8 @@ internal object RealInputTracker : InputTracker {
     }
   }
 }
+
+data class InputEventTrigger(
+  val inputEvent: InputEvent,
+  val deliveryUptime: Duration
+)

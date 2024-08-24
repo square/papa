@@ -12,6 +12,7 @@ import android.util.TypedValue.COMPLEX_UNIT_SP
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import papa.internal.InputEventTrigger
 
 /**
  * Overlay view that displays the interactions in flight.
@@ -68,8 +69,8 @@ class InteractionOverlayView<EventType : Any>(
 
     val interactionLines =
       trackedInteractionsWithFrameCount.map { (trackedInteraction, frameCount) ->
-        val input = trackedInteraction.interactionInput?.let { deliveredInput ->
-          when (val inputEvent = (deliveredInput as DeliveredInput<*>).event) {
+        val input = trackedInteraction.interactionTrigger?.payload?.let { deliveredInput ->
+          when (val inputEvent = (deliveredInput as InputEventTrigger).inputEvent) {
             is MotionEvent -> MotionEvent.actionToString(inputEvent.action)
             is KeyEvent -> KeyEvent.keyCodeToString(inputEvent.keyCode)
             else -> error("Unknown input event class ${inputEvent::class.java.name}")

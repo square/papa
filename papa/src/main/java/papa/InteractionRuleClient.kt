@@ -1,9 +1,7 @@
 package papa
 
-import android.os.SystemClock
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
-import android.view.InputEvent
 import papa.internal.checkMainThread
 import papa.internal.isMainThread
 import papa.internal.mainHandler
@@ -58,18 +56,15 @@ class InteractionRuleClient<EventType : Any>(
   override fun sendEvent(event: EventType) {
     val eventSentUptime = System.nanoTime().nanoseconds
     val sentEvent = SentEvent(eventSentUptime, event)
-    if (isMainThread) {
+    val sendEvent = {
       for (engine in interactionEngines) {
-        engine.sendEvent(sentEvent, InputTracker.triggerEvent)
+        engine.sendEvent(sentEvent)
       }
+    }
+    if (isMainThread) {
+      sendEvent()
     } else {
-      mainHandler.post {
-        for (engine in interactionEngines) {
-          // interactionInput is null as the event was sent from a background thread so there's
-          // no way the event can be tied back to an input event.
-          engine.sendEvent(sentEvent, interactionInput = null)
-        }
-      }
+      mainHandler.post(sendEvent)
     }
   }
 }
@@ -109,7 +104,7 @@ private class InteractionEngine<ParentEventType : Any>(
   private var eventInScope: SentEvent<ParentEventType>? = null
 
   inner class RealRunningInteraction(
-    override val interactionInput: InteractionStartInput?,
+    override val interactionTrigger: InteractionTrigger?,
     private val trace: InteractionTrace,
     cancelTimeout: Duration
   ) : RunningInteraction<ParentEventType>, FinishingInteraction<ParentEventType>, FrameCallback {
@@ -156,7 +151,7 @@ private class InteractionEngine<ParentEventType : Any>(
       resultListener.onInteractionResult(
         InteractionResult.Canceled(
           data = InteractionResultDataPayload(
-            interactionInput = interactionInput,
+            interactionTrigger = interactionTrigger,
             runningFrameCount = frameCountSinceStart,
             sentEvents = eventsCopy,
           ),
@@ -178,7 +173,7 @@ private class InteractionEngine<ParentEventType : Any>(
         resultListener.onInteractionResult(
           InteractionResult.Finished(
             data = InteractionResultDataPayload(
-              interactionInput = interactionInput,
+              interactionTrigger = interactionTrigger,
               runningFrameCount = frameCountSinceStart,
               sentEvents = eventsCopy,
             ),
@@ -213,7 +208,6 @@ private class InteractionEngine<ParentEventType : Any>(
 
   fun sendEvent(
     sentEvent: SentEvent<ParentEventType>,
-    interactionInput: DeliveredInput<out InputEvent>?
   ) {
 
     val realEventScope = object : OnEventScope<ParentEventType, ParentEventType> {
@@ -221,20 +215,18 @@ private class InteractionEngine<ParentEventType : Any>(
 
       override fun finishingInteractions() = finishingInteractions.toList()
 
-      override val interactionInput = interactionInput
+      override val interactionTrigger = MainThreadTriggerStack.earliestInteractionTrigger
 
       override fun startInteraction(
-        interactionStartInput: InteractionStartInput?,
-        trace: InteractionTrace,
+        trigger: InteractionTrigger?,
         cancelTimeout: Duration,
       ): RunningInteraction<ParentEventType> {
-        // If the interaction input trace end isn't taken over yet, end it.
-        interactionInput?.takeOverTraceEnd()?.invoke()
-
+        val interactionTrigger = trigger ?: interactionTrigger
+        val trace = interactionTrigger?.takeOverInteractionTrace() ?: InteractionTrace.startNow(
+          event.toString()
+        )
         val runningInteraction = RealRunningInteraction(
-          // Default to custom interactionStartInput if passed in, otherwise default to delivered
-          // input (key or tap)
-          interactionInput = interactionStartInput ?: interactionInput,
+          interactionTrigger = interactionTrigger,
           trace = trace,
           cancelTimeout
         )
@@ -264,13 +256,12 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
   fun runningInteractions(): List<RunningInteraction<ParentEventType>>
   fun finishingInteractions(): List<FinishingInteraction<ParentEventType>>
 
-  val interactionInput: DeliveredInput<out InputEvent>?
+  val interactionTrigger: InteractionTrigger?
 
   val event: EventType
 
   fun startInteraction(
-    interactionStartInput: InteractionStartInput? = null,
-    trace: InteractionTrace = InteractionTrace.fromInputDelivered(event, interactionInput),
+    trigger: InteractionTrigger? = null,
     cancelTimeout: Duration = 1.minutes,
   ): RunningInteraction<ParentEventType>
 
@@ -280,9 +271,9 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
    * the event until the next frame.
    */
   fun recordSingleFrameInteraction(
-    trace: InteractionTrace = InteractionTrace.fromInputDelivered(event, interactionInput),
+    trigger: InteractionTrigger? = null,
   ): FinishingInteraction<ParentEventType> {
-    return startInteraction(trace = trace).finish()
+    return startInteraction(trigger = trigger).finish()
   }
 
   /**
@@ -308,38 +299,9 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
   }
 }
 
-fun interface InteractionTrace {
-
-  fun endTrace()
-
-  companion object {
-    fun fromInputDelivered(
-      event: Any,
-      interactionInput: DeliveredInput<out InputEvent>?
-    ): InteractionTrace {
-      val endTrace = interactionInput?.takeOverTraceEnd()
-      return if (endTrace != null) {
-        InteractionTrace {
-          endTrace()
-        }
-      } else {
-        fromNow(event.toString())
-      }
-    }
-
-    fun fromNow(label: String): InteractionTrace {
-      val cookie = SystemClock.uptimeMillis().rem(Int.MAX_VALUE).toInt()
-      SafeTrace.beginAsyncSection(label, cookie)
-      return InteractionTrace {
-        SafeTrace.endAsyncSection(label, cookie)
-      }
-    }
-  }
-}
-
 interface TrackedInteraction<EventType : Any> {
   val sentEvents: List<SentEvent<EventType>>
-  val interactionInput: InteractionStartInput?
+  val interactionTrigger: InteractionTrigger?
 
   /**
    * Adds the current event instance to the list of events (if not already added).
@@ -361,7 +323,7 @@ interface InteractionResultData<EventType : Any> {
    * Interaction input that was automatically detected when the interaction started to be tracked,
    * if any.
    */
-  val interactionInput: InteractionStartInput?
+  val interactionTrigger: InteractionTrigger?
 
   /**
    * The number of frames that were rendered between the first and the last event in [sentEvents]
@@ -377,7 +339,7 @@ class SentEvent<EventType : Any>(
 )
 
 class InteractionResultDataPayload<EventType : Any>(
-  override val interactionInput: InteractionStartInput?,
+  override val interactionTrigger: InteractionTrigger?,
   override val runningFrameCount: Int,
   override val sentEvents: List<SentEvent<EventType>>,
 ) : InteractionResultData<EventType>
@@ -427,16 +389,16 @@ sealed class InteractionResult<EventType : Any>(
       )
       append("runningFrameCount=$runningFrameCount, ")
       append("events=${sentEvents.map { it.event }}, ")
-      interactionInput?.let {
+      interactionTrigger?.let {
         append(
           "inputToStart=${
-            (sentEvents.first().uptime - it.inputUptime).toString(
+            (sentEvents.first().uptime - it.triggerUptime).toString(
               MILLISECONDS
             )
           }, "
         )
       }
-      append("interactionInput=$interactionInput")
+      append("interactionInput=$interactionTrigger")
       append(")")
     }
   }
