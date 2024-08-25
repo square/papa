@@ -4,17 +4,30 @@ import papa.internal.checkMainThread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 
-data class InteractionTrigger(
-  val triggerUptime: Duration,
-  val name: String,
-  private var interactionTrace: InteractionTrace? = null,
-  /**
-   * Additional details that can be carried by [InteractionTrigger]
-   */
-  val payload: Any? = null
-) {
+sealed interface InteractionTrigger {
+  val triggerUptime: Duration
+  val name: String
+  fun takeOverInteractionTrace(): InteractionTrace?
 
-  fun takeOverInteractionTrace(): InteractionTrace? {
+  companion object {
+    fun triggerNow(
+      name: String,
+    ): InteractionTrigger {
+      val nowUptimeNanos = System.nanoTime()
+      val interactionTrace = InteractionTrace.startNow(name)
+      val triggerUptime = nowUptimeNanos.nanoseconds
+      return SimpleInteractionTrigger(triggerUptime, name, interactionTrace)
+    }
+  }
+}
+
+class SimpleInteractionTrigger(
+  override val triggerUptime: Duration,
+  override val name: String,
+  private var interactionTrace: InteractionTrace? = null,
+) : InteractionTrigger {
+
+  override fun takeOverInteractionTrace(): InteractionTrace? {
     checkMainThread()
     try {
       return interactionTrace
@@ -23,15 +36,18 @@ data class InteractionTrigger(
     }
   }
 
-  companion object {
-    fun triggerNow(
-      name: String,
-      payload: Any? = null
-    ): InteractionTrigger {
-      val nowUptimeNanos = System.nanoTime()
-      val interactionTrace = InteractionTrace.startNow(name)
-      val triggerUptime = nowUptimeNanos.nanoseconds
-      return InteractionTrigger(triggerUptime, name, interactionTrace, payload)
-    }
+  override fun toString(): String {
+    return "InteractionTrigger(name='$name', triggerUptime=$triggerUptime)"
+  }
+}
+
+class InteractionTriggerWithPayload<T>(
+  triggerUptime: Duration,
+  name: String,
+  interactionTrace: InteractionTrace?,
+  val payload: T
+) : InteractionTrigger by SimpleInteractionTrigger(triggerUptime, name, interactionTrace) {
+  override fun toString(): String {
+    return "InteractionTrigger(name='$name', triggerUptime=$triggerUptime, payload=$payload)"
   }
 }

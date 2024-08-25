@@ -4,7 +4,6 @@ import android.app.Application
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.view.InputEvent
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewConfiguration
@@ -19,12 +18,12 @@ import curtains.keyEventInterceptors
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
 import curtains.windowAttachCount
-import papa.InteractionTrigger
+import papa.InputEventTrigger
+import papa.InteractionTriggerWithPayload
 import papa.MainThreadTriggerStack
 import papa.SafeTrace
 import papa.internal.FrozenFrameOnTouchDetector.findPressedView
 import papa.safeTrace
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 
@@ -54,7 +53,7 @@ internal object InputTracker {
             // Event bugfix: if event time is after delivery time, use delivery time as trigger time.
             val triggerUptime = if (eventUptime > deliveryUptime) deliveryUptime else eventUptime
 
-            InteractionTrigger(
+            InteractionTriggerWithPayload(
               triggerUptime = triggerUptime,
               name = "tap",
               interactionTrace = {
@@ -132,7 +131,7 @@ internal object InputTracker {
           // Event bugfix: if event time is after delivery time, use delivery time as trigger time.
           val triggerUptime = if (eventUptime > deliveryUptime) deliveryUptime else eventUptime
 
-          val trigger = InteractionTrigger(
+          val trigger = InteractionTriggerWithPayload(
             triggerUptime = triggerUptime,
             name = "key ${keyEvent.name}",
             interactionTrace = {
@@ -176,8 +175,3 @@ internal object InputTracker {
     }
   }
 }
-
-data class InputEventTrigger(
-  val inputEvent: InputEvent,
-  val deliveryUptime: Duration
-)

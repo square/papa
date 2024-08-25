@@ -10,6 +10,14 @@ object MainThreadTriggerStack {
       return interactionTriggerStack.minByOrNull { it.triggerUptime }
     }
 
+  val inputEventInteractionTriggers: List<InteractionTriggerWithPayload<InputEventTrigger>>
+    get() {
+      checkMainThread()
+      return interactionTriggerStack.mapNotNull {
+        it.toInputEventTriggerOrNull()
+      }
+    }
+
   private val interactionTriggerStack = mutableListOf<InteractionTrigger>()
 
   /**

@@ -204,6 +204,23 @@ public final class papa/AppVisibilityState : java/lang/Enum {
 public abstract interface class papa/FinishingInteraction : papa/TrackedInteraction {
 }
 
+public final class papa/InputEventTrigger {
+	public synthetic fun <init> (Landroid/view/InputEvent;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Landroid/view/InputEvent;
+	public final fun component2-UwyO8pc ()J
+	public final fun copy-HG0u8IE (Landroid/view/InputEvent;J)Lpapa/InputEventTrigger;
+	public static synthetic fun copy-HG0u8IE$default (Lpapa/InputEventTrigger;Landroid/view/InputEvent;JILjava/lang/Object;)Lpapa/InputEventTrigger;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDeliveryUptime-UwyO8pc ()J
+	public final fun getInputEvent ()Landroid/view/InputEvent;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/InputEventTriggerKt {
+	public static final fun toInputEventTriggerOrNull (Lpapa/InteractionTrigger;)Lpapa/InteractionTriggerWithPayload;
+}
+
 public abstract interface class papa/InteractionEventSink {
 	public abstract fun sendEvent (Ljava/lang/Object;)V
 }
@@ -271,33 +288,31 @@ public final class papa/InteractionTrace$Companion {
 	public final fun startNow (Ljava/lang/String;)Lpapa/InteractionTrace;
 }
 
-public final class papa/InteractionTrigger {
+public abstract interface class papa/InteractionTrigger {
 	public static final field Companion Lpapa/InteractionTrigger$Companion;
-	public synthetic fun <init> (JLjava/lang/String;Lpapa/InteractionTrace;Ljava/lang/Object;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (JLjava/lang/String;Lpapa/InteractionTrace;Ljava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1-UwyO8pc ()J
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component4 ()Ljava/lang/Object;
-	public final fun copy-rnQQ1Ag (JLjava/lang/String;Lpapa/InteractionTrace;Ljava/lang/Object;)Lpapa/InteractionTrigger;
-	public static synthetic fun copy-rnQQ1Ag$default (Lpapa/InteractionTrigger;JLjava/lang/String;Lpapa/InteractionTrace;Ljava/lang/Object;ILjava/lang/Object;)Lpapa/InteractionTrigger;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getName ()Ljava/lang/String;
-	public final fun getPayload ()Ljava/lang/Object;
-	public final fun getTriggerUptime-UwyO8pc ()J
-	public fun hashCode ()I
-	public final fun takeOverInteractionTrace ()Lpapa/InteractionTrace;
-	public fun toString ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getTriggerUptime-UwyO8pc ()J
+	public abstract fun takeOverInteractionTrace ()Lpapa/InteractionTrace;
 }
 
 public final class papa/InteractionTrigger$Companion {
-	public final fun triggerNow (Ljava/lang/String;Ljava/lang/Object;)Lpapa/InteractionTrigger;
-	public static synthetic fun triggerNow$default (Lpapa/InteractionTrigger$Companion;Ljava/lang/String;Ljava/lang/Object;ILjava/lang/Object;)Lpapa/InteractionTrigger;
+	public final fun triggerNow (Ljava/lang/String;)Lpapa/InteractionTrigger;
+}
+
+public final class papa/InteractionTriggerWithPayload : papa/InteractionTrigger {
+	public synthetic fun <init> (JLjava/lang/String;Lpapa/InteractionTrace;Ljava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getName ()Ljava/lang/String;
+	public final fun getPayload ()Ljava/lang/Object;
+	public fun getTriggerUptime-UwyO8pc ()J
+	public fun takeOverInteractionTrace ()Lpapa/InteractionTrace;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class papa/MainThreadTriggerStack {
 	public static final field INSTANCE Lpapa/MainThreadTriggerStack;
 	public final fun getCurrentTriggers ()Ljava/util/List;
 	public final fun getEarliestInteractionTrigger ()Lpapa/InteractionTrigger;
+	public final fun getInputEventInteractionTriggers ()Ljava/util/List;
 	public final fun triggeredBy (Lpapa/InteractionTrigger;ZLkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 }
 
@@ -432,6 +447,15 @@ public final class papa/SentEvent {
 	public final fun getUptime-UwyO8pc ()J
 }
 
+public final class papa/SimpleInteractionTrigger : papa/InteractionTrigger {
+	public synthetic fun <init> (JLjava/lang/String;Lpapa/InteractionTrace;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JLjava/lang/String;Lpapa/InteractionTrace;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getName ()Ljava/lang/String;
+	public fun getTriggerUptime-UwyO8pc ()J
+	public fun takeOverInteractionTrace ()Lpapa/InteractionTrace;
+	public fun toString ()Ljava/lang/String;
+}
+
 public abstract interface class papa/TrackedInteraction {
 	public abstract fun getInteractionTrigger ()Lpapa/InteractionTrigger;
 	public abstract fun getSentEvents ()Ljava/util/List;
@@ -454,19 +478,6 @@ public final class papa/TriggerData$Unknown : papa/TriggerData {
 	public static final field INSTANCE Lpapa/TriggerData$Unknown;
 	public fun getDurationUptimeMillis ()J
 	public fun getName ()Ljava/lang/String;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class papa/internal/InputEventTrigger {
-	public synthetic fun <init> (Landroid/view/InputEvent;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Landroid/view/InputEvent;
-	public final fun component2-UwyO8pc ()J
-	public final fun copy-HG0u8IE (Landroid/view/InputEvent;J)Lpapa/internal/InputEventTrigger;
-	public static synthetic fun copy-HG0u8IE$default (Lpapa/internal/InputEventTrigger;Landroid/view/InputEvent;JILjava/lang/Object;)Lpapa/internal/InputEventTrigger;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDeliveryUptime-UwyO8pc ()J
-	public final fun getInputEvent ()Landroid/view/InputEvent;
-	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
