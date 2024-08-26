@@ -37,11 +37,14 @@ object MainThreadTriggerStack {
     block: () -> T
   ): T {
     checkMainThread()
+    check(interactionTriggerStack.none { it === trigger }) {
+      "Trigger $trigger already in the main thread trigger stack"
+    }
     interactionTriggerStack.add(trigger)
     try {
       return block()
     } finally {
-      interactionTriggerStack.removeLast()
+      interactionTriggerStack.removeAll { it === trigger }
       if (endTraceAfterBlock) {
         trigger.takeOverInteractionTrace()?.endTrace()
       }
@@ -49,6 +52,9 @@ object MainThreadTriggerStack {
   }
 
   internal fun pushTriggeredBy(trigger: InteractionTrigger) {
+    check(interactionTriggerStack.none { it === trigger }) {
+      "Trigger $trigger already in the main thread trigger stack"
+    }
     interactionTriggerStack.add(trigger)
   }
 

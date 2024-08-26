@@ -215,8 +215,6 @@ private class InteractionEngine<ParentEventType : Any>(
 
       override fun finishingInteractions() = finishingInteractions.toList()
 
-      override val interactionTrigger = MainThreadTriggerStack.earliestInteractionTrigger
-
       override fun startInteraction(
         trigger: InteractionTrigger?,
         trace: InteractionTrace,
@@ -253,12 +251,10 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
   fun runningInteractions(): List<RunningInteraction<ParentEventType>>
   fun finishingInteractions(): List<FinishingInteraction<ParentEventType>>
 
-  val interactionTrigger: InteractionTrigger?
-
   val event: EventType
 
   fun startInteraction(
-    trigger: InteractionTrigger? = interactionTrigger,
+    trigger: InteractionTrigger? = MainThreadTriggerStack.earliestInteractionTrigger,
     trace: InteractionTrace = trigger?.takeOverInteractionTrace() ?: InteractionTrace.startNow(
       event.toString()
     ),
@@ -271,7 +267,7 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
    * the event until the next frame.
    */
   fun recordSingleFrameInteraction(
-    trigger: InteractionTrigger? = interactionTrigger,
+    trigger: InteractionTrigger? = MainThreadTriggerStack.earliestInteractionTrigger,
     trace: InteractionTrace = trigger?.takeOverInteractionTrace() ?: InteractionTrace.startNow(
       event.toString()
     ),

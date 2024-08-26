@@ -321,7 +321,6 @@ public abstract interface class papa/OnEventScope {
 	public abstract fun cancelRunningInteractions (Ljava/lang/String;)V
 	public abstract fun finishingInteractions ()Ljava/util/List;
 	public abstract fun getEvent ()Ljava/lang/Object;
-	public abstract fun getInteractionTrigger ()Lpapa/InteractionTrigger;
 	public abstract fun recordSingleFrameInteraction (Lpapa/InteractionTrigger;Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
 	public abstract fun runningInteractions ()Ljava/util/List;
 	public abstract fun startInteraction-SxA4cEA (Lpapa/InteractionTrigger;Lpapa/InteractionTrace;J)Lpapa/RunningInteraction;
