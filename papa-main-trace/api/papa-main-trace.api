@@ -1,0 +1,10 @@
+public final class papa/MainThreadMessageSpy {
+	public static final field INSTANCE Lpapa/MainThreadMessageSpy;
+	public final fun startTracing (Lpapa/MainThreadMessageSpy$Tracer;)V
+	public final fun stopTracing (Lpapa/MainThreadMessageSpy$Tracer;)V
+}
+
+public abstract interface class papa/MainThreadMessageSpy$Tracer {
+	public abstract fun onMessageDispatch (Ljava/lang/String;Z)V
+}
+

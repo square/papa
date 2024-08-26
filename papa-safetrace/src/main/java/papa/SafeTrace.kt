@@ -6,7 +6,7 @@ import papa.SafeTrace.MAX_LABEL_LENGTH
 import papa.SafeTrace.beginSection
 import papa.SafeTrace.isCurrentlyTracing
 import papa.SafeTrace.isTraceable
-import papa.internal.TraceMainThreadMessages
+import papa.internal.SafeTraceMainThreadMessages
 
 /**
  * This is a wrapper for [androidx.tracing.Trace] that should be used instead as [beginSection] and
@@ -64,7 +64,7 @@ object SafeTrace {
   fun forceTraceable() {
     androidx.tracing.Trace.forceEnableAppTracing()
     isForcedTraceable = true
-    TraceMainThreadMessages.enableMainThreadMessageTracing()
+    SafeTraceMainThreadMessages.enableMainThreadMessageTracing()
   }
 
   @Volatile

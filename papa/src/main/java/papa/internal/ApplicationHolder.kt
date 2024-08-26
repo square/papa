@@ -20,5 +20,6 @@ internal object ApplicationHolder {
     }
     InputTracker.install(application)
     FrozenFrameOnTouchDetector.install()
+    MainThreadTriggerTracer.install(application)
   }
 }

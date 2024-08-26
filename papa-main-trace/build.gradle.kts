@@ -39,9 +39,4 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
-  implementation(project(":papa-main-trace"))
-
-  compileOnly(Dependencies.Build.AndroidXAnnotation)
-
-  implementation(Dependencies.AndroidXTracing)
 }

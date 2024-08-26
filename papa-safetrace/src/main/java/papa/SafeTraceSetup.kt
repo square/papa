@@ -1,7 +1,7 @@
 package papa
 
 import android.app.Application
-import papa.internal.TraceMainThreadMessages
+import papa.internal.SafeTraceMainThreadMessages
 
 object SafeTraceSetup {
 
@@ -13,7 +13,7 @@ object SafeTraceSetup {
 
   fun init(application: Application) {
     this.application = application
-    TraceMainThreadMessages.enableMainThreadMessageTracing()
+    SafeTraceMainThreadMessages.enableMainThreadMessageTracing()
   }
 
   var mainThreadSectionNameMapper: SectionNameMapper = SectionNameMapper {

@@ -45,6 +45,7 @@ tasks.withType<KotlinCompile> {
 
 dependencies {
 
+  api(project(":papa-main-trace"))
   api(project(":papa-safetrace"))
   compileOnly(Dependencies.Build.AndroidXAnnotation)
 
