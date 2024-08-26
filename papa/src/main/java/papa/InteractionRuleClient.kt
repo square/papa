@@ -219,14 +219,11 @@ private class InteractionEngine<ParentEventType : Any>(
 
       override fun startInteraction(
         trigger: InteractionTrigger?,
+        trace: InteractionTrace,
         cancelTimeout: Duration,
       ): RunningInteraction<ParentEventType> {
-        val interactionTrigger = trigger ?: interactionTrigger
-        val trace = interactionTrigger?.takeOverInteractionTrace() ?: InteractionTrace.startNow(
-          event.toString()
-        )
         val runningInteraction = RealRunningInteraction(
-          interactionTrigger = interactionTrigger,
+          interactionTrigger = trigger,
           trace = trace,
           cancelTimeout
         )
@@ -261,7 +258,10 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
   val event: EventType
 
   fun startInteraction(
-    trigger: InteractionTrigger? = null,
+    trigger: InteractionTrigger? = interactionTrigger,
+    trace: InteractionTrace = trigger?.takeOverInteractionTrace() ?: InteractionTrace.startNow(
+      event.toString()
+    ),
     cancelTimeout: Duration = 1.minutes,
   ): RunningInteraction<ParentEventType>
 
@@ -271,7 +271,10 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
    * the event until the next frame.
    */
   fun recordSingleFrameInteraction(
-    trigger: InteractionTrigger? = null,
+    trigger: InteractionTrigger? = interactionTrigger,
+    trace: InteractionTrace = trigger?.takeOverInteractionTrace() ?: InteractionTrace.startNow(
+      event.toString()
+    ),
   ): FinishingInteraction<ParentEventType> {
     return startInteraction(trigger = trigger).finish()
   }

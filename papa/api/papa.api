@@ -322,18 +322,18 @@ public abstract interface class papa/OnEventScope {
 	public abstract fun finishingInteractions ()Ljava/util/List;
 	public abstract fun getEvent ()Ljava/lang/Object;
 	public abstract fun getInteractionTrigger ()Lpapa/InteractionTrigger;
-	public abstract fun recordSingleFrameInteraction (Lpapa/InteractionTrigger;)Lpapa/FinishingInteraction;
+	public abstract fun recordSingleFrameInteraction (Lpapa/InteractionTrigger;Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
 	public abstract fun runningInteractions ()Ljava/util/List;
-	public abstract fun startInteraction-HG0u8IE (Lpapa/InteractionTrigger;J)Lpapa/RunningInteraction;
+	public abstract fun startInteraction-SxA4cEA (Lpapa/InteractionTrigger;Lpapa/InteractionTrace;J)Lpapa/RunningInteraction;
 }
 
 public final class papa/OnEventScope$DefaultImpls {
 	public static fun cancel (Lpapa/OnEventScope;Lpapa/RunningInteraction;)V
 	public static fun cancelRunningInteractions (Lpapa/OnEventScope;Ljava/lang/String;)V
 	public static synthetic fun cancelRunningInteractions$default (Lpapa/OnEventScope;Ljava/lang/String;ILjava/lang/Object;)V
-	public static fun recordSingleFrameInteraction (Lpapa/OnEventScope;Lpapa/InteractionTrigger;)Lpapa/FinishingInteraction;
-	public static synthetic fun recordSingleFrameInteraction$default (Lpapa/OnEventScope;Lpapa/InteractionTrigger;ILjava/lang/Object;)Lpapa/FinishingInteraction;
-	public static synthetic fun startInteraction-HG0u8IE$default (Lpapa/OnEventScope;Lpapa/InteractionTrigger;JILjava/lang/Object;)Lpapa/RunningInteraction;
+	public static fun recordSingleFrameInteraction (Lpapa/OnEventScope;Lpapa/InteractionTrigger;Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
+	public static synthetic fun recordSingleFrameInteraction$default (Lpapa/OnEventScope;Lpapa/InteractionTrigger;Lpapa/InteractionTrace;ILjava/lang/Object;)Lpapa/FinishingInteraction;
+	public static synthetic fun startInteraction-SxA4cEA$default (Lpapa/OnEventScope;Lpapa/InteractionTrigger;Lpapa/InteractionTrace;JILjava/lang/Object;)Lpapa/RunningInteraction;
 }
 
 public abstract class papa/PapaEvent {
