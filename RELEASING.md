@@ -9,26 +9,21 @@ Install GitHub CLI
 brew install gh
 ```
 
-## Releasing
-
-* Create a local release branch from `main` and update `VERSION_NAME` in `gradle.properties` (removing `-SNAPSHOT`) and the README:
-```bash
-git checkout main && \
-git pull && \
-git checkout -b release_{NEW_VERSION} && \
-sed -i '' 's/VERSION_NAME=.*-SNAPSHOT/VERSION_NAME={NEW_VERSION}/' gradle.properties
-sed -i '' "s/com.squareup.papa:papa:.*'/com.squareup.papa:papa:{NEW_VERSION}'/" README.md
-```
-
+## Creating the release
 
 * Update the changelog
 ```bash
 mate CHANGELOG.md
 ```
 
-* Release
+* Create a local release branch from `main` and update `VERSION_NAME` in `gradle.properties` (removing `-SNAPSHOT`) and the README, then start the publish workflow:
 
 ```bash
+git checkout main && \
+git pull && \
+git checkout -b release_{NEW_VERSION} && \
+sed -i '' 's/VERSION_NAME=.*-SNAPSHOT/VERSION_NAME={NEW_VERSION}/' gradle.properties
+sed -i '' "s/com.squareup.papa:papa:.*'/com.squareup.papa:papa:{NEW_VERSION}'/" README.md && \
 git commit -am "Prepare {NEW_VERSION} release" && \
 ./gradlew clean && \
 ./gradlew build && \
