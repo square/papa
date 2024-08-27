@@ -35,10 +35,11 @@ git commit -am "Prepare {NEW_VERSION} release" && \
 ./gradlew connectedCheck && \
 git tag v{NEW_VERSION} && \
 git push origin v{NEW_VERSION} && \
-gh workflow run publish-release.yml --ref v{NEW_VERSION}
+gh workflow run publish-release.yml --ref v{NEW_VERSION} && \
+gh run watch
 ```
 
-* Wait for the GitHub workflow to finish running then finish the release:
+* Press enter to confirm selection of the currently running workflow, wait for it to finish running then finish the release:
 
 ```bash
 git checkout main && \
