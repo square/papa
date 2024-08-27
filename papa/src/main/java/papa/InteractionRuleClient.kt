@@ -272,7 +272,10 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
       event.toString()
     ),
   ): FinishingInteraction<ParentEventType> {
-    return startInteraction(trigger = trigger).finish()
+    return startInteraction(
+      trigger = trigger,
+      trace = trace
+      ).finish()
   }
 
   /**
