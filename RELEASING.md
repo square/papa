@@ -16,8 +16,8 @@ brew install gh
 git checkout main && \
 git pull && \
 git checkout -b release_{NEW_VERSION} && \
-sed -i '' 's/VERSION_NAME={PREVIOUS_NEW_VERSION}-SNAPSHOT/VERSION_NAME={NEW_VERSION}/' gradle.properties
-sed -i '' 's/com.squareup.papa:papa:{PREVIOUS_VERSION}/com.squareup.papa:papa:{NEW_VERSION}/' README.md
+sed -i '' 's/VERSION_NAME=.*-SNAPSHOT/VERSION_NAME={NEW_VERSION}/' gradle.properties
+sed -i '' "s/com.squareup.papa:papa:.*'/com.squareup.papa:papa:{NEW_VERSION}'/" README.md
 ```
 
 
