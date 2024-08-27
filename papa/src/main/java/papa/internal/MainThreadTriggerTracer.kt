@@ -20,7 +20,7 @@ internal object MainThreadTriggerTracer {
     lateinit var currentTrigger: InteractionTrigger
     MainThreadMessageSpy.startTracing { _, before ->
       if (before) {
-        val dispatchUptimeNanos =  System.nanoTime()
+        val dispatchUptimeNanos = System.nanoTime()
         val asyncTraceCookie = dispatchUptimeNanos.toInt()
         SafeTrace.beginAsyncSection(ASYNC_SECTION_LABEL, asyncTraceCookie)
         currentTrigger = SimpleInteractionTrigger(
