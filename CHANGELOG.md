@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 0.19
+_2024-08_26_
+
+* Introduced `MainThreadMessageSpy` (artifact: `papa-main-trace`) which provides an API to be notified of main thread message dispatching.
+* Introduced `InteractionTrigger` (2 sub types: `SimpleInteractionTrigger` and `InteractionTriggerWithPayload` to represent the concept of a trigger (such as a tap or a key input) in a more generic way that allows for new trigger types, which then allows for better tracking of what started and interaction, and when. Introduced new trigger: `main-message` to find track the proper start time of an interaction not started with a tap (disble this by setting `papa_track_main_thread_triggers` to false). New API: `MainThreadTriggerStack` helps us manage current triggers.
+* API breaking changes: renamed `interactionInput` to `interactionTrigger` on `InteractionResultData` and `TrackedInteraction`. Removed it entirely from `OnEventScope`. Removed `InteractionStartInput` which was replaced by the more generic `InteractionTrigger`.
+
 Version 0.18
 _2024-08_21_
 
