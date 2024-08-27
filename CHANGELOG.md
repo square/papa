@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-Version 0.20
+Version 0.21
 _2024-08_27_
 
 * Introduced `MainThreadMessageSpy` (artifact: `papa-main-trace`) which provides an API to be notified of main thread message dispatching.
