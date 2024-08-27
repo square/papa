@@ -17,14 +17,14 @@ internal object MainThreadTriggerTracer {
     if (!application.resources.getBoolean(R.bool.papa_track_main_thread_triggers)) {
       return
     }
-    val asyncTraceCookie = System.nanoTime().toInt()
     lateinit var currentTrigger: InteractionTrigger
     MainThreadMessageSpy.startTracing { _, before ->
       if (before) {
-        val dispatchUptime = System.nanoTime().nanoseconds
+        val dispatchUptimeNanos =  System.nanoTime()
+        val asyncTraceCookie = dispatchUptimeNanos.toInt()
         SafeTrace.beginAsyncSection(ASYNC_SECTION_LABEL, asyncTraceCookie)
         currentTrigger = SimpleInteractionTrigger(
-          triggerUptime = dispatchUptime,
+          triggerUptime = dispatchUptimeNanos.nanoseconds,
           name = "main-message",
           interactionTrace = {
             SafeTrace.endAsyncSection(ASYNC_SECTION_LABEL, asyncTraceCookie)
