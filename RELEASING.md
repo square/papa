@@ -31,6 +31,7 @@ git commit -am "Prepare {NEW_VERSION} release" && \
 git tag v{NEW_VERSION} && \
 git push origin v{NEW_VERSION} && \
 gh workflow run publish-release.yml --ref v{NEW_VERSION} && \
+sleep 5 &&\
 gh run list --workflow=publish-release.yml --branch v{NEW_VERSION} --json databaseId --jq ".[].databaseId" | xargs -I{} gh run watch {} --exit-status && \
 git checkout main && \
 git pull && \
