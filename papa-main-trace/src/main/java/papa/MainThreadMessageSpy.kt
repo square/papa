@@ -72,7 +72,7 @@ object MainThreadMessageSpy {
   }
 
   private fun checkMainThread() {
-    check(Looper.getMainLooper().thread === Thread.currentThread()) {
+    check(Looper.getMainLooper() === Looper.myLooper()) {
       "Should be called from the main thread, not ${Thread.currentThread()}"
     }
   }
