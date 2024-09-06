@@ -2,10 +2,10 @@ package papa
 
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
+import papa.InteractionResult.Finished
 import papa.internal.checkMainThread
 import papa.internal.isMainThread
 import papa.internal.mainHandler
-import papa.internal.onCurrentOrNextFrameRendered
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.nanoseconds
@@ -165,13 +165,13 @@ private class InteractionEngine<ParentEventType : Any>(
       stopRunning()
       finishingInteractions += this
       recordEvent()
-      onCurrentOrNextFrameRendered { frameRenderedUptime ->
+      Choreographers.postOnFrameRendered { frameRenderedUptime ->
         trace.endTrace()
         choreographer.removeFrameCallback(this)
         finishingInteractions -= this
         val eventsCopy = sentEvents.toList()
         resultListener.onInteractionResult(
-          InteractionResult.Finished(
+          Finished(
             data = InteractionResultDataPayload(
               interactionTrigger = interactionTrigger,
               runningFrameCount = frameCountSinceStart,

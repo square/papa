@@ -201,20 +201,28 @@ public final class papa/AppVisibilityState : java/lang/Enum {
 	public static fun values ()[Lpapa/AppVisibilityState;
 }
 
+public final class papa/Choreographers {
+	public static final field INSTANCE Lpapa/Choreographers;
+	public final fun isInChoreographerFrame ()Z
+	public final fun postOnFrameRendered (Lpapa/OnFrameRenderedListener;)V
+	public final fun postOnWindowFrameRendered (Landroid/view/Window;Lpapa/OnFrameRenderedListener;)V
+}
+
 public abstract interface class papa/FinishingInteraction : papa/TrackedInteraction {
 }
 
 public final class papa/InputEventTrigger {
+	public static final field Companion Lpapa/InputEventTrigger$Companion;
 	public synthetic fun <init> (Landroid/view/InputEvent;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Landroid/view/InputEvent;
-	public final fun component2-UwyO8pc ()J
-	public final fun copy-HG0u8IE (Landroid/view/InputEvent;J)Lpapa/InputEventTrigger;
-	public static synthetic fun copy-HG0u8IE$default (Lpapa/InputEventTrigger;Landroid/view/InputEvent;JILjava/lang/Object;)Lpapa/InputEventTrigger;
-	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDeliveryUptime-UwyO8pc ()J
 	public final fun getInputEvent ()Landroid/view/InputEvent;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
+	public final fun getRendered ()Z
+	public final fun getRenderedUptime-FghU774 ()Lkotlin/time/Duration;
+	public final fun onInputEventFrameRendered (Lpapa/OnFrameRenderedListener;)V
+}
+
+public final class papa/InputEventTrigger$Companion {
+	public final fun createTrackingWhenFrameRendered-SxA4cEA (Landroid/view/Window;Landroid/view/InputEvent;J)Lpapa/InputEventTrigger;
 }
 
 public final class papa/InputEventTriggerKt {
@@ -333,6 +341,10 @@ public final class papa/OnEventScope$DefaultImpls {
 	public static fun recordSingleFrameInteraction (Lpapa/OnEventScope;Lpapa/InteractionTrigger;Lpapa/InteractionTrace;)Lpapa/FinishingInteraction;
 	public static synthetic fun recordSingleFrameInteraction$default (Lpapa/OnEventScope;Lpapa/InteractionTrigger;Lpapa/InteractionTrace;ILjava/lang/Object;)Lpapa/FinishingInteraction;
 	public static synthetic fun startInteraction-SxA4cEA$default (Lpapa/OnEventScope;Lpapa/InteractionTrigger;Lpapa/InteractionTrace;JILjava/lang/Object;)Lpapa/RunningInteraction;
+}
+
+public abstract interface class papa/OnFrameRenderedListener {
+	public abstract fun onFrameRendered-LRDsOJo (J)V
 }
 
 public abstract class papa/PapaEvent {

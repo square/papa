@@ -24,6 +24,7 @@ import papa.AppUpdateStartStatus.NORMAL_START
 import papa.AppVisibilityState
 import papa.AppVisibilityState.INVISIBLE
 import papa.AppVisibilityState.VISIBLE
+import papa.Choreographers
 import papa.PapaEvent.AppLaunch
 import papa.PapaEventListener
 import papa.PreLaunchState
@@ -413,7 +414,7 @@ internal object Perfs {
       return
     }
     reportedFullDrawn = true
-    onCurrentOrNextFrameRendered { frameRenderedUptime ->
+    Choreographers.postOnFrameRendered { frameRenderedUptime ->
       appStartData = appStartData.copy(
         firstFrameAfterFullyDrawnElapsedUptimeMillis = frameRenderedUptime.inWholeMilliseconds - appStartData.processStartUptimeMillis
       )

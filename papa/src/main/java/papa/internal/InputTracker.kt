@@ -1,6 +1,5 @@
 package papa.internal
 
-import android.app.Application
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -9,7 +8,6 @@ import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.AbsListView
-import com.squareup.papa.R
 import curtains.Curtains
 import curtains.KeyEventInterceptor
 import curtains.OnRootViewAddedListener
@@ -59,7 +57,8 @@ internal object InputTracker {
               interactionTrace = {
                 SafeTrace.endAsyncSection(TAP_INTERACTION_SECTION, cookie)
               },
-              payload = InputEventTrigger(
+              payload = InputEventTrigger.createTrackingWhenFrameRendered(
+                inputEventWindow = window,
                 // Making a copy as motionEvent will get cleared once dispatched.
                 inputEvent = MotionEvent.obtain(motionEvent),
                 deliveryUptime = deliveryUptimeNanos.nanoseconds
@@ -137,7 +136,8 @@ internal object InputTracker {
             interactionTrace = {
               SafeTrace.endAsyncSection(traceSectionName, cookie)
             },
-            payload = InputEventTrigger(
+            payload = InputEventTrigger.createTrackingWhenFrameRendered(
+              inputEventWindow = window,
               inputEvent = keyEvent,
               deliveryUptime = deliveryUptimeNanos.nanoseconds
             )
@@ -150,10 +150,8 @@ internal object InputTracker {
     }
   }
 
-  internal fun install(application: Application) {
-    if (application.resources.getBoolean(R.bool.papa_track_input_events)) {
+  fun install() {
       Curtains.onRootViewsChangedListeners += listener
-    }
   }
 
   private const val INTERACTION_SUFFIX = "Interaction"

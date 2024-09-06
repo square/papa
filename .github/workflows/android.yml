@@ -33,18 +33,33 @@ jobs:
       # Allow tests to continue on other devices if they fail on one device.
       fail-fast: false
       matrix:
+        api-level:
+          - 21
+          - 22
+          - 23
+          - 24
+          - 25
+          - 26
+          # - 27 has 'default;x86_64' and 'google_apis;x86' but not 'google_apis;x86_64' so we're setting it up as a one-off with x86 below.
+          - 28
+          - 29
+          - 30
+          # No tests found, process crashed
+          # - 31
+          # No tests found, process crashed
+          # - 32
+          # No tests found, process crashed
+          # - 33
+          # Disabled 34: needs min target SDK 23, and upgrading AGP.
+          # - 34
         arch: [ x86_64 ]
         target: [ google_apis ]
         channel: [ stable ]
-        api-level:
-          - 21
-          - 23
-          # Disabled 26, running into https://github.com/ReactiveCircus/android-emulator-runner/issues/385
-          # - 26
-          - 29
-          - 30
-          # Disabled 34: needs min target SDK 23, and upgrading AGP.
-          # - 34
+        include:
+          - arch: x86
+            api-level: 27
+            target: google_apis
+            channel: stable
     steps:
       - name: Enable KVM group perms
         run: |
@@ -58,30 +73,12 @@ jobs:
           java-version: 11
           distribution: 'zulu'
       - uses: gradle/gradle-build-action@v2
-      - name: AVD cache
-        uses: actions/cache@v4
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-cached-${{ matrix.api-level }}-${{ matrix.os }}-${{ matrix.target }}
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ matrix.api-level }}
-          target: ${{ matrix.target }}
-          arch: ${{ matrix.arch }}
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot-load
-          disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
       - name: Instrumentation Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
-          force-avd-creation: false
+          # Disabled AVD caching and forcing AVD creation to avoid running into https://github.com/ReactiveCircus/android-emulator-runner/issues/385
+          force-avd-creation: true
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-metrics -camera-back none -no-snapshot-save
@@ -91,7 +88,6 @@ jobs:
             adb logcat >> emulator.log &          # pipe all logcat messages into log file as a background process
             adb shell settings put global package_verifier_user_consent -1
             ./gradlew connectedCheck --no-build-cache --no-daemon --stacktrace
-
       - name: Upload results
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
@@ -103,7 +99,7 @@ jobs:
 
   snapshot-deployment:
     if: github.repository == 'square/papa' && github.event_name == 'push'
-    needs: [ checks , instrumentation-tests ]
+    needs: [ checks ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
