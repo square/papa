@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 0.23
+_2024-09_10_
+
+* Improve tracking on choreographer frame ends [#68](https://github.com/square/papa/pull/68)
+
 Version 0.22
 _2024-08_28_
 
