@@ -11,9 +11,12 @@ import curtains.TouchEventInterceptor
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
 import curtains.windowAttachCount
+import papa.Choreographers.postOnWindowFrameRendered
+import papa.OnFrameRenderedListener
 import papa.PapaEvent.FrozenFrameOnTouch
 import papa.PapaEventListener
 import papa.internal.FrozenFrameOnTouchDetector.install
+import kotlin.time.Duration
 
 /**
  * Detects when the interval of time between when a touch event is issued and the next frame is
@@ -42,25 +45,29 @@ internal object FrozenFrameOnTouchDetector {
                 if (handledTime - motionEvent.eventTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
                   val windowTitle = window.attributes.title.toString().substringAfter("/")
                   touchDownWaitingRender = MotionEvent.obtain(motionEvent)
-                  onCurrentOrNextFrameRendered { frameRenderedUptime ->
-                    val localTouchDownWaitingRender = touchDownWaitingRender!!
-                    val sentTime = localTouchDownWaitingRender.eventTime
-                    val sentToReceive = handledTime - sentTime
-                    val receiveToFrame = frameRenderedUptime.inWholeMilliseconds - handledTime
-                    PapaEventListener.sendEvent(
-                      FrozenFrameOnTouch(
-                        activityName = windowTitle,
-                        repeatTouchDownCount = repeatTouchDownCount,
-                        deliverDurationUptimeMillis = sentToReceive,
-                        dislayDurationUptimeMillis = receiveToFrame,
-                        pressedView = pressedViewName
+                  // When compiling with Java11 we get AbstractMethodError at runtime when this is a lambda.
+                  @Suppress("ObjectLiteralToLambda")
+                  window.postOnWindowFrameRendered(object : OnFrameRenderedListener {
+                    override fun onFrameRendered(frameRenderedUptime: Duration) {
+                      val localTouchDownWaitingRender = touchDownWaitingRender!!
+                      val sentTime = localTouchDownWaitingRender.eventTime
+                      val sentToReceive = handledTime - sentTime
+                      val receiveToFrame = frameRenderedUptime.inWholeMilliseconds - handledTime
+                      PapaEventListener.sendEvent(
+                        FrozenFrameOnTouch(
+                          activityName = windowTitle,
+                          repeatTouchDownCount = repeatTouchDownCount,
+                          deliverDurationUptimeMillis = sentToReceive,
+                          dislayDurationUptimeMillis = receiveToFrame,
+                          pressedView = pressedViewName
+                        )
                       )
-                    )
-                    localTouchDownWaitingRender.recycle()
-                    touchDownWaitingRender = null
-                    repeatTouchDownCount = 0
-                    pressedViewName = null
-                  }
+                      localTouchDownWaitingRender.recycle()
+                      touchDownWaitingRender = null
+                      repeatTouchDownCount = 0
+                      pressedViewName = null
+                    }
+                  })
                 }
               }
             }

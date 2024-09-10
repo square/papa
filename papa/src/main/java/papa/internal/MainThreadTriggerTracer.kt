@@ -1,7 +1,5 @@
 package papa.internal
 
-import android.app.Application
-import com.squareup.papa.R
 import papa.InteractionTrigger
 import papa.MainThreadMessageSpy
 import papa.MainThreadTriggerStack
@@ -13,12 +11,9 @@ internal object MainThreadTriggerTracer {
 
   private const val ASYNC_SECTION_LABEL = "Main Message Interaction"
 
-  fun install(application: Application) {
-    if (!application.resources.getBoolean(R.bool.papa_track_main_thread_triggers)) {
-      return
-    }
+  fun install() {
     lateinit var currentTrigger: InteractionTrigger
-    MainThreadMessageSpy.startTracing { _, before ->
+    MainThreadMessageSpy.addTracer { _, before ->
       if (before) {
         val dispatchUptimeNanos = System.nanoTime()
         val asyncTraceCookie = dispatchUptimeNanos.toInt()

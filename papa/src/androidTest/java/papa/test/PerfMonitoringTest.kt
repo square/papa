@@ -3,35 +3,31 @@ package papa.test
 import android.app.AlertDialog
 import android.os.SystemClock
 import android.view.Choreographer
-import android.view.MotionEvent
-import android.view.View
 import android.widget.Button
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.UiController
-import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.RootMatchers.isDialog
-import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.squareup.papa.test.R
 import curtains.TouchEventInterceptor
 import curtains.touchEventInterceptors
-import org.hamcrest.Matcher
 import org.junit.Test
 import papa.AndroidComponentEvent
 import papa.AppStart.AppStartData
+import papa.Choreographers
+import papa.MainThreadMessageSpy
 import papa.PapaEvent.FrozenFrameOnTouch
 import papa.PapaEventListener
 import papa.internal.Perfs
-import papa.internal.isChoreographerDoingFrame
 import papa.internal.mainHandler
 import papa.test.utilities.TestActivity
+import papa.test.utilities.dismissCheckForUpdates
+import papa.test.utilities.getOnMainSync
+import papa.test.utilities.location
+import papa.test.utilities.runOnMainSync
+import papa.test.utilities.sendTap
 import radiography.Radiography
 import radiography.ScannableView.AndroidView
 import radiography.ViewStateRenderer
@@ -137,9 +133,8 @@ class PerfMonitoringTest {
         }
       }
 
-      val (buttonX, buttonY) = findDialogButtonCoordinates(R.id.dialog_view)
-
-      sendTapAtTime(SystemClock.uptimeMillis() - 2000, buttonX, buttonY)
+      val twoSecondsAgo = SystemClock.uptimeMillis() - 2000
+      onView(withId(R.id.dialog_view)).inRoot(isDialog()).location.sendTap(twoSecondsAgo)
 
       val frozenFrameOnTouch = waitForFrozenFrame()
 
@@ -157,7 +152,7 @@ class PerfMonitoringTest {
     var isChoreographerDoingFrame = false
     mainHandler.post {
       Choreographer.getInstance().postFrameCallback {
-        isChoreographerDoingFrame = isChoreographerDoingFrame()
+        isChoreographerDoingFrame = Choreographers.isInChoreographerFrame()
         frameCallbackLatch.countDown()
       }
     }
@@ -165,28 +160,58 @@ class PerfMonitoringTest {
     assertThat(isChoreographerDoingFrame).isTrue()
   }
 
-  @Test fun Choreographer_not_doing_Frame() {
+  @Test fun Choreographer_is_doing_Frame_no_spying() {
+    postOnMainBlocking {
+      MainThreadMessageSpy.stopSpyingMainThreadDispatching()
+    }
     val frameCallbackLatch = CountDownLatch(1)
     var isChoreographerDoingFrame = false
     mainHandler.post {
-      isChoreographerDoingFrame = isChoreographerDoingFrame()
-      frameCallbackLatch.countDown()
+      Choreographer.getInstance().postFrameCallback {
+        isChoreographerDoingFrame = Choreographers.isInChoreographerFrame()
+        frameCallbackLatch.countDown()
+      }
     }
     check(frameCallbackLatch.await(10, SECONDS))
+    assertThat(isChoreographerDoingFrame).isTrue()
+
+    // reset
+    postOnMainBlocking {
+      MainThreadMessageSpy.startSpyingMainThreadDispatching()
+    }
+  }
+
+  @Test fun Choreographer_not_doing_Frame() {
+    var isChoreographerDoingFrame = false
+    postOnMainBlocking {
+      isChoreographerDoingFrame = Choreographers.isInChoreographerFrame()
+    }
     assertThat(isChoreographerDoingFrame).isFalse()
   }
 
-  private fun dismissCheckForUpdates() {
-    val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-    val deprecationDialog = uiDevice.wait(
-      Until.findObject(
-        By.pkg("android").depth(0)
-      ), 500
-    )
-    if (deprecationDialog != null) {
-      val okButton = deprecationDialog.findObject(By.text("OK"))!!
-      okButton.click()
+  @Test fun Choreographer_not_doing_Frame_no_spying() {
+    postOnMainBlocking {
+      MainThreadMessageSpy.stopSpyingMainThreadDispatching()
     }
+    var isChoreographerDoingFrame = false
+    postOnMainBlocking {
+      isChoreographerDoingFrame = Choreographers.isInChoreographerFrame()
+    }
+    assertThat(isChoreographerDoingFrame).isFalse()
+
+    // reset
+    postOnMainBlocking {
+      MainThreadMessageSpy.startSpyingMainThreadDispatching()
+    }
+  }
+
+  private fun postOnMainBlocking(block: () -> Unit) {
+    val waitForMainPost = CountDownLatch(1)
+    mainHandler.post {
+      block()
+      waitForMainPost.countDown()
+    }
+    check(waitForMainPost.await(10, SECONDS))
   }
 
   private fun reportFrozenFrame(): () -> FrozenFrameOnTouch {
@@ -205,75 +230,6 @@ class PerfMonitoringTest {
       registration.close()
       frozenFrameOnTouchRef.get()!!
     }
-  }
-
-  private fun runOnMainSync(block: () -> Unit) {
-    InstrumentationRegistry.getInstrumentation().runOnMainSync(block)
-  }
-
-  private fun <T> getOnMainSync(block: () -> T): T {
-    val resultHolder = AtomicReference<T>()
-    val latch = CountDownLatch(1)
-    InstrumentationRegistry.getInstrumentation()
-      .runOnMainSync {
-        resultHolder.set(block())
-        latch.countDown()
-      }
-    latch.await()
-    return resultHolder.get()
-  }
-
-  private fun findDialogButtonCoordinates(buttonResId: Int): Pair<Int, Int> {
-    val waitForDialogButton = CountDownLatch(1)
-    val dialogButtonCenter = AtomicReference<Pair<Int, Int>>()
-    onView(withId(buttonResId)).inRoot(isDialog())
-      .perform(object : ViewAction {
-        override fun getDescription() = "Retrieving dialog ok button"
-
-        override fun getConstraints(): Matcher<View> = ViewMatchers.isDisplayed()
-
-        override fun perform(
-          uiController: UiController,
-          view: View
-        ) {
-          val location = IntArray(2)
-          view.getLocationOnScreen(location)
-          val centerX = location[0] + view.width / 2
-          val centerY = location[1] + view.height / 2
-          dialogButtonCenter.set(centerX to centerY)
-          waitForDialogButton.countDown()
-        }
-      })
-    check(waitForDialogButton.await(10, SECONDS))
-    return dialogButtonCenter.get()!!
-  }
-
-  private fun sendTapAtTime(
-    downTime: Long,
-    clickX: Int,
-    clickY: Int
-  ) {
-    val instrumentation = InstrumentationRegistry.getInstrumentation()
-    instrumentation.sendPointerSync(
-      MotionEvent.obtain(
-        downTime,
-        downTime,
-        MotionEvent.ACTION_DOWN,
-        clickX.toFloat(),
-        clickY.toFloat(),
-        0
-      )
-    )
-    instrumentation.sendPointerSync(
-      MotionEvent.obtain(
-        downTime,
-        downTime + 50,
-        MotionEvent.ACTION_UP,
-        clickX.toFloat(),
-        clickY.toFloat(),
-        0
-      )
-    )
   }
 
   private val appStart: AppStartData

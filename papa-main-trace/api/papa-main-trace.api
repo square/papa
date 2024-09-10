@@ -1,7 +1,22 @@
+public final class papa/MainThreadMessageScopedLazy : kotlin/properties/ReadOnlyProperty {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public final fun getProvider ()Lkotlin/jvm/functions/Function0;
+	public fun getValue (Ljava/lang/Object;Lkotlin/reflect/KProperty;)Ljava/lang/Object;
+}
+
+public final class papa/MainThreadMessageScopedLazyKt {
+	public static final fun mainThreadMessageScopedLazy (Lkotlin/jvm/functions/Function0;)Lpapa/MainThreadMessageScopedLazy;
+}
+
 public final class papa/MainThreadMessageSpy {
 	public static final field INSTANCE Lpapa/MainThreadMessageSpy;
-	public final fun startTracing (Lpapa/MainThreadMessageSpy$Tracer;)V
-	public final fun stopTracing (Lpapa/MainThreadMessageSpy$Tracer;)V
+	public final fun addTracer (Lpapa/MainThreadMessageSpy$Tracer;)V
+	public final fun getCurrentMessageAsString ()Ljava/lang/String;
+	public final fun getEnabled ()Z
+	public final fun onCurrentMessageFinished (Lkotlin/jvm/functions/Function0;)V
+	public final fun removeTracer (Lpapa/MainThreadMessageSpy$Tracer;)V
+	public final fun startSpyingMainThreadDispatching ()V
+	public final fun stopSpyingMainThreadDispatching ()V
 }
 
 public abstract interface class papa/MainThreadMessageSpy$Tracer {

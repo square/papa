@@ -2,7 +2,10 @@ package papa.internal
 
 import android.app.Activity
 import android.os.SystemClock
+import papa.Choreographers
+import papa.OnFrameRenderedListener
 import papa.SafeTrace
+import kotlin.time.Duration
 
 internal class LaunchTracker(
   val appLaunchedCallback: (Launch) -> Unit
@@ -101,30 +104,33 @@ internal class LaunchTracker(
     // not drawing and another activity is resumed immediately after, whichever activity draws
     // first will end up being declared as the final launched activity.
     resumedActivity.window.onNextPreDraw {
-      onCurrentFrameRendered { frameRenderedUptime ->
-        val launchInProgress = launchInProgress ?: return@onCurrentFrameRendered
-        this.launchInProgress = null
+      // When compiling with Java11 we get AbstractMethodError at runtime when this is a lambda.
+      Choreographers.postOnCurrentFrameRendered(object : OnFrameRenderedListener {
+        override fun onFrameRendered(frameRenderedUptime: Duration) {
+          val launchInProgress = launchInProgress ?: return
+          this@LaunchTracker.launchInProgress = null
 
-        // We're ignoring a launch happening less than 500ms after the app became invisible.
-        val isRealLaunch = launchInProgress.invisibleDurationRealtimeMillis?.let { it >= 500 }
-          ?: true
-        // We're cancelling at the end so that all activity lifecycle events in between are still
-        // tracked as part of this fluke launch.
-        if (!isRealLaunch) {
-          return@onCurrentFrameRendered
+          // We're ignoring a launch happening less than 500ms after the app became invisible.
+          val isRealLaunch = launchInProgress.invisibleDurationRealtimeMillis?.let { it >= 500 }
+            ?: true
+          // We're cancelling at the end so that all activity lifecycle events in between are still
+          // tracked as part of this fluke launch.
+          if (!isRealLaunch) {
+            return
+          }
+          val launch = with(launchInProgress) {
+            Launch(
+              trampoline = activityHash != resumedActivityHash,
+              startUptimeMillis = startUptimeMillis,
+              startRealtimeMillis = startRealtimeMillis,
+              endUptimeMillis = frameRenderedUptime.inWholeMilliseconds,
+              invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
+              activityStartingTransition = activityStartingTransition
+            )
+          }
+          appLaunchedCallback(launch)
         }
-        val launch = with(launchInProgress) {
-          Launch(
-            trampoline = activityHash != resumedActivityHash,
-            startUptimeMillis = startUptimeMillis,
-            startRealtimeMillis = startRealtimeMillis,
-            endUptimeMillis = frameRenderedUptime.inWholeMilliseconds,
-            invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
-            activityStartingTransition = activityStartingTransition
-          )
-        }
-        appLaunchedCallback(launch)
-      }
+      })
     }
   }
 }

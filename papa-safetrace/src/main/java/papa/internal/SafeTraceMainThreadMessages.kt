@@ -36,7 +36,7 @@ internal object SafeTraceMainThreadMessages {
     if (!enabled && SafeTrace.isTraceable && traceMainThreadMessages) {
       enabled = true
       var currentlyTracing = false
-      MainThreadMessageSpy.startTracing { messageAsString, before ->
+      MainThreadMessageSpy.addTracer { messageAsString, before ->
         if (!currentlyTracing) {
           if (SafeTrace.isCurrentlyTracing &&
             before &&

@@ -14,7 +14,46 @@ object MainThreadMessageSpy {
 
   private val tracers = mutableListOf<Tracer>()
 
-  fun startTracing(tracer: Tracer) {
+  var enabled = false
+    private set
+
+  var currentMessageAsString: String? = null
+    private set
+    get() {
+      checkMainThread()
+      return field
+    }
+
+  fun addTracer(tracer: Tracer) {
+    checkMainThread()
+    check(tracers.none { it === tracers }) {
+      "Tracer $tracer already in $tracers"
+    }
+    tracers.add(tracer)
+  }
+
+  fun removeTracer(tracer: Tracer) {
+    checkMainThread()
+    tracers.removeAll { it === tracer }
+  }
+
+  fun onCurrentMessageFinished(block: () -> Unit) {
+    if (!enabled) {
+      return
+    }
+    checkMainThread()
+    tracers.add(object : Tracer {
+      override fun onMessageDispatch(
+        messageAsString: String,
+        before: Boolean
+      ) {
+        tracers.remove(this)
+        block()
+      }
+    })
+  }
+
+  fun startSpyingMainThreadDispatching() {
     checkMainThread()
     if (VERSION.SDK_INT == 28) {
       // This is disabled on Android 9 because it can introduce crashes. The log is created by
@@ -31,43 +70,29 @@ object MainThreadMessageSpy {
       // https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/app/UiAutomation.java;l=1365-1371;drc=master
       return
     }
-    check(tracers.none { it === tracers }) {
-      "Tracer $tracer already in $tracers"
-    }
-    tracers.add(tracer)
-    if (tracers.size == 1) {
-      startSpyingMainThreadDispatching()
-    }
-  }
-
-  fun stopTracing(tracer: Tracer) {
-    checkMainThread()
-    val singleTracerLeft = tracers.size == 1
-    tracers.removeAll { it === tracer }
-    if (singleTracerLeft && tracers.isEmpty()) {
-      stopSpyingMainThreadDispatching()
-    }
-  }
-
-  private fun startSpyingMainThreadDispatching() {
+    enabled = true
     // Looper can log to a printer before and after each message. We leverage this to surface the
     // beginning and end of every main thread message in system traces. This costs a few extra string
     // concatenations for each message handling.
     // The printer is called before ('>>' prefix) and after ('<<' prefix) every message.
     Looper.getMainLooper().setMessageLogging { messageAsString ->
-      if (messageAsString.startsWith('>')) {
-        for (tracer in tracers) {
-          tracer.onMessageDispatch(messageAsString, before = true)
-        }
-      } else {
-        for (tracer in tracers) {
-          tracer.onMessageDispatch(messageAsString, before = false)
-        }
+      val before = messageAsString.startsWith('>')
+      if (before) {
+        currentMessageAsString = messageAsString
+      }
+      for (tracer in tracers) {
+        tracer.onMessageDispatch(messageAsString, before = before)
+      }
+      if (!before) {
+        currentMessageAsString = null
       }
     }
   }
 
-  private fun stopSpyingMainThreadDispatching() {
+  fun stopSpyingMainThreadDispatching() {
+    checkMainThread()
+    currentMessageAsString = null
+    enabled = false
     Looper.getMainLooper().setMessageLogging(null)
   }
 
