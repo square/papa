@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-Version 0.25
+Version 0.26
 _2024-09_11_
 
 * Improve tracking on choreographer frame ends [#68](https://github.com/square/papa/pull/68). New interesting APIs: `MainThreadMessageSpy.currentMessageAsString`, `Handlers.onCurrentMainThreadMessageFinished()`, `prop by mainThreadMessageScopedLazy {}`, `Choreographers.postOnFrameRendered()`, `Choreographers.postOnWindowFrameRendered()` and `Choreographers.isInChoreographerFrame`.
