@@ -162,22 +162,26 @@ private class InteractionEngine<ParentEventType : Any>(
       stopRunning()
       finishingInteractions += this
       recordEvent()
-      Choreographers.postOnFrameRendered { frameRenderedUptime ->
-        trace.endTrace()
-        choreographer.removeFrameCallback(this)
-        finishingInteractions -= this
-        val eventsCopy = sentEvents.toList()
-        resultListener.onInteractionResult(
-          Finished(
-            data = InteractionResultDataPayload(
-              interactionTrigger = interactionTrigger,
-              runningFrameCount = frameCountSinceStart,
-              sentEvents = eventsCopy,
-            ),
-            endFrameRenderedUptime = frameRenderedUptime
+      // When compiling with Java11 we get AbstractMethodError at runtime when this is a lambda.
+      @Suppress("ObjectLiteralToLambda")
+      Choreographers.postOnFrameRendered(object : OnFrameRenderedListener {
+        override fun onFrameRendered(frameRenderedUptime: Duration) {
+          trace.endTrace()
+          choreographer.removeFrameCallback(this@RealRunningInteraction)
+          finishingInteractions -= this@RealRunningInteraction
+          val eventsCopy = sentEvents.toList()
+          resultListener.onInteractionResult(
+            Finished(
+              data = InteractionResultDataPayload(
+                interactionTrigger = interactionTrigger,
+                runningFrameCount = frameCountSinceStart,
+                sentEvents = eventsCopy,
+              ),
+              endFrameRenderedUptime = frameRenderedUptime
+            )
           )
-        )
-      }
+        }
+      })
       return this
     }
 
@@ -272,7 +276,7 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
     return startInteraction(
       trigger = trigger,
       trace = trace
-      ).finish()
+    ).finish()
   }
 
   /**

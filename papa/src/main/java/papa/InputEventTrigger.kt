@@ -15,7 +15,11 @@ class InputEventTrigger private constructor(
     get() = renderedUptime != null
 
   private val inputEventFrameRenderedCallbacks =
-    mutableListOf(OnFrameRenderedListener { renderedUptime = it })
+    mutableListOf<OnFrameRenderedListener>(object : OnFrameRenderedListener {
+      override fun onFrameRendered(frameRenderedUptime: Duration) {
+        renderedUptime = frameRenderedUptime
+      }
+    })
 
   fun onInputEventFrameRendered(listener: OnFrameRenderedListener) {
     Handlers.checkOnMainThread()
@@ -33,12 +37,16 @@ class InputEventTrigger private constructor(
       deliveryUptime: Duration
     ): InputEventTrigger {
       val trigger = InputEventTrigger(inputEvent, deliveryUptime)
-      inputEventWindow.postOnWindowFrameRendered {
-        for (callback in trigger.inputEventFrameRenderedCallbacks) {
-          callback.onFrameRendered(it)
+      // When compiling with Java11 we get AbstractMethodError at runtime when this is a lambda.
+      @Suppress("ObjectLiteralToLambda")
+      inputEventWindow.postOnWindowFrameRendered(object : OnFrameRenderedListener {
+        override fun onFrameRendered(frameRenderedUptime: Duration) {
+          for (callback in trigger.inputEventFrameRenderedCallbacks) {
+            callback.onFrameRendered(frameRenderedUptime)
+          }
+          trigger.inputEventFrameRenderedCallbacks.clear()
         }
-        trigger.inputEventFrameRenderedCallbacks.clear()
-      }
+      })
       return trigger
     }
   }

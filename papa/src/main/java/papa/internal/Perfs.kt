@@ -26,6 +26,7 @@ import papa.AppVisibilityState.INVISIBLE
 import papa.AppVisibilityState.VISIBLE
 import papa.Choreographers
 import papa.Handlers
+import papa.OnFrameRenderedListener
 import papa.PapaEvent.AppLaunch
 import papa.PapaEventListener
 import papa.PreLaunchState
@@ -46,6 +47,7 @@ import papa.internal.LaunchedActivityStartingTransition.STARTED
 import papa.internal.MyProcess.ErrorRetrievingMyProcessData
 import papa.internal.MyProcess.MyProcessData
 import papa.internal.PerfsActivityLifecycleCallbacks.Companion.trackActivityLifecycle
+import kotlin.time.Duration
 
 /**
  * Singleton object centralizing state for app start and future other perf metrics.
@@ -418,11 +420,15 @@ internal object Perfs {
       return
     }
     reportedFullDrawn = true
-    Choreographers.postOnFrameRendered { frameRenderedUptime ->
-      appStartData = appStartData.copy(
-        firstFrameAfterFullyDrawnElapsedUptimeMillis = frameRenderedUptime.inWholeMilliseconds - appStartData.processStartUptimeMillis
-      )
-    }
+    // When compiling with Java11 we get AbstractMethodError at runtime when this is a lambda.
+    @Suppress("ObjectLiteralToLambda")
+    Choreographers.postOnFrameRendered(object : OnFrameRenderedListener {
+      override fun onFrameRendered(frameRenderedUptime: Duration) {
+        appStartData = appStartData.copy(
+          firstFrameAfterFullyDrawnElapsedUptimeMillis = frameRenderedUptime.inWholeMilliseconds - appStartData.processStartUptimeMillis
+        )
+      }
+    })
   }
 
   fun customFirstEvent(
