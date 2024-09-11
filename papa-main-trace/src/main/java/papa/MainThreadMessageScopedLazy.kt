@@ -14,12 +14,9 @@ class MainThreadMessageScopedLazy<T>(val provider: () -> T) : ReadOnlyProperty<A
     valueOrNull?.let {
       return it
     }
-    check(MainThreadMessageSpy.enabled) {
-      "Can't use a MainThreadMessageScopedLazy when MainThreadMessageSpy is not enabled."
-    }
     val value = provider()
     valueOrNull = value
-    MainThreadMessageSpy.onCurrentMessageFinished {
+    Handlers.onCurrentMainThreadMessageFinished {
       valueOrNull = null
     }
     return value

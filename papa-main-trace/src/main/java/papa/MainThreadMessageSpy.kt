@@ -38,22 +38,6 @@ object MainThreadMessageSpy {
     tracers.removeAll { it === tracer }
   }
 
-  fun onCurrentMessageFinished(block: () -> Unit) {
-    if (!enabled) {
-      return
-    }
-    Handlers.checkOnMainThread()
-    tracers.add(object : Tracer {
-      override fun onMessageDispatch(
-        messageAsString: String,
-        before: Boolean
-      ) {
-        tracers.remove(this)
-        block()
-      }
-    })
-  }
-
   fun startSpyingMainThreadDispatching() {
     Handlers.checkOnMainThread()
     if (VERSION.SDK_INT == 28) {
@@ -95,5 +79,21 @@ object MainThreadMessageSpy {
     currentMessageAsString = null
     enabled = false
     Looper.getMainLooper().setMessageLogging(null)
+  }
+
+  /**
+   * Internal, we expect callers to have checked that we're on the
+   * main thread and that enabled is true.
+   */
+  internal fun onCurrentMessageFinished(block: () -> Unit) {
+    tracers.add(object : Tracer {
+      override fun onMessageDispatch(
+        messageAsString: String,
+        before: Boolean
+      ) {
+        tracers.remove(this)
+        block()
+      }
+    })
   }
 }

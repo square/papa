@@ -21,7 +21,6 @@ public final class papa/MainThreadMessageSpy {
 	public final fun addTracer (Lpapa/MainThreadMessageSpy$Tracer;)V
 	public final fun getCurrentMessageAsString ()Ljava/lang/String;
 	public final fun getEnabled ()Z
-	public final fun onCurrentMessageFinished (Lkotlin/jvm/functions/Function0;)V
 	public final fun removeTracer (Lpapa/MainThreadMessageSpy$Tracer;)V
 	public final fun startSpyingMainThreadDispatching ()V
 	public final fun stopSpyingMainThreadDispatching ()V

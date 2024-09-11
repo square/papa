@@ -64,7 +64,7 @@ class MainThreadMessageSpyTest {
         runOrder += "second post"
         runnablesRan.countDown()
       }
-      MainThreadMessageSpy.onCurrentMessageFinished {
+      Handlers.onCurrentMainThreadMessageFinished {
         runOrder += "first post finished"
         runnablesRan.countDown()
       }
@@ -81,8 +81,8 @@ class MainThreadMessageSpyTest {
   @Test
   fun no_ConcurrentModificationException_when_iterating_after_onCurrentMessageFinished_removes_its_tracer() {
     runOnMainSync {
-      MainThreadMessageSpy.onCurrentMessageFinished {}
-      MainThreadMessageSpy.onCurrentMessageFinished {}
+      Handlers.onCurrentMainThreadMessageFinished {}
+      Handlers.onCurrentMainThreadMessageFinished {}
     }
   }
 
