@@ -39,4 +39,5 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
+  implementation(Dependencies.AndroidXCore)
 }

@@ -3,9 +3,6 @@ package papa
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import papa.InteractionResult.Finished
-import papa.internal.checkMainThread
-import papa.internal.isMainThread
-import papa.internal.mainHandler
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.nanoseconds
@@ -35,19 +32,19 @@ class InteractionRuleClient<EventType : Any>(
 
   val trackedInteractions: List<TrackedInteraction<EventType>>
     get() {
-      checkMainThread()
+      Handlers.checkOnMainThread()
       return interactionEngines.flatMap { it.trackedInteractions }
     }
 
   override fun addInteractionRule(block: InteractionScope<EventType>.() -> Unit): RemovableInteraction {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     val interactionScope = InteractionScope<EventType>().apply {
       block()
     }
     val engine = InteractionEngine(resultListener, interactionScope)
     interactionEngines += engine
     return RemovableInteraction {
-      checkMainThread()
+      Handlers.checkOnMainThread()
       engine.cancelRunningInteractions("Rule removed")
       interactionEngines -= engine
     }
@@ -61,10 +58,10 @@ class InteractionRuleClient<EventType : Any>(
         engine.sendEvent(sentEvent)
       }
     }
-    if (isMainThread) {
+    if (Handlers.isOnMainThread) {
       sendEvent()
     } else {
-      mainHandler.post(sendEvent)
+      Handlers.mainThreadHandler.post(sendEvent)
     }
   }
 }
@@ -131,7 +128,7 @@ private class InteractionEngine<ParentEventType : Any>(
 
     init {
       choreographer.postFrameCallback(this)
-      mainHandler.postDelayed(cancelOnTimeout, cancelTimeout.inWholeMilliseconds)
+      Handlers.mainThreadHandler.postDelayed(cancelOnTimeout, cancelTimeout.inWholeMilliseconds)
       recordEvent()
     }
 
@@ -139,7 +136,7 @@ private class InteractionEngine<ParentEventType : Any>(
       check(runningInteractions.remove(this)) {
         "Interaction started by ${sentEvents.first()} and ended by ${sentEvents.last()} is not running."
       }
-      mainHandler.removeCallbacks(cancelOnTimeout)
+      Handlers.mainThreadHandler.removeCallbacks(cancelOnTimeout)
       choreographer.removeFrameCallback(this)
     }
 

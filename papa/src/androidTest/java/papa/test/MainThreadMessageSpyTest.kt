@@ -10,11 +10,10 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import papa.Choreographers
+import papa.Handlers
 import papa.MainThreadMessageSpy
 import papa.MainThreadMessageSpy.Tracer
 import papa.MainThreadTriggerStack
-import papa.internal.mainHandler
-import papa.internal.postAtFrontOfQueueAsync
 import papa.mainThreadMessageScopedLazy
 import papa.test.utilities.SkipTestIf
 import papa.test.utilities.TestActivity
@@ -49,7 +48,7 @@ class MainThreadMessageSpyTest {
       }
     }
 
-    mainHandler.post(MyRunnable())
+    Handlers.mainThreadHandler.post(MyRunnable())
     check(runnableRan.await(5, SECONDS))
 
     assertThat(runnableCurrentMessageAsString).doesNotContain("MyRunnable")
@@ -60,8 +59,8 @@ class MainThreadMessageSpyTest {
     val runnablesRan = CountDownLatch(3)
     val runOrder = mutableListOf<String>()
 
-    mainHandler.post {
-      mainHandler.postAtFrontOfQueueAsync {
+    Handlers.mainThreadHandler.post {
+      Handlers.mainThreadHandler.post {
         runOrder += "second post"
         runnablesRan.countDown()
       }

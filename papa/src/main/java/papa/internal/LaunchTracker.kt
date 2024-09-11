@@ -3,6 +3,7 @@ package papa.internal
 import android.app.Activity
 import android.os.SystemClock
 import papa.Choreographers
+import papa.Handlers
 import papa.OnFrameRenderedListener
 import papa.SafeTrace
 import kotlin.time.Duration
@@ -40,8 +41,8 @@ internal class LaunchTracker(
 
     fun updateLastLifecycleChangeTime() {
       lastLifecycleChangeDoneUptimeMillis = null
-      mainHandler.removeCallbacks(updateLastLifecycleChangeUptimeMillis)
-      mainHandler.post(updateLastLifecycleChangeUptimeMillis)
+      Handlers.mainThreadHandler.removeCallbacks(updateLastLifecycleChangeUptimeMillis)
+      Handlers.mainThreadHandler.post(updateLastLifecycleChangeUptimeMillis)
     }
 
     /**

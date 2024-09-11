@@ -14,6 +14,7 @@ import papa.AppStart.AppStartData
 import papa.AppVisibilityState
 import papa.AppVisibilityState.INVISIBLE
 import papa.AppVisibilityState.VISIBLE
+import papa.Handlers
 import papa.internal.LaunchTracker.Launch
 
 /**
@@ -63,7 +64,10 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
     }
   }
 
-  override fun onActivityPreCreated(activity: Activity, savedInstanceState: Bundle?) {
+  override fun onActivityPreCreated(
+    activity: Activity,
+    savedInstanceState: Bundle?
+  ) {
     // Record timestamp earlier on Android versions that support it.
     recordActivityCreated(activity, savedInstanceState)
   }
@@ -121,7 +125,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
               appStart.copy(firstIdleAfterFirstDraw = activityEvent)
             }
           }
-          handler.postAtFrontOfQueueAsync {
+          Handlers.onCurrentMainThreadMessageFinished {
             updateAppStart(activityClassName) { appStart, activityEvent ->
               appStart.copy(firstPostAfterFirstDraw = activityEvent)
             }

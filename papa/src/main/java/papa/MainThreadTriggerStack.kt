@@ -1,18 +1,16 @@
 package papa
 
-import papa.internal.checkMainThread
-
 object MainThreadTriggerStack {
 
   val earliestInteractionTrigger: InteractionTrigger?
     get() {
-      checkMainThread()
+      Handlers.checkOnMainThread()
       return interactionTriggerStack.minByOrNull { it.triggerUptime }
     }
 
   val inputEventInteractionTriggers: List<InteractionTriggerWithPayload<InputEventTrigger>>
     get() {
-      checkMainThread()
+      Handlers.checkOnMainThread()
       return interactionTriggerStack.mapNotNull {
         it.toInputEventTriggerOrNull()
       }
@@ -27,7 +25,7 @@ object MainThreadTriggerStack {
    */
   val currentTriggers: List<InteractionTrigger>
     get() {
-      checkMainThread()
+      Handlers.checkOnMainThread()
       return ArrayList(interactionTriggerStack)
     }
 
@@ -36,7 +34,7 @@ object MainThreadTriggerStack {
     endTraceAfterBlock: Boolean,
     block: () -> T
   ): T {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     check(interactionTriggerStack.none { it === trigger }) {
       "Trigger $trigger already in the main thread trigger stack"
     }

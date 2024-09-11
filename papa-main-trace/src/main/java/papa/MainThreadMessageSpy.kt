@@ -21,12 +21,12 @@ object MainThreadMessageSpy {
   var currentMessageAsString: String? = null
     private set
     get() {
-      checkMainThread()
+      Handlers.checkOnMainThread()
       return field
     }
 
   fun addTracer(tracer: Tracer) {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     check(tracers.none { it === tracers }) {
       "Tracer $tracer already in $tracers"
     }
@@ -34,7 +34,7 @@ object MainThreadMessageSpy {
   }
 
   fun removeTracer(tracer: Tracer) {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     tracers.removeAll { it === tracer }
   }
 
@@ -42,7 +42,7 @@ object MainThreadMessageSpy {
     if (!enabled) {
       return
     }
-    checkMainThread()
+    Handlers.checkOnMainThread()
     tracers.add(object : Tracer {
       override fun onMessageDispatch(
         messageAsString: String,
@@ -55,7 +55,7 @@ object MainThreadMessageSpy {
   }
 
   fun startSpyingMainThreadDispatching() {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     if (VERSION.SDK_INT == 28) {
       // This is disabled on Android 9 because it can introduce crashes. The log is created by
       // concatenating several values from Message, including toString() from Message.callback, which is
@@ -91,15 +91,9 @@ object MainThreadMessageSpy {
   }
 
   fun stopSpyingMainThreadDispatching() {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     currentMessageAsString = null
     enabled = false
     Looper.getMainLooper().setMessageLogging(null)
-  }
-
-  private fun checkMainThread() {
-    check(Looper.getMainLooper() === Looper.myLooper()) {
-      "Should be called from the main thread, not ${Thread.currentThread()}"
-    }
   }
 }

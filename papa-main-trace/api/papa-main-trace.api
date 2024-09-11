@@ -1,3 +1,11 @@
+public final class papa/Handlers {
+	public static final field INSTANCE Lpapa/Handlers;
+	public final fun checkOnMainThread ()V
+	public final fun getMainThreadHandler ()Landroid/os/Handler;
+	public final fun isOnMainThread ()Z
+	public final fun onCurrentMainThreadMessageFinished (Lkotlin/jvm/functions/Function0;)V
+}
+
 public final class papa/MainThreadMessageScopedLazy : kotlin/properties/ReadOnlyProperty {
 	public fun <init> (Lkotlin/jvm/functions/Function0;)V
 	public final fun getProvider ()Lkotlin/jvm/functions/Function0;

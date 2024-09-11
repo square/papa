@@ -1,6 +1,5 @@
 package papa
 
-import papa.internal.checkMainThread
 import java.io.Closeable
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -24,7 +23,7 @@ fun interface PapaEventListener {
     }
 
     internal fun sendEvent(event: PapaEvent) {
-      checkMainThread()
+      Handlers.checkOnMainThread()
       for (listener in listeners) {
         listener.onEvent(event)
       }

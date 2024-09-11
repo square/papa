@@ -17,11 +17,11 @@ import org.junit.Test
 import papa.AndroidComponentEvent
 import papa.AppStart.AppStartData
 import papa.Choreographers
+import papa.Handlers
 import papa.MainThreadMessageSpy
 import papa.PapaEvent.FrozenFrameOnTouch
 import papa.PapaEventListener
 import papa.internal.Perfs
-import papa.internal.mainHandler
 import papa.test.utilities.TestActivity
 import papa.test.utilities.dismissCheckForUpdates
 import papa.test.utilities.getOnMainSync
@@ -150,7 +150,7 @@ class PerfMonitoringTest {
   @Test fun Choreographer_is_doing_Frame() {
     val frameCallbackLatch = CountDownLatch(1)
     var isChoreographerDoingFrame = false
-    mainHandler.post {
+    Handlers.mainThreadHandler.post {
       Choreographer.getInstance().postFrameCallback {
         isChoreographerDoingFrame = Choreographers.isInChoreographerFrame()
         frameCallbackLatch.countDown()
@@ -166,7 +166,7 @@ class PerfMonitoringTest {
     }
     val frameCallbackLatch = CountDownLatch(1)
     var isChoreographerDoingFrame = false
-    mainHandler.post {
+    Handlers.mainThreadHandler.post {
       Choreographer.getInstance().postFrameCallback {
         isChoreographerDoingFrame = Choreographers.isInChoreographerFrame()
         frameCallbackLatch.countDown()
@@ -207,7 +207,7 @@ class PerfMonitoringTest {
 
   private fun postOnMainBlocking(block: () -> Unit) {
     val waitForMainPost = CountDownLatch(1)
-    mainHandler.post {
+    Handlers.mainThreadHandler.post {
       block()
       waitForMainPost.countDown()
     }

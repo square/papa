@@ -1,6 +1,5 @@
 package papa
 
-import papa.internal.checkMainThread
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 
@@ -28,7 +27,7 @@ class SimpleInteractionTrigger(
 ) : InteractionTrigger {
 
   override fun takeOverInteractionTrace(): InteractionTrace? {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     try {
       return interactionTrace
     } finally {

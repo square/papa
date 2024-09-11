@@ -25,6 +25,7 @@ import papa.AppVisibilityState
 import papa.AppVisibilityState.INVISIBLE
 import papa.AppVisibilityState.VISIBLE
 import papa.Choreographers
+import papa.Handlers
 import papa.PapaEvent.AppLaunch
 import papa.PapaEventListener
 import papa.PreLaunchState
@@ -125,7 +126,7 @@ internal object Perfs {
     val initCalledCurrentTimeMillis = System.currentTimeMillis()
     val initCalledRealtimeMillis = SystemClock.elapsedRealtime()
     // Should only be init on the main thread, once.
-    if (!isMainThread || initialized) {
+    if (!Handlers.isOnMainThread || initialized) {
       return
     }
     if (context !is Application) {
@@ -140,6 +141,7 @@ internal object Perfs {
           "${myProcessInfo.throwable.message}"
         return
       }
+
       is MyProcessData -> {
         myProcessInfo
       }
@@ -202,7 +204,8 @@ internal object Perfs {
       }
     val lastAppAliveElapsedTimeMillis = if (Build.VERSION.SDK_INT >= 30) {
       val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-      val applicationExitInfos: List<ApplicationExitInfo> = activityManager.getHistoricalProcessExitReasons(null, 0, 0)
+      val applicationExitInfos: List<ApplicationExitInfo> =
+        activityManager.getHistoricalProcessExitReasons(null, 0, 0)
       // On first run, applicationExitInfos list will be empty. Return 0 in this case.  
       applicationExitInfos.firstOrNull()?.let {
         initCalledCurrentTimeMillis - it.timestamp
@@ -283,7 +286,7 @@ internal object Perfs {
     application.trackAppUpgrade { updateAppStartData ->
       appStartData = updateAppStartData(appStartData)
     }
-    handler.postAtFrontOfQueueAsync {
+    Handlers.onCurrentMainThreadMessageFinished {
       val firstPostAtFront = appStartData.elapsedSinceStart()
       appStartData = appStartData.copy(firstPostAtFrontElapsedUptimeMillis = firstPostAtFront)
     }
@@ -377,6 +380,7 @@ internal object Perfs {
               NORMAL_START -> NO_PROCESS
             }
           }
+
           else -> NO_PROCESS
         }
       }
@@ -396,7 +400,7 @@ internal object Perfs {
   }
 
   internal fun firstComponentInstantiated(componentName: String) {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     if (!initialized) {
       return
     }
@@ -409,7 +413,7 @@ internal object Perfs {
   }
 
   fun reportFullyDrawn() {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     if (!initialized || reportedFullDrawn) {
       return
     }
@@ -425,7 +429,7 @@ internal object Perfs {
     eventName: String,
     extra: Any? = null
   ) {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     if (!initialized || eventName in appStartData.customFirstEvents) {
       return
     }

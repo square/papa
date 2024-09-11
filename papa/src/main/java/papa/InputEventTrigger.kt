@@ -3,7 +3,6 @@ package papa
 import android.view.InputEvent
 import android.view.Window
 import papa.Choreographers.postOnWindowFrameRendered
-import papa.internal.checkMainThread
 import kotlin.time.Duration
 
 class InputEventTrigger private constructor(
@@ -19,7 +18,7 @@ class InputEventTrigger private constructor(
     mutableListOf(OnFrameRenderedListener { renderedUptime = it })
 
   fun onInputEventFrameRendered(listener: OnFrameRenderedListener) {
-    checkMainThread()
+    Handlers.checkOnMainThread()
     renderedUptime?.let {
       listener.onFrameRendered(it)
       return
