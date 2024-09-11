@@ -11,6 +11,9 @@ class MainThreadMessageScopedLazy<T>(val provider: () -> T) : ReadOnlyProperty<A
     thisRef: Any?,
     property: KProperty<*>
   ): T {
+    valueOrNull?.let {
+      return it
+    }
     check(MainThreadMessageSpy.enabled) {
       "Can't use a MainThreadMessageScopedLazy when MainThreadMessageSpy is not enabled."
     }

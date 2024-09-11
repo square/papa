@@ -15,6 +15,7 @@ import papa.MainThreadMessageSpy.Tracer
 import papa.MainThreadTriggerStack
 import papa.internal.mainHandler
 import papa.internal.postAtFrontOfQueueAsync
+import papa.mainThreadMessageScopedLazy
 import papa.test.utilities.SkipTestIf
 import papa.test.utilities.TestActivity
 import papa.test.utilities.dismissCheckForUpdates
@@ -76,6 +77,14 @@ class MainThreadMessageSpyTest {
     assertThat(runOrder)
       .containsExactly("first post", "first post finished", "second post")
       .inOrder()
+  }
+
+  @Test
+  fun no_ConcurrentModificationException_when_iterating_after_onCurrentMessageFinished_removes_its_tracer() {
+    runOnMainSync {
+      MainThreadMessageSpy.onCurrentMessageFinished {}
+      MainThreadMessageSpy.onCurrentMessageFinished {}
+    }
   }
 
   @Test
@@ -199,5 +208,28 @@ class MainThreadMessageSpyTest {
     assertThat(inputTriggerFrameRenderedUptimeOnClick).isNull()
     assertThat(inputCallbackFrameRenderedUptime).isEqualTo(inputTriggerFrameRenderedUptime)
     assertThat(isFrameRenderedInChoreographerFrame).isTrue()
+  }
+
+  @Test
+  fun mainThreadMessageScopedLazy_value_is_cached_for_same_message() {
+    val scopedLazy by mainThreadMessageScopedLazy { Any() }
+    val (msg1Read1, msg1Read2) = getOnMainSync {
+      scopedLazy to scopedLazy
+    }
+
+    assertThat(msg1Read1).isSameInstanceAs(msg1Read2)
+  }
+
+  @Test
+  fun mainThreadMessageScopedLazy_value_is_cleared_between_messages() {
+    val scopedLazy by mainThreadMessageScopedLazy { Any() }
+    val msg1Read = getOnMainSync {
+      scopedLazy
+    }
+    val msg2Read = getOnMainSync {
+      scopedLazy
+    }
+
+    assertThat(msg1Read).isNotSameInstanceAs(msg2Read)
   }
 }

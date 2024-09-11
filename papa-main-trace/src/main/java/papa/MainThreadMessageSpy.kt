@@ -2,6 +2,7 @@ package papa
 
 import android.os.Build.VERSION
 import android.os.Looper
+import java.util.concurrent.CopyOnWriteArrayList
 
 object MainThreadMessageSpy {
 
@@ -12,7 +13,7 @@ object MainThreadMessageSpy {
     )
   }
 
-  private val tracers = mutableListOf<Tracer>()
+  private val tracers = CopyOnWriteArrayList<Tracer>()
 
   var enabled = false
     private set
