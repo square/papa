@@ -25,9 +25,6 @@ git checkout -b release_{NEW_VERSION} && \
 sed -i '' 's/VERSION_NAME=.*-SNAPSHOT/VERSION_NAME={NEW_VERSION}/' gradle.properties
 sed -i '' "s/com.squareup.papa:papa:.*'/com.squareup.papa:papa:{NEW_VERSION}'/" README.md && \
 git commit -am "Prepare {NEW_VERSION} release" && \
-./gradlew clean && \
-./gradlew build && \
-./gradlew connectedCheck && \
 git tag v{NEW_VERSION} && \
 git push origin v{NEW_VERSION} && \
 gh workflow run publish-release.yml --ref v{NEW_VERSION} && \
