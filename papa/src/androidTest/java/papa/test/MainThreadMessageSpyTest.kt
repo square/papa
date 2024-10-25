@@ -1,6 +1,7 @@
 package papa.test
 
 import android.os.Build.VERSION
+import android.view.Choreographer
 import android.view.MotionEvent
 import android.widget.Button
 import androidx.test.core.app.ActivityScenario
@@ -76,6 +77,49 @@ class MainThreadMessageSpyTest {
     assertThat(runOrder)
       .containsExactly("first post", "first post finished", "second post")
       .inOrder()
+  }
+
+  @Test fun inputEventDispatching_not_in_MainThread_Message() {
+    var spyEnabled: Boolean? = null
+    var isInMainThreadMessage: Boolean? = null
+    var currentMessageAsString: String? = null
+
+    val handledTap = CountDownLatch(1)
+    ActivityScenario.launch(TestActivity::class.java).use { scenario ->
+
+      val blockFrame = CountDownLatch(1)
+      val waitForFrame = CountDownLatch(1)
+      scenario.onActivity { activity ->
+        activity.setContentView(Button(activity).apply {
+          text = "Click Me"
+          setOnTouchListener { _, _ ->
+            spyEnabled = MainThreadMessageSpy.enabled
+            isInMainThreadMessage = MainThreadMessageSpy.isInMainThreadMessage
+            currentMessageAsString = MainThreadMessageSpy.currentMessageAsString
+            handledTap.countDown()
+            false
+          }
+        })
+        Choreographer.getInstance().postFrameCallback {
+          // unblock clicking code.
+          waitForFrame.countDown()
+          check(blockFrame.await(5, SECONDS))
+          // Giving a little time to enqueue the tap.
+          Thread.sleep(500)
+        }
+      }
+
+      check(waitForFrame.await(5, SECONDS))
+      // unblock frame, at this point tap should be enqueued and dequeued immediately, and not
+      // during a choreographer frame.
+      blockFrame.countDown()
+      onView(withText("Click Me")).location.sendTap()
+
+      check(handledTap.await(5, SECONDS))
+      assertThat(spyEnabled).isTrue()
+      assertThat(currentMessageAsString).isNull()
+      assertThat(isInMainThreadMessage).isFalse()
+    }
   }
 
   @Test

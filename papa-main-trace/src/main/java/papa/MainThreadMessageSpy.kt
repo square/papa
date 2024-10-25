@@ -18,6 +18,15 @@ object MainThreadMessageSpy {
   var enabled = false
     private set
 
+  val isInMainThreadMessage: Boolean
+    get() = enabled && currentMessageAsString != null
+
+  /**
+   * Must be called only from the main thread.
+   * Null if [enabled] is false or if the code calling this (from the main thread) is running
+   * from outside the dispatching of a main thread message. For example,
+   * [MessageQueue.nativePollOnce] may invoke input event dispatching code directly.
+   */
   var currentMessageAsString: String? = null
     private set
     get() {

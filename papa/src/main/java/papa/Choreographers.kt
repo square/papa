@@ -10,7 +10,11 @@ object Choreographers {
   private val pendingRenderedCallbacks = mutableListOf<OnFrameRenderedListener>()
 
   private val isInChoreographerFrameMessage by mainThreadMessageScopedLazy {
-    "android.view.Choreographer\$FrameDisplayEventReceiver" in MainThreadMessageSpy.currentMessageAsString!!
+    if (MainThreadMessageSpy.isInMainThreadMessage) {
+      "android.view.Choreographer\$FrameDisplayEventReceiver" in MainThreadMessageSpy.currentMessageAsString!!
+    } else {
+      false
+    }
   }
 
   /**
