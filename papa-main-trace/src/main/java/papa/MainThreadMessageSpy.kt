@@ -18,6 +18,15 @@ object MainThreadMessageSpy {
   var enabled = false
     private set
 
+  val isInMainThreadMessage: Boolean
+    get() = enabled && currentMessageAsString != null
+
+  /**
+   * Must be called only from the main thread.
+   * Null if [enabled] is false or if the code calling this (from the main thread) is running
+   * from outside the dispatching of a main thread message. For example,
+   * [MessageQueue.nativePollOnce] may invoke input event dispatching code directly.
+   */
   var currentMessageAsString: String? = null
     private set
     get() {
@@ -59,9 +68,18 @@ object MainThreadMessageSpy {
     // Looper can log to a printer before and after each message. We leverage this to surface the
     // beginning and end of every main thread message in system traces. This costs a few extra string
     // concatenations for each message handling.
-    // The printer is called before ('>>' prefix) and after ('<<' prefix) every message.
+
+    // Looper.mLogging is extracted to a local variable inside the message loop, and the same
+    // reference is used for before and after. We're setting Looper.mLogging in the middle of a
+    // message but won't get the "finish" callback because that local variable still references
+    // null at that point.
+    var before = true
     Looper.getMainLooper().setMessageLogging { messageAsString ->
-      val before = messageAsString.startsWith('>')
+      if (!enabled) {
+        // We still get called here for the last message finishing after we called
+        // stopSpyingMainThreadDispatching which called Looper.setMessageLogging(null)
+        return@setMessageLogging
+      }
       if (before) {
         currentMessageAsString = messageAsString
       }
@@ -71,6 +89,7 @@ object MainThreadMessageSpy {
       if (!before) {
         currentMessageAsString = null
       }
+      before = !before
     }
   }
 

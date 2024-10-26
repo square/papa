@@ -25,7 +25,7 @@ object Handlers {
    */
   fun onCurrentMainThreadMessageFinished(block: () -> Unit) {
     checkOnMainThread()
-    if (MainThreadMessageSpy.enabled) {
+    if (MainThreadMessageSpy.isInMainThreadMessage) {
       MainThreadMessageSpy.onCurrentMessageFinished(block)
     } else {
       mainThreadHandler.postAtFrontOfQueueAsync(block)
