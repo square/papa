@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+Version 0.27
+_2024-10_25_
+
+* Fix crashes: [#71](https://github.com/square/papa/issues/71) and [#69](https://github.com/square/papa/issues/69)
+
+
 Version 0.26
 _2024-09_11_
 
