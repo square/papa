@@ -19,6 +19,8 @@ object MainThreadMessageSpy {
     private set
 
   val isInMainThreadMessage: Boolean
+    // if currentMessageAsString is null, we're not in a main thread message, e.g. we
+    // could be handling touch inputs in between messages.
     get() = enabled && currentMessageAsString != null
 
   /**

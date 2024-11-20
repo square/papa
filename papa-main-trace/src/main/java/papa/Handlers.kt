@@ -25,7 +25,14 @@ object Handlers {
    */
   fun onCurrentMainThreadMessageFinished(block: () -> Unit) {
     checkOnMainThread()
-    if (MainThreadMessageSpy.isInMainThreadMessage) {
+    if (MainThreadMessageSpy.enabled &&
+      // if currentMessageAsString is null, we're not in a main thread message, e.g. we
+      // could be handling touch inputs in between messages
+      // if currentMessageAsString contains "androidx.test.espresso" then this is likely
+      // Espresso taking over the main thread queue via Interrogator.loopAndInterrogate() and
+      // running main messages at once so we need to fallback.
+      MainThreadMessageSpy.currentMessageAsString?.let { "androidx.test.espresso" !in it } == true
+    ) {
       MainThreadMessageSpy.onCurrentMessageFinished(block)
     } else {
       mainThreadHandler.postAtFrontOfQueueAsync(block)
