@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 0.28
+_2024-11_20_
+
+* Fix onCurrentMainThreadMessageFinished() running after multiple messages when Espresso is taking over the looper queue
+
 Version 0.27
 _2024-10_25_
 
