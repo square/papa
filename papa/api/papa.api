@@ -21,6 +21,7 @@ public final class papa/AppLaunchType : java/lang/Enum {
 	public static final field COLD Lpapa/AppLaunchType;
 	public static final field HOT Lpapa/AppLaunchType;
 	public static final field WARM Lpapa/AppLaunchType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getSlowThresholdMillis ()J
 	public static fun valueOf (Ljava/lang/String;)Lpapa/AppLaunchType;
 	public static fun values ()[Lpapa/AppLaunchType;
@@ -190,6 +191,7 @@ public final class papa/AppUpdateStartStatus : java/lang/Enum {
 	public static final field FIRST_START_AFTER_FRESH_INSTALL Lpapa/AppUpdateStartStatus;
 	public static final field FIRST_START_AFTER_UPGRADE Lpapa/AppUpdateStartStatus;
 	public static final field NORMAL_START Lpapa/AppUpdateStartStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lpapa/AppUpdateStartStatus;
 	public static fun values ()[Lpapa/AppUpdateStartStatus;
 }
@@ -197,6 +199,7 @@ public final class papa/AppUpdateStartStatus : java/lang/Enum {
 public final class papa/AppVisibilityState : java/lang/Enum {
 	public static final field INVISIBLE Lpapa/AppVisibilityState;
 	public static final field VISIBLE Lpapa/AppVisibilityState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lpapa/AppVisibilityState;
 	public static fun values ()[Lpapa/AppVisibilityState;
 }
@@ -434,6 +437,7 @@ public final class papa/PreLaunchState : java/lang/Enum {
 	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL Lpapa/PreLaunchState;
 	public static final field NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE Lpapa/PreLaunchState;
 	public static final field PROCESS_WAS_LAUNCHING_IN_BACKGROUND Lpapa/PreLaunchState;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getLaunchType ()Lpapa/AppLaunchType;
 	public fun toString ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lpapa/PreLaunchState;

@@ -1,6 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.squareup.papa.test">
+    xmlns:tools="http://schemas.android.com/tools">
 
   <!--
    Workaround required for running tests on API 30 devices.

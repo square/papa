@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-  compileSdkVersion(31)
+  compileSdk = 31
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -17,10 +17,9 @@ android {
   resourcePrefix = "papa_"
 
   defaultConfig {
-    minSdkVersion(21)
-    versionCode = 1
-    versionName = "1.0"
+    minSdk = 21
   }
+  namespace = "com.squareup.papa.dev.receivers"
 
   buildFeatures {
     buildConfig = false
@@ -30,9 +29,6 @@ android {
 tasks.withType<KotlinCompile> {
   kotlinOptions {
     freeCompilerArgs = listOfNotNull(
-      // allow-jvm-ir-dependencies is required to consume binaries built with the IR backend.
-      // It doesn't change the bytecode that gets generated for this module.
-      "-Xallow-jvm-ir-dependencies",
       "-Xopt-in=kotlin.RequiresOptIn"
     )
   }

@@ -49,8 +49,7 @@ class PerfMonitoringTest {
   @Test fun firstActivity() {
     ActivityScenario.launch(TestActivity::class.java).use {
       dismissCheckForUpdates()
-      // Our activity isn't actually first when testing, oh well.
-      val firstActivity = "androidx.test.core.app.InstrumentationActivityInvoker\$BootstrapActivity"
+      val firstActivity = "papa.test.utilities.TestActivity"
       assertThat(appStart.firstActivityOnCreate!!.name).isEqualTo(
         firstActivity
       )

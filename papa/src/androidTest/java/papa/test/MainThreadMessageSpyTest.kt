@@ -86,7 +86,7 @@ class MainThreadMessageSpyTest {
 
     val handledTap = CountDownLatch(1)
     ActivityScenario.launch(TestActivity::class.java).use { scenario ->
-
+      dismissCheckForUpdates()
       val blockFrame = CountDownLatch(1)
       val waitForFrame = CountDownLatch(1)
       scenario.onActivity { activity ->
