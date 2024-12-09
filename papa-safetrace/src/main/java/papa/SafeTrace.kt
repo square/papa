@@ -20,6 +20,9 @@ import papa.internal.SafeTraceMainThreadMessages
  */
 object SafeTrace {
 
+  @Volatile
+  private var _isTraceable: Boolean? = null
+
   /**
    * Whether calls to tracing functions will be forwarded to the Android tracing APIs.
    * This is true if the app manifest has the debuggable to true or if it includes the
@@ -40,22 +43,11 @@ object SafeTrace {
    */
   @JvmStatic
   val isTraceable: Boolean
-    get() = isForcedTraceable || (SafeTraceSetup.initDone && isTraceableBuild)
+    get() = isTraceableInlined()
 
   @JvmStatic
   val isCurrentlyTracing: Boolean
-    get() = isTraceable && androidx.tracing.Trace.isEnabled()
-
-  /**
-   * Note: this should not be called if [SafeTraceSetup.initDone] is false.
-   */
-  private val isTraceableBuild by lazy {
-    val application = SafeTraceSetup.application
-    val applicationInfo = application.applicationInfo
-    val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-    val isProfileable = Build.VERSION.SDK_INT >= 29 && applicationInfo.isProfileableByShell
-    isDebuggable || isProfileable
-  }
+    get() = isTraceableInlined() && androidx.tracing.Trace.isEnabled()
 
   /**
    * @see isTraceable
@@ -63,12 +55,32 @@ object SafeTrace {
   @JvmStatic
   fun forceTraceable() {
     androidx.tracing.Trace.forceEnableAppTracing()
-    isForcedTraceable = true
+    _isTraceable = true
     SafeTraceMainThreadMessages.enableMainThreadMessageTracing()
   }
 
-  @Volatile
-  private var isForcedTraceable: Boolean = false
+  @Suppress("NOTHING_TO_INLINE")
+  private inline fun isTraceableInlined(): Boolean {
+    // Prior to SafeTraceSetup.initDone we can't determine if the app is traceable or not, so we
+    // always return false, unless something called forceTraceable(). The first call after
+    // SafeTraceSetup.initDone becomes true will compute the actual value based on debuggable
+    // and profileable manifest flags, then cache it so that we don't need to recheck again.
+    return _isTraceable
+      ?: if (SafeTraceSetup.initDone) {
+        val application = SafeTraceSetup.application
+        val applicationInfo = application.applicationInfo
+        val isTraceable =
+          // debuggable
+          (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0 ||
+            // profileable
+            (Build.VERSION.SDK_INT >= 29 && applicationInfo.isProfileableByShell)
+        isTraceable.also {
+          _isTraceable = it
+        }
+      } else {
+        false
+      }
+  }
 
   /**
    * Writes a trace message to indicate that a given section of code has begun. This call must
