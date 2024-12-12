@@ -1,3 +1,4 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SonatypeHost
 import kotlinx.validation.ApiValidationExtension
@@ -56,6 +57,11 @@ subprojects {
   plugins.withId("com.vanniktech.maven.publish.base") {
     configure<MavenPublishBaseExtension> {
       publishToMavenCentral(SonatypeHost.S01)
+      signAllPublications()
+      pomFromGradleProperties()
+      configure(
+        AndroidSingleVariantLibrary(variant = "release", sourcesJar = true, publishJavadocJar = true),
+      )
     }
   }
 
