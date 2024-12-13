@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+
+Version 0.29
+_2024-12_09_
+
+* [#72](https://github.com/square/papa/pull/72) Improve the performance of traceable checks. Also upgrade to Kotlin 1.9.
+
 Version 0.28
 _2024-11_20_
 
