@@ -2,55 +2,55 @@ Change Log
 ==========
 
 
-Version 0.29
+# Version 0.29
 _2024-12_09_
 
 * [#72](https://github.com/square/papa/pull/72) Improve the performance of traceable checks. Also upgrade to Kotlin 1.9.
 
-Version 0.28
+# Version 0.28
 _2024-11_20_
 
 * Fix onCurrentMainThreadMessageFinished() running after multiple messages when Espresso is taking over the looper queue
 
-Version 0.27
+# Version 0.27
 _2024-10_25_
 
 * Fix crashes: [#71](https://github.com/square/papa/issues/71) and [#69](https://github.com/square/papa/issues/69)
 
 
-Version 0.26
+# Version 0.26
 _2024-09_11_
 
 * Improve tracking on choreographer frame ends [#68](https://github.com/square/papa/pull/68). New interesting APIs: `MainThreadMessageSpy.currentMessageAsString`, `Handlers.onCurrentMainThreadMessageFinished()`, `prop by mainThreadMessageScopedLazy {}`, `Choreographers.postOnFrameRendered()`, `Choreographers.postOnWindowFrameRendered()` and `Choreographers.isInChoreographerFrame`.
 
-Version 0.22
+# Version 0.22
 _2024-08_28_
 
 * Introduced `MainThreadMessageSpy` (artifact: `papa-main-trace`) which provides an API to be notified of main thread message dispatching.
-* Introduced `InteractionTrigger` (2 sub types: `SimpleInteractionTrigger` and `InteractionTriggerWithPayload` to represent the concept of a trigger (such as a tap or a key input) in a more generic way that allows for new trigger types, which then allows for better tracking of what started and interaction, and when. Introduced new trigger: `main-message` to find track the proper start time of an interaction not started with a tap (disble this by setting `papa_track_main_thread_triggers` to false). New API: `MainThreadTriggerStack` helps us manage current triggers.
+* Introduced `InteractionTrigger` (2 sub types: `SimpleInteractionTrigger` and `InteractionTriggerWithPayload` to represent the concept of a trigger (such as a tap or a key input) in a more generic way that allows for new trigger types, which then allows for better tracking of what started and interaction, and when. Introduced new trigger: `main-message` to find track the proper start time of an interaction not started with a tap (disble this by setting `papa_track_main_th# read_triggers` to false). New API: `MainThreadTriggerStack` helps us manage current triggers.
 * API breaking changes: renamed `interactionInput` to `interactionTrigger` on `InteractionResultData` and `TrackedInteraction`. Removed it entirely from `OnEventScope`. Removed `InteractionStartInput` which was replaced by the more generic `InteractionTrigger`.
 
-Version 0.18
+# Version 0.18
 _2024-08_21_
 
 * Add support for custom startInteraction start input events [#66](https://github.com/square/papa/pull/66).
 
-Version 0.15
+# Version 0.15
 _2023-11-30_
 
 * bugfix: Allow thread disk reads temporarily at onAppCrashing() function
 
-Version 0.14
+# Version 0.14
 _2023-08-04_
 
 * bugfix: remove the 1 second post delay to compute the lastAliveCurrentMillis value, which can cause excessive reads/writes to disk.
 
-Version 0.13
+# Version 0.13
 _2023-03-24_
 
 * bugfix: prevent negative values from being recorded for interaction durations. if eventTime is after delivery uptime, use deliveryUptimeMillis for DeliveredInput's uptime.
 
-Version 0.12
+# Version 0.12
 _2023-03-14_
 
 * Add `EventFrameLabeler` to leverage with `SafeTrace` and `WindowOverlay` to make it easy to match frames in Perfetto & on screen.
@@ -62,24 +62,24 @@ _2023-03-14_
 * Add `InteractionRuleClient.trackedInteractions`
 * Rename `RunningInteraction.events` to `RunningInteraction.sentEvents`
 
-Version 0.10
+# Version 0.10
 _2022-10-12_
 
 * bugfix: never cleared finishing interactions
 * Add support for registering against event interfaces
 
-Version 0.8
+# Version 0.8
 _2022-10-06_
 
 * Even more rewrite of the interaction latency APIs! Interactions are now just a list of events (no more start & end, no more interaction type)
 
-Version 0.7
+# Version 0.7
 _2022-10-03_
 
 * More rewrite of the interaction latency APIs. Adds reporting of start & end events, centralizes the handling of the ending of the interactions.
 * Removing a rule cancels any interaction in flight.
 
-Version 0.6
+# Version 0.6
 
 _2022-09-28_
 
@@ -87,7 +87,7 @@ _2022-09-28_
 * Use MessageCompat.setAsynchronous to support API 16+ ([#33](https://github.com/square/papa/pull/33))
 * `onCurrentFrameRendered()` joins multiple calls into a single post ([#35](https://github.com/square/papa/issues/35))
 
-Version 0.5
+# Version 0.5
 
 _2022-05-26_
 
