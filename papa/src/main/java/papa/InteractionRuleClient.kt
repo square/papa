@@ -129,7 +129,7 @@ private class InteractionEngine<ParentEventType : Any>(
     init {
       choreographer.postFrameCallback(this)
       Handlers.mainThreadHandler.postDelayed(cancelOnTimeout, cancelTimeout.inWholeMilliseconds)
-      recordEvent()
+      recordEvent(false)
     }
 
     private fun stopRunning() {
@@ -141,6 +141,9 @@ private class InteractionEngine<ParentEventType : Any>(
     }
 
     override fun cancel(reason: String) {
+      SafeTrace.logSection {
+        "PAPA-cancel:$eventInScope:$reason"
+      }
       val cancelUptime = eventInScope?.uptime ?: System.nanoTime().nanoseconds
       stopRunning()
       trace.endTrace()
@@ -159,9 +162,12 @@ private class InteractionEngine<ParentEventType : Any>(
     }
 
     override fun finish(): FinishingInteraction<ParentEventType> {
+      SafeTrace.logSection {
+        "PAPA-finishInteraction:$eventInScope"
+      }
       stopRunning()
       finishingInteractions += this
-      recordEvent()
+      recordEvent(false)
       // When compiling with Java11 we get AbstractMethodError at runtime when this is a lambda.
       @Suppress("ObjectLiteralToLambda")
       Choreographers.postOnFrameRendered(object : OnFrameRenderedListener {
@@ -186,7 +192,16 @@ private class InteractionEngine<ParentEventType : Any>(
     }
 
     override fun recordEvent() {
+      recordEvent(true)
+    }
+
+    private fun recordEvent(logSection: Boolean) {
       val recordedSentEvent = eventInScope!!
+      if (logSection) {
+        SafeTrace.logSection {
+          "PAPA-recordEvent:$eventInScope"
+        }
+      }
       if (sentEvents.lastOrNull()?.event !== recordedSentEvent.event) {
         sentEvents += recordedSentEvent
       }
@@ -221,6 +236,9 @@ private class InteractionEngine<ParentEventType : Any>(
         trace: InteractionTrace,
         cancelTimeout: Duration,
       ): RunningInteraction<ParentEventType> {
+        SafeTrace.logSection {
+          "PAPA-startInteraction:$event"
+        }
         val runningInteraction = RealRunningInteraction(
           interactionTrigger = trigger,
           trace = trace,
