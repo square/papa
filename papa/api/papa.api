@@ -236,6 +236,11 @@ public abstract interface class papa/InteractionEventSink {
 	public abstract fun sendEvent (Ljava/lang/Object;)V
 }
 
+public abstract interface class papa/InteractionInFlight {
+	public abstract fun getInteractionTrigger ()Lpapa/InteractionTrigger;
+	public abstract fun getSentEvents ()Ljava/util/List;
+}
+
 public abstract class papa/InteractionResult : papa/InteractionResultData {
 	public synthetic fun <init> (Lpapa/InteractionResultData;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getInteractionTrigger ()Lpapa/InteractionTrigger;
@@ -279,10 +284,14 @@ public abstract interface class papa/InteractionRuleBuilder {
 }
 
 public final class papa/InteractionRuleClient : papa/InteractionEventSink, papa/InteractionRuleBuilder {
-	public fun <init> (Lpapa/InteractionResultListener;)V
+	public fun <init> (Lpapa/InteractionUpdateListener;)V
 	public fun addInteractionRule (Lkotlin/jvm/functions/Function1;)Lpapa/RemovableInteraction;
 	public final fun getTrackedInteractions ()Ljava/util/List;
 	public fun sendEvent (Ljava/lang/Object;)V
+}
+
+public final class papa/InteractionRuleDeprecatedKt {
+	public static final fun asInteractionUpdateListener (Lpapa/InteractionResultListener;)Lpapa/InteractionUpdateListener;
 }
 
 public final class papa/InteractionScope {
@@ -317,6 +326,100 @@ public final class papa/InteractionTriggerWithPayload : papa/InteractionTrigger 
 	public fun getTriggerUptime-UwyO8pc ()J
 	public fun takeOverInteractionTrace ()Lpapa/InteractionTrace;
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class papa/InteractionUpdate {
+	public abstract fun getInteraction ()Lpapa/InteractionInFlight;
+}
+
+public final class papa/InteractionUpdate$CancelOnEvent : papa/InteractionUpdate$WithEvent {
+	public fun <init> (Lpapa/SentEvent;Lpapa/InteractionInFlight;Ljava/lang/String;)V
+	public final fun component1 ()Lpapa/SentEvent;
+	public final fun component2 ()Lpapa/InteractionInFlight;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lpapa/SentEvent;Lpapa/InteractionInFlight;Ljava/lang/String;)Lpapa/InteractionUpdate$CancelOnEvent;
+	public static synthetic fun copy$default (Lpapa/InteractionUpdate$CancelOnEvent;Lpapa/SentEvent;Lpapa/InteractionInFlight;Ljava/lang/String;ILjava/lang/Object;)Lpapa/InteractionUpdate$CancelOnEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getEvent ()Lpapa/SentEvent;
+	public fun getInteraction ()Lpapa/InteractionInFlight;
+	public final fun getReason ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/InteractionUpdate$CancelOnTimeout : papa/InteractionUpdate {
+	public synthetic fun <init> (JLpapa/InteractionInFlight;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-UwyO8pc ()J
+	public final fun component2 ()Lpapa/InteractionInFlight;
+	public final fun copy-VtjQ1oo (JLpapa/InteractionInFlight;)Lpapa/InteractionUpdate$CancelOnTimeout;
+	public static synthetic fun copy-VtjQ1oo$default (Lpapa/InteractionUpdate$CancelOnTimeout;JLpapa/InteractionInFlight;ILjava/lang/Object;)Lpapa/InteractionUpdate$CancelOnTimeout;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getInteraction ()Lpapa/InteractionInFlight;
+	public final fun getTimeout-UwyO8pc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/InteractionUpdate$Finish : papa/InteractionUpdate$WithEvent {
+	public fun <init> (Lpapa/SentEvent;Lpapa/InteractionInFlight;)V
+	public final fun component1 ()Lpapa/SentEvent;
+	public final fun component2 ()Lpapa/InteractionInFlight;
+	public final fun copy (Lpapa/SentEvent;Lpapa/InteractionInFlight;)Lpapa/InteractionUpdate$Finish;
+	public static synthetic fun copy$default (Lpapa/InteractionUpdate$Finish;Lpapa/SentEvent;Lpapa/InteractionInFlight;ILjava/lang/Object;)Lpapa/InteractionUpdate$Finish;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getEvent ()Lpapa/SentEvent;
+	public fun getInteraction ()Lpapa/InteractionInFlight;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/InteractionUpdate$RecordEvent : papa/InteractionUpdate$WithEvent {
+	public fun <init> (Lpapa/SentEvent;Lpapa/InteractionInFlight;)V
+	public final fun component1 ()Lpapa/SentEvent;
+	public final fun component2 ()Lpapa/InteractionInFlight;
+	public final fun copy (Lpapa/SentEvent;Lpapa/InteractionInFlight;)Lpapa/InteractionUpdate$RecordEvent;
+	public static synthetic fun copy$default (Lpapa/InteractionUpdate$RecordEvent;Lpapa/SentEvent;Lpapa/InteractionInFlight;ILjava/lang/Object;)Lpapa/InteractionUpdate$RecordEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getEvent ()Lpapa/SentEvent;
+	public fun getInteraction ()Lpapa/InteractionInFlight;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/InteractionUpdate$Rendered : papa/InteractionUpdate$WithEvent {
+	public synthetic fun <init> (Lpapa/SentEvent;Lpapa/InteractionInFlight;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lpapa/SentEvent;
+	public final fun component2 ()Lpapa/InteractionInFlight;
+	public final fun component3-UwyO8pc ()J
+	public final fun copy-SxA4cEA (Lpapa/SentEvent;Lpapa/InteractionInFlight;J)Lpapa/InteractionUpdate$Rendered;
+	public static synthetic fun copy-SxA4cEA$default (Lpapa/InteractionUpdate$Rendered;Lpapa/SentEvent;Lpapa/InteractionInFlight;JILjava/lang/Object;)Lpapa/InteractionUpdate$Rendered;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getEvent ()Lpapa/SentEvent;
+	public final fun getFrameRenderedUptime-UwyO8pc ()J
+	public fun getInteraction ()Lpapa/InteractionInFlight;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class papa/InteractionUpdate$Start : papa/InteractionUpdate$WithEvent {
+	public fun <init> (Lpapa/SentEvent;Lpapa/InteractionInFlight;)V
+	public final fun component1 ()Lpapa/SentEvent;
+	public final fun component2 ()Lpapa/InteractionInFlight;
+	public final fun copy (Lpapa/SentEvent;Lpapa/InteractionInFlight;)Lpapa/InteractionUpdate$Start;
+	public static synthetic fun copy$default (Lpapa/InteractionUpdate$Start;Lpapa/SentEvent;Lpapa/InteractionInFlight;ILjava/lang/Object;)Lpapa/InteractionUpdate$Start;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getEvent ()Lpapa/SentEvent;
+	public fun getInteraction ()Lpapa/InteractionInFlight;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class papa/InteractionUpdate$WithEvent : papa/InteractionUpdate {
+	public abstract fun getEvent ()Lpapa/SentEvent;
+}
+
+public abstract interface class papa/InteractionUpdateListener {
+	public abstract fun onInteractionUpdate (Lpapa/InteractionUpdate;)V
 }
 
 public final class papa/MainThreadTriggerStack {
@@ -471,9 +574,7 @@ public final class papa/SimpleInteractionTrigger : papa/InteractionTrigger {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class papa/TrackedInteraction {
-	public abstract fun getInteractionTrigger ()Lpapa/InteractionTrigger;
-	public abstract fun getSentEvents ()Ljava/util/List;
+public abstract interface class papa/TrackedInteraction : papa/InteractionInFlight {
 	public abstract fun recordEvent ()V
 }
 

@@ -1,19 +1,61 @@
 package papa
 
-import android.view.Choreographer
-import android.view.Choreographer.FrameCallback
-import papa.InteractionResult.Finished
+import papa.InteractionUpdate.CancelOnEvent
+import papa.InteractionUpdate.CancelOnTimeout
+import papa.InteractionUpdate.Finish
+import papa.InteractionUpdate.RecordEvent
+import papa.InteractionUpdate.Rendered
+import papa.InteractionUpdate.Start
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.nanoseconds
-import kotlin.time.DurationUnit.MILLISECONDS
 
 interface InteractionRuleBuilder<EventType : Any> {
   fun addInteractionRule(block: InteractionScope<EventType>.() -> Unit): RemovableInteraction
 }
 
-fun interface InteractionResultListener<EventType : Any> {
-  fun onInteractionResult(result: InteractionResult<EventType>)
+sealed interface InteractionUpdate<EventType : Any> {
+  val interaction: InteractionInFlight<EventType>
+
+  sealed interface WithEvent<EventType : Any> : InteractionUpdate<EventType> {
+    val event: SentEvent<EventType>
+  }
+
+  data class Start<EventType : Any>(
+    override val event: SentEvent<EventType>,
+    override val interaction: InteractionInFlight<EventType>
+  ) : WithEvent<EventType>
+
+  data class RecordEvent<EventType : Any>(
+    override val event: SentEvent<EventType>,
+    override val interaction: InteractionInFlight<EventType>
+  ) : WithEvent<EventType>
+
+  data class CancelOnEvent<EventType : Any>(
+    override val event: SentEvent<EventType>,
+    override val interaction: InteractionInFlight<EventType>,
+    val reason: String
+  ) : WithEvent<EventType>
+
+  data class CancelOnTimeout<EventType : Any>(
+    val timeout: Duration,
+    override val interaction: InteractionInFlight<EventType>
+  ) : InteractionUpdate<EventType>
+
+  data class Finish<EventType : Any>(
+    override val event: SentEvent<EventType>,
+    override val interaction: InteractionInFlight<EventType>
+  ) : WithEvent<EventType>
+
+  data class Rendered<EventType : Any>(
+    override val event: SentEvent<EventType>,
+    override val interaction: InteractionInFlight<EventType>,
+    val frameRenderedUptime: Duration
+  ) : WithEvent<EventType>
+}
+
+fun interface InteractionUpdateListener<EventType : Any> {
+  fun onInteractionUpdate(update: InteractionUpdate<EventType>)
 }
 
 fun interface RemovableInteraction {
@@ -25,12 +67,12 @@ interface InteractionEventSink<EventType> {
 }
 
 class InteractionRuleClient<EventType : Any>(
-  private val resultListener: InteractionResultListener<EventType>,
+  private val updateListener: InteractionUpdateListener<EventType>,
 ) : InteractionRuleBuilder<EventType>, InteractionEventSink<EventType> {
 
   private val interactionEngines = mutableListOf<InteractionEngine<EventType>>()
 
-  val trackedInteractions: List<TrackedInteraction<EventType>>
+  val trackedInteractions: List<InteractionInFlight<EventType>>
     get() {
       Handlers.checkOnMainThread()
       return interactionEngines.flatMap { it.trackedInteractions }
@@ -41,7 +83,7 @@ class InteractionRuleClient<EventType : Any>(
     val interactionScope = InteractionScope<EventType>().apply {
       block()
     }
-    val engine = InteractionEngine(resultListener, interactionScope)
+    val engine = InteractionEngine(updateListener, interactionScope)
     interactionEngines += engine
     return RemovableInteraction {
       Handlers.checkOnMainThread()
@@ -86,7 +128,7 @@ class InteractionScope<ParentEventType : Any> {
 }
 
 private class InteractionEngine<ParentEventType : Any>(
-  private val resultListener: InteractionResultListener<ParentEventType>,
+  private val updateListener: InteractionUpdateListener<ParentEventType>,
   interactionScope: InteractionScope<ParentEventType>
 ) {
 
@@ -104,9 +146,7 @@ private class InteractionEngine<ParentEventType : Any>(
     override val interactionTrigger: InteractionTrigger?,
     private val trace: InteractionTrace,
     cancelTimeout: Duration
-  ) : RunningInteraction<ParentEventType>, FinishingInteraction<ParentEventType>, FrameCallback {
-
-    private var frameCountSinceStart: Int = 0
+  ) : RunningInteraction<ParentEventType>, FinishingInteraction<ParentEventType> {
 
     override val sentEvents = mutableListOf<SentEvent<ParentEventType>>()
 
@@ -116,20 +156,17 @@ private class InteractionEngine<ParentEventType : Any>(
      * called with an unknown [Runnable].
      */
     private val cancelOnTimeout: Runnable = Runnable {
-      cancel("Timeout after $cancelTimeout")
-    }
-
-    private val choreographer = Choreographer.getInstance()
-
-    override fun doFrame(frameTimeNanos: Long) {
-      frameCountSinceStart++
-      choreographer.postFrameCallback(this)
+      SafeTrace.logSection {
+        "PAPA-cancel:timeout"
+      }
+      stopRunning()
+      trace.endTrace()
+      updateListener.onInteractionUpdate(CancelOnTimeout(cancelTimeout, this))
     }
 
     init {
-      choreographer.postFrameCallback(this)
       Handlers.mainThreadHandler.postDelayed(cancelOnTimeout, cancelTimeout.inWholeMilliseconds)
-      recordEvent()
+      addRecordedEvent()
     }
 
     private fun stopRunning() {
@@ -137,55 +174,51 @@ private class InteractionEngine<ParentEventType : Any>(
         "Interaction started by ${sentEvents.first()} and ended by ${sentEvents.last()} is not running."
       }
       Handlers.mainThreadHandler.removeCallbacks(cancelOnTimeout)
-      choreographer.removeFrameCallback(this)
     }
 
     override fun cancel(reason: String) {
-      val cancelUptime = eventInScope?.uptime ?: System.nanoTime().nanoseconds
+      val sentEvent = eventInScope!!
+      SafeTrace.logSection {
+        "PAPA-cancel:${sentEvent.event}:$reason"
+      }
       stopRunning()
       trace.endTrace()
-      val eventsCopy = sentEvents.toList()
-      resultListener.onInteractionResult(
-        InteractionResult.Canceled(
-          data = InteractionResultDataPayload(
-            interactionTrigger = interactionTrigger,
-            runningFrameCount = frameCountSinceStart,
-            sentEvents = eventsCopy,
-          ),
-          cancelUptime = cancelUptime,
-          cancelReason = reason
-        )
-      )
+      updateListener.onInteractionUpdate(CancelOnEvent(sentEvent, this, reason))
     }
 
     override fun finish(): FinishingInteraction<ParentEventType> {
+      val sentEvent = eventInScope!!
+      SafeTrace.logSection {
+        "PAPA-finishInteraction:${sentEvent.event}"
+      }
       stopRunning()
       finishingInteractions += this
-      recordEvent()
+      addRecordedEvent()
+      updateListener.onInteractionUpdate(Finish(sentEvent, this))
+
       // When compiling with Java11 we get AbstractMethodError at runtime when this is a lambda.
       @Suppress("ObjectLiteralToLambda")
       Choreographers.postOnFrameRendered(object : OnFrameRenderedListener {
         override fun onFrameRendered(frameRenderedUptime: Duration) {
           trace.endTrace()
-          choreographer.removeFrameCallback(this@RealRunningInteraction)
-          finishingInteractions -= this@RealRunningInteraction
-          val eventsCopy = sentEvents.toList()
-          resultListener.onInteractionResult(
-            Finished(
-              data = InteractionResultDataPayload(
-                interactionTrigger = interactionTrigger,
-                runningFrameCount = frameCountSinceStart,
-                sentEvents = eventsCopy,
-              ),
-              endFrameRenderedUptime = frameRenderedUptime
-            )
-          )
+          val interaction = this@RealRunningInteraction
+          finishingInteractions -= interaction
+          updateListener.onInteractionUpdate(Rendered(sentEvent, interaction, frameRenderedUptime))
         }
       })
       return this
     }
 
     override fun recordEvent() {
+      val sentEvent = eventInScope!!
+      SafeTrace.logSection {
+        "PAPA-recordEvent:${sentEvent.event}"
+      }
+      addRecordedEvent()
+      updateListener.onInteractionUpdate(RecordEvent(sentEvent, this))
+    }
+
+    private fun addRecordedEvent() {
       val recordedSentEvent = eventInScope!!
       if (sentEvents.lastOrNull()?.event !== recordedSentEvent.event) {
         sentEvents += recordedSentEvent
@@ -221,12 +254,16 @@ private class InteractionEngine<ParentEventType : Any>(
         trace: InteractionTrace,
         cancelTimeout: Duration,
       ): RunningInteraction<ParentEventType> {
+        SafeTrace.logSection {
+          "PAPA-startInteraction:${sentEvent.event}"
+        }
         val runningInteraction = RealRunningInteraction(
           interactionTrigger = trigger,
           trace = trace,
           cancelTimeout
         )
         runningInteractions += runningInteraction
+        updateListener.onInteractionUpdate(Start(sentEvent, runningInteraction))
         return runningInteraction
       }
 
@@ -302,10 +339,17 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
   }
 }
 
-interface TrackedInteraction<EventType : Any> {
+interface InteractionInFlight<EventType : Any> {
+  /**
+   * List of events recorded for this interaction. This list is dynamically updated from the
+   * main thread as new events get tied to this interaction, and isn't thread safe, so avoid
+   * switching threads with this and make copies instead.
+   */
   val sentEvents: List<SentEvent<EventType>>
   val interactionTrigger: InteractionTrigger?
+}
 
+interface TrackedInteraction<EventType : Any> : InteractionInFlight<EventType> {
   /**
    * Adds the current event instance to the list of events (if not already added).
    * Useful for both [RunningInteraction] & [FinishingInteraction] (to record new events
@@ -321,88 +365,7 @@ interface RunningInteraction<EventType : Any> : TrackedInteraction<EventType> {
 
 interface FinishingInteraction<EventType : Any> : TrackedInteraction<EventType>
 
-interface InteractionResultData<EventType : Any> {
-  /**
-   * Interaction input that was automatically detected when the interaction started to be tracked,
-   * if any.
-   */
-  val interactionTrigger: InteractionTrigger?
-
-  /**
-   * The number of frames that were rendered between the first and the last event in [sentEvents]
-   */
-  val runningFrameCount: Int
-
-  val sentEvents: List<SentEvent<EventType>>
-}
-
 class SentEvent<EventType : Any>(
   val uptime: Duration,
   val event: EventType
 )
-
-class InteractionResultDataPayload<EventType : Any>(
-  override val interactionTrigger: InteractionTrigger?,
-  override val runningFrameCount: Int,
-  override val sentEvents: List<SentEvent<EventType>>,
-) : InteractionResultData<EventType>
-
-sealed class InteractionResult<EventType : Any>(
-  data: InteractionResultData<EventType>
-) : InteractionResultData<EventType> by data {
-
-  /**
-   * An interaction that was started and then canceled.
-   */
-  class Canceled<EventType : Any>(
-    data: InteractionResultData<EventType>,
-    val cancelReason: String,
-    val cancelUptime: Duration
-  ) : InteractionResult<EventType>(data) {
-    val startToCancel: Duration
-      get() = cancelUptime - sentEvents.first().uptime
-  }
-
-  /**
-   * An interaction that was started, finished and the UI change was visible to the user
-   * (frame rendered).
-   */
-  class Finished<EventType : Any>(
-    data: InteractionResultData<EventType>,
-    val endFrameRenderedUptime: Duration
-  ) : InteractionResult<EventType>(data) {
-    val startToEndFrameRendered: Duration
-      get() = endFrameRenderedUptime - sentEvents.first().uptime
-  }
-
-  override fun toString(): String {
-    return buildString {
-      append("InteractionResult.${this@InteractionResult::class.java.simpleName}")
-      append("(")
-      append(
-        when (this@InteractionResult) {
-          is Canceled<*> -> "cancelReason=\"$cancelReason\", startToCancel=${
-            startToCancel.toString(MILLISECONDS)
-          }, "
-
-          is Finished<*> -> "startToEndFrameRendered=${
-            startToEndFrameRendered.toString(MILLISECONDS)
-          }, "
-        }
-      )
-      append("runningFrameCount=$runningFrameCount, ")
-      append("events=${sentEvents.map { it.event }}, ")
-      interactionTrigger?.let {
-        append(
-          "inputToStart=${
-            (sentEvents.first().uptime - it.triggerUptime).toString(
-              MILLISECONDS
-            )
-          }, "
-        )
-      }
-      append("interactionInput=$interactionTrigger")
-      append(")")
-    }
-  }
-}

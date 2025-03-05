@@ -103,6 +103,31 @@ object SafeTrace {
   }
 
   /**
+   * Begins and ends a section immediately. Useful for reporting information in the trace.
+   */
+  @JvmStatic
+  fun logSection(label: String) {
+    if (!isCurrentlyTracing) {
+      return
+    }
+    androidx.tracing.Trace.beginSection(label.take(MAX_LABEL_LENGTH))
+    androidx.tracing.Trace.endSection()
+  }
+
+  /**
+   * @see [logSection]
+   */
+  @JvmStatic
+  inline fun logSection(crossinline labelLambda: () -> String) {
+    if (!isCurrentlyTracing) {
+      return
+    }
+    val label = labelLambda().take(MAX_LABEL_LENGTH)
+    androidx.tracing.Trace.beginSection(label)
+    androidx.tracing.Trace.endSection()
+  }
+
+  /**
    * Writes a trace message to indicate that a given section of code has ended. This call must
    * be preceded by a corresponding call to {@link #beginSection(String)}. Calling this method
    * will mark the end of the most recently begun section of code, so care must be taken to

@@ -32,8 +32,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class ExampleApplication : Application() {
 
-  private val interactionRuleClient = InteractionRuleClient<InteractionEvent> { result ->
-    Log.d("ExampleApplication", "$result")
+  private val interactionRuleClient = InteractionRuleClient<InteractionEvent> { update ->
+    Log.d("ExampleApplication", "$update")
   }
 
   private lateinit var interactionOverlay: WindowOverlay
