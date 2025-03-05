@@ -13,6 +13,8 @@ public final class papa/SafeTrace {
 	public static final fun forceTraceable ()V
 	public static final fun isCurrentlyTracing ()Z
 	public static final fun isTraceable ()Z
+	public static final fun logSection (Ljava/lang/String;)V
+	public static final fun logSection (Lkotlin/jvm/functions/Function0;)V
 }
 
 public final class papa/SafeTraceFunctionsKt {
