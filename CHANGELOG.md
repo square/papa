@@ -1,6 +1,16 @@
 Change Log
 ==========
 
+## Version 0.30
+_2025-03_06_
+
+* `InteractionResultListener` is now constructed with a `InteractionUpdateListener` instead of `InteractionResultListener`. You can migrate progressively by leveraging `InteractionResultListener.asInteractionUpdateListener()` which allows you to keep the code mostly unchanged. The main difference is that `InteractionResultListener` would only call back for completed interactions (cancel or rendered), whereas `InteractionUpdateListener` calls back for any interaction update (start, record event, cancel, finish, rendered). The cancelation case is also now clearly broken up into 3 cases: CanceledOnEvent, CanceledOnTimeout and CanceledOnRuleRemoved.
+* Removed the `Main Message Interaction` async trace sections which were way too noisy and not useful as you couldn't know which one to query for in a perfetto trace.
+* Stopped recording the number of frames that rendered during an interaction, as that could trigger an increase in number of scheduled frames.
+* Added new instant trace sections when starting and finishing interactions, all starting with a `PAPA-` prefix.
+* Adding `SafeTrace.logSection(label)` which beings and ends a trace section immediately. Useful for reporting information in the trace.
+
+[Full diff](https://github.com/square/papa/compare/v0.29...v0.30)
 
 ## Version 0.29
 _2024-12_09_
