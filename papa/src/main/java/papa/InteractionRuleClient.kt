@@ -1,12 +1,12 @@
 package papa
 
-import papa.InteractionUpdate.CancelOnEvent
-import papa.InteractionUpdate.CancelOnRuleRemoved
-import papa.InteractionUpdate.CancelOnTimeout
-import papa.InteractionUpdate.Finish
-import papa.InteractionUpdate.RecordEvent
-import papa.InteractionUpdate.Rendered
-import papa.InteractionUpdate.Start
+import papa.InteractionUpdated.CanceledOnEvent
+import papa.InteractionUpdated.CanceledOnRuleRemoved
+import papa.InteractionUpdated.CanceledOnTimeout
+import papa.InteractionUpdated.Finished
+import papa.InteractionUpdated.EventRecorded
+import papa.InteractionUpdated.FrameRendered
+import papa.InteractionUpdated.Started
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.nanoseconds
@@ -15,54 +15,8 @@ interface InteractionRuleBuilder<EventType : Any> {
   fun addInteractionRule(block: InteractionScope<EventType>.() -> Unit): RemovableInteraction
 }
 
-sealed interface InteractionUpdate<EventType : Any> {
-  val interaction: InteractionInFlight<EventType>
-
-  sealed interface WithEvent<EventType : Any> : InteractionUpdate<EventType> {
-    val event: SentEvent<EventType>
-  }
-
-  sealed interface Cancel<EventType : Any> : InteractionUpdate<EventType>
-
-  data class Start<EventType : Any>(
-    override val event: SentEvent<EventType>,
-    override val interaction: InteractionInFlight<EventType>
-  ) : WithEvent<EventType>
-
-  data class RecordEvent<EventType : Any>(
-    override val event: SentEvent<EventType>,
-    override val interaction: InteractionInFlight<EventType>
-  ) : WithEvent<EventType>
-
-  data class CancelOnEvent<EventType : Any>(
-    override val event: SentEvent<EventType>,
-    override val interaction: InteractionInFlight<EventType>,
-    val reason: String
-  ) : WithEvent<EventType>, Cancel<EventType>
-
-  data class CancelOnRuleRemoved<EventType : Any>(
-    override val interaction: InteractionInFlight<EventType>
-  ) : InteractionUpdate<EventType>, Cancel<EventType>
-
-  data class CancelOnTimeout<EventType : Any>(
-    val timeout: Duration,
-    override val interaction: InteractionInFlight<EventType>
-  ) : InteractionUpdate<EventType>, Cancel<EventType>
-
-  data class Finish<EventType : Any>(
-    override val event: SentEvent<EventType>,
-    override val interaction: InteractionInFlight<EventType>
-  ) : WithEvent<EventType>
-
-  data class Rendered<EventType : Any>(
-    override val event: SentEvent<EventType>,
-    override val interaction: InteractionInFlight<EventType>,
-    val frameRenderedUptime: Duration
-  ) : WithEvent<EventType>
-}
-
 fun interface InteractionUpdateListener<EventType : Any> {
-  fun onInteractionUpdate(update: InteractionUpdate<EventType>)
+  fun onInteractionUpdate(update: InteractionUpdated<EventType>)
 }
 
 fun interface RemovableInteraction {
@@ -168,7 +122,7 @@ private class InteractionEngine<ParentEventType : Any>(
       }
       stopRunning()
       trace.endTrace()
-      updateListener.onInteractionUpdate(CancelOnTimeout(cancelTimeout, this))
+      updateListener.onInteractionUpdate(CanceledOnTimeout(cancelTimeout, this))
     }
 
     fun cancelOnRuleRemoved() {
@@ -177,7 +131,7 @@ private class InteractionEngine<ParentEventType : Any>(
       }
       stopRunning()
       trace.endTrace()
-      updateListener.onInteractionUpdate(CancelOnRuleRemoved(this))
+      updateListener.onInteractionUpdate(CanceledOnRuleRemoved(this))
     }
 
     init {
@@ -199,7 +153,7 @@ private class InteractionEngine<ParentEventType : Any>(
       }
       stopRunning()
       trace.endTrace()
-      updateListener.onInteractionUpdate(CancelOnEvent(sentEvent, this, reason))
+      updateListener.onInteractionUpdate(CanceledOnEvent(sentEvent, this, reason))
     }
 
     override fun finish(): FinishingInteraction<ParentEventType> {
@@ -210,7 +164,7 @@ private class InteractionEngine<ParentEventType : Any>(
       stopRunning()
       finishingInteractions += this
       addRecordedEvent()
-      updateListener.onInteractionUpdate(Finish(sentEvent, this))
+      updateListener.onInteractionUpdate(Finished(sentEvent, this))
 
       // When compiling with Java11 we get AbstractMethodError at runtime when this is a lambda.
       @Suppress("ObjectLiteralToLambda")
@@ -219,7 +173,7 @@ private class InteractionEngine<ParentEventType : Any>(
           trace.endTrace()
           val interaction = this@RealRunningInteraction
           finishingInteractions -= interaction
-          updateListener.onInteractionUpdate(Rendered(sentEvent, interaction, frameRenderedUptime))
+          updateListener.onInteractionUpdate(FrameRendered(sentEvent, interaction, frameRenderedUptime))
         }
       })
       return this
@@ -231,7 +185,7 @@ private class InteractionEngine<ParentEventType : Any>(
         "PAPA-recordEvent:${sentEvent.event}"
       }
       addRecordedEvent()
-      updateListener.onInteractionUpdate(RecordEvent(sentEvent, this))
+      updateListener.onInteractionUpdate(EventRecorded(sentEvent, this))
     }
 
     private fun addRecordedEvent() {
@@ -279,7 +233,7 @@ private class InteractionEngine<ParentEventType : Any>(
           cancelTimeout
         )
         runningInteractions += runningInteraction
-        updateListener.onInteractionUpdate(Start(sentEvent, runningInteraction))
+        updateListener.onInteractionUpdate(Started(sentEvent, runningInteraction))
         return runningInteraction
       }
 
