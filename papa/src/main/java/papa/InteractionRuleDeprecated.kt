@@ -1,9 +1,9 @@
 package papa
 
 import papa.InteractionResult.Finished
-import papa.InteractionUpdate.CancelOnEvent
-import papa.InteractionUpdate.CancelOnTimeout
-import papa.InteractionUpdate.Rendered
+import papa.InteractionUpdated.CanceledOnEvent
+import papa.InteractionUpdated.CanceledOnTimeout
+import papa.InteractionUpdated.FrameRendered
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.DurationUnit.MILLISECONDS
@@ -16,7 +16,7 @@ fun interface InteractionResultListener<EventType : Any> {
 fun <EventType : Any> InteractionResultListener<EventType>.asInteractionUpdateListener(): InteractionUpdateListener<EventType> {
   return InteractionUpdateListener { update ->
     when (update) {
-      is CancelOnTimeout -> {
+      is CanceledOnTimeout -> {
         onInteractionResult(
           InteractionResult.Canceled(
             data = InteractionResultDataPayload(
@@ -31,7 +31,7 @@ fun <EventType : Any> InteractionResultListener<EventType>.asInteractionUpdateLi
         )
       }
 
-      is CancelOnEvent -> {
+      is CanceledOnEvent -> {
         onInteractionResult(
           InteractionResult.Canceled(
             data = InteractionResultDataPayload(
@@ -46,7 +46,7 @@ fun <EventType : Any> InteractionResultListener<EventType>.asInteractionUpdateLi
         )
       }
 
-      is Rendered -> {
+      is FrameRendered -> {
         onInteractionResult(
           Finished(
             data = InteractionResultDataPayload(
