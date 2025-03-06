@@ -1,6 +1,7 @@
 package papa
 
 import papa.InteractionUpdate.CancelOnEvent
+import papa.InteractionUpdate.CancelOnRuleRemoved
 import papa.InteractionUpdate.CancelOnTimeout
 import papa.InteractionUpdate.Finish
 import papa.InteractionUpdate.RecordEvent
@@ -21,6 +22,8 @@ sealed interface InteractionUpdate<EventType : Any> {
     val event: SentEvent<EventType>
   }
 
+  sealed interface Cancel<EventType : Any> : InteractionUpdate<EventType>
+
   data class Start<EventType : Any>(
     override val event: SentEvent<EventType>,
     override val interaction: InteractionInFlight<EventType>
@@ -35,12 +38,16 @@ sealed interface InteractionUpdate<EventType : Any> {
     override val event: SentEvent<EventType>,
     override val interaction: InteractionInFlight<EventType>,
     val reason: String
-  ) : WithEvent<EventType>
+  ) : WithEvent<EventType>, Cancel<EventType>
+
+  data class CancelOnRuleRemoved<EventType : Any>(
+    override val interaction: InteractionInFlight<EventType>
+  ) : InteractionUpdate<EventType>, Cancel<EventType>
 
   data class CancelOnTimeout<EventType : Any>(
     val timeout: Duration,
     override val interaction: InteractionInFlight<EventType>
-  ) : InteractionUpdate<EventType>
+  ) : InteractionUpdate<EventType>, Cancel<EventType>
 
   data class Finish<EventType : Any>(
     override val event: SentEvent<EventType>,
@@ -87,7 +94,7 @@ class InteractionRuleClient<EventType : Any>(
     interactionEngines += engine
     return RemovableInteraction {
       Handlers.checkOnMainThread()
-      engine.cancelRunningInteractions("Rule removed")
+      engine.cancelInteractionsOnRuleRemoved()
       interactionEngines -= engine
     }
   }
@@ -134,7 +141,7 @@ private class InteractionEngine<ParentEventType : Any>(
 
   private val onEventCallbacks: Map<Class<out ParentEventType>, List<OnEventScope<ParentEventType, ParentEventType>.() -> Unit>>
 
-  private val runningInteractions = mutableListOf<RunningInteraction<ParentEventType>>()
+  private val runningInteractions = mutableListOf<RealRunningInteraction>()
   private val finishingInteractions = mutableListOf<FinishingInteraction<ParentEventType>>()
 
   val trackedInteractions: List<TrackedInteraction<ParentEventType>>
@@ -162,6 +169,15 @@ private class InteractionEngine<ParentEventType : Any>(
       stopRunning()
       trace.endTrace()
       updateListener.onInteractionUpdate(CancelOnTimeout(cancelTimeout, this))
+    }
+
+    fun cancelOnRuleRemoved() {
+      SafeTrace.logSection {
+        "PAPA-cancel:ruleRemoved"
+      }
+      stopRunning()
+      trace.endTrace()
+      updateListener.onInteractionUpdate(CancelOnRuleRemoved(this))
     }
 
     init {
@@ -281,6 +297,11 @@ private class InteractionEngine<ParentEventType : Any>(
   fun cancelRunningInteractions(reason: String) {
     // Copy list as cancel mutates the backing list.
     runningInteractions.toList().forEach { it.cancel(reason) }
+  }
+
+  fun cancelInteractionsOnRuleRemoved() {
+    // Copy list as cancel mutates the backing list.
+    runningInteractions.toList().forEach { it.cancelOnRuleRemoved() }
   }
 }
 

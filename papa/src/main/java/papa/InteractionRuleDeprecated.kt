@@ -59,7 +59,6 @@ fun <EventType : Any> InteractionResultListener<EventType>.asInteractionUpdateLi
           )
         )
       }
-
       else -> {}
     }
   }
