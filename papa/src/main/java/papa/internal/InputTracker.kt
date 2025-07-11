@@ -16,6 +16,7 @@ import curtains.keyEventInterceptors
 import curtains.phoneWindow
 import curtains.touchEventInterceptors
 import curtains.windowAttachCount
+import papa.Choreographers
 import papa.InputEventTrigger
 import papa.InteractionTriggerWithPayload
 import papa.MainThreadTriggerStack
@@ -92,8 +93,12 @@ internal object InputTracker {
           // we're clearing the event right after the onclick is handled.
           if (isActionUp) {
             val clearEventForPostedClick = Runnable {
-              actionUpTrigger!!.takeOverInteractionTrace()?.endTrace()
-              MainThreadTriggerStack.popTriggeredBy(actionUpTrigger)
+              Choreographers.postOnFrameRendered {
+                // Take over and clear this if it has not already been taken over by the time of the
+                // frame after the click handling.
+                actionUpTrigger!!.takeOverInteractionTrace()?.endTrace()
+                MainThreadTriggerStack.popTriggeredBy(actionUpTrigger)
+              }
             }
 
             val dispatchEnd = SystemClock.uptimeMillis()
