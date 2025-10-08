@@ -29,15 +29,25 @@ object MainThreadTriggerStack {
       return ArrayList(interactionTriggerStack)
     }
 
+  /**
+   * Must be called from the main thread.
+   * Adds [trigger] to the [interactionTriggerStack], it will replace any existing trigger with
+   * the same [InteractionTrigger.name] and [InteractionTrigger.triggerUptime].
+   *
+   * @param endTraceAfterBlock Finish the interaction trace after [block] runs.
+   * @param block The code to run, during whose call stack the trigger added will be available
+   *   on the [interactionTriggerStack] and via [earliestInteractionTrigger].
+   */
   fun <T> triggeredBy(
     trigger: InteractionTrigger,
     endTraceAfterBlock: Boolean,
     block: () -> T
   ): T {
     Handlers.checkOnMainThread()
-    check(interactionTriggerStack.none { it === trigger }) {
-      "Trigger $trigger already in the main thread trigger stack"
-    }
+    // First, remove based on object equality (which uses name/triggerUptime). This has the effect
+    // of replacing any existing same-named, same-timed triggers.
+    // After the block() we remove just this instance from the stack.
+    interactionTriggerStack.removeAll { it == trigger }
     interactionTriggerStack.add(trigger)
     try {
       return block()
