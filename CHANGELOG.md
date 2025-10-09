@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-## Unreleased
+## Version 0.31
 
 * Change `MainThreadTriggerStack.triggeredBy` to replace any triggers in the stack with the same `name` and `triggerUptime`. Add tests to verify this.
 
