@@ -310,6 +310,7 @@ public final class papa/InteractionTrace$Companion {
 
 public abstract interface class papa/InteractionTrigger {
 	public static final field Companion Lpapa/InteractionTrigger$Companion;
+	public abstract fun equals (Ljava/lang/Object;)Z
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun getTriggerUptime-UwyO8pc ()J
 	public abstract fun takeOverInteractionTrace ()Lpapa/InteractionTrace;
@@ -321,6 +322,7 @@ public final class papa/InteractionTrigger$Companion {
 
 public final class papa/InteractionTriggerWithPayload : papa/InteractionTrigger {
 	public synthetic fun <init> (JLjava/lang/String;Lpapa/InteractionTrace;Ljava/lang/Object;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
 	public fun getName ()Ljava/lang/String;
 	public final fun getPayload ()Ljava/lang/Object;
 	public fun getTriggerUptime-UwyO8pc ()J
@@ -582,6 +584,7 @@ public final class papa/SentEvent {
 public final class papa/SimpleInteractionTrigger : papa/InteractionTrigger {
 	public synthetic fun <init> (JLjava/lang/String;Lpapa/InteractionTrace;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (JLjava/lang/String;Lpapa/InteractionTrace;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
 	public fun getName ()Ljava/lang/String;
 	public fun getTriggerUptime-UwyO8pc ()J
 	public fun takeOverInteractionTrace ()Lpapa/InteractionTrace;
