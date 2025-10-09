@@ -67,7 +67,7 @@ class PerfMonitoringTest {
       (activityEvent, lifecycle) in listOf(
         firstActivityOnCreate to "onCreate()",
         appStart.firstActivityOnStart to "onStart()",
-        appStart.firstActivityOnResume to "onResume()",
+        appStart.firstActivityOnResume to "onResume()"
         // Unfortunately the bootstrap activity doesn't get laid out / drawn
         // appStart.firstGlobalLayout to "onGlobalLayout()",
         // appStart.firstPreDraw to "onPreDraw()",
@@ -111,11 +111,13 @@ class PerfMonitoringTest {
         val dialog = AlertDialog.Builder(activity)
           // The standard dialog buttons are in a scrollview.
           // Scrollable containers delay the pressed state, making the test flaky.
-          .setView(Button(activity).apply {
-            id = R.id.dialog_view
-            // The tap is late (late, latte) and it leads to frozen frames (frozen, frappé coffee)
-            text = "Better latte than frappé"
-          })
+          .setView(
+            Button(activity).apply {
+              id = R.id.dialog_view
+              // The tap is late (late, latte) and it leads to frozen frames (frozen, frappé coffee)
+              text = "Better latte than frappé"
+            }
+          )
           .show()
 
         dialog.window!!.touchEventInterceptors += TouchEventInterceptor { motionEvent, dispatch ->
@@ -127,7 +129,8 @@ class PerfMonitoringTest {
                   if (view is AndroidView) {
                     append("pressed:${view.view.isPressed}")
                   }
-                })
+                }
+              )
           }
         }
       }

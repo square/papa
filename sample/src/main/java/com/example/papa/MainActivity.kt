@@ -48,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     findViewById<View>(R.id.draw_permission_button).setOnClickListener {
       if (VERSION.SDK_INT >= VERSION_CODES.M) {
         val intent = interactionOverlay.newManageOverlayIntent()
+        @Suppress("DEPRECATION")
         startActivityForResult(intent, 1)
       }
     }

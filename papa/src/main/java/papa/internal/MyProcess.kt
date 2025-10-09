@@ -38,8 +38,14 @@ internal sealed class MyProcess {
             for (process in runningProcesses) {
               if (process.pid == myPid) {
                 val appTasks = activityManager.appTasks.toAppTasks()
-                val processStartRealtimeMillis = Processes.readProcessStartRealtimeMillis(myPid)
-                return@let MyProcessData(process, processStartRealtimeMillis, appTasks)
+                val processStartRealtimeMillis = Processes.readProcessStartRealtimeMillis(
+                  myPid
+                )
+                return@let MyProcessData(
+                  process,
+                  processStartRealtimeMillis,
+                  appTasks
+                )
               }
             }
             val processIds = runningProcesses.map { it.pid }
@@ -50,7 +56,9 @@ internal sealed class MyProcess {
               )
             )
           }
-            ?: ErrorRetrievingMyProcessData(RuntimeException("ActivityManager.getRunningAppProcesses() returned null"))
+            ?: ErrorRetrievingMyProcessData(
+              RuntimeException("ActivityManager.getRunningAppProcesses() returned null")
+            )
         } catch (exception: SecurityException) {
           // This is a known possible error for isolated processes.
           // https://github.com/square/leakcanary/issues/948

@@ -38,7 +38,10 @@ class PapaTestInstrumentationRunner : AndroidJUnitRunner() {
             when (xpp.name) {
               "hierarchy" -> {
                 result.appendLine(
-                  "view hierarchy with screen rotation ${xpp.getAttributeValue(null, "rotation")}"
+                  "view hierarchy with screen rotation ${xpp.getAttributeValue(
+                    null,
+                    "rotation"
+                  )}"
                 )
               }
               "node" -> {
@@ -46,7 +49,9 @@ class PapaTestInstrumentationRunner : AndroidJUnitRunner() {
                   "text", "resource-id", "checked", "enabled", "focused", "selected", "bounds",
                   "visible-to-user", "package"
                 )
-                val className = xpp.getAttributeValue(null, "class").substringAfterLast(".")
+                val className = xpp.getAttributeValue(null, "class").substringAfterLast(
+                  "."
+                )
                 val attributes = (0 until xpp.attributeCount)
                   .asSequence()
                   .mapNotNull { index ->

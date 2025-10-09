@@ -227,7 +227,8 @@ class MainThreadTriggerStackTest {
   fun `pushTriggeredBy allows different trigger instances with same properties`() {
     val trigger1 = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
     val trigger2 = SimpleInteractionTrigger(
-      1000.nanoseconds, "test-trigger"
+      1000.nanoseconds,
+      "test-trigger"
     ) // Same properties, different instance
 
     MainThreadTriggerStack.pushTriggeredBy(trigger1)
@@ -282,10 +283,12 @@ class MainThreadTriggerStackTest {
     )
 
     MainThreadTriggerStack.triggeredBy(
-      regularTrigger, endTraceAfterBlock = false
+      regularTrigger,
+      endTraceAfterBlock = false
     ) {
       MainThreadTriggerStack.triggeredBy(
-        inputEventTrigger, endTraceAfterBlock = false
+        inputEventTrigger,
+        endTraceAfterBlock = false
       ) {
         val inputTriggers = MainThreadTriggerStack.inputEventInteractionTriggers
         // Both triggers should be filtered out since neither has InputEventTrigger payload
@@ -320,11 +323,13 @@ class MainThreadTriggerStackTest {
       assertEquals(outerTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
 
       MainThreadTriggerStack.triggeredBy(
-        innerTrigger, endTraceAfterBlock = false
+        innerTrigger,
+        endTraceAfterBlock = false
       ) {
         assertEquals(2, MainThreadTriggerStack.currentTriggers.size)
         assertEquals(
-          outerTrigger, MainThreadTriggerStack.earliestInteractionTrigger
+          outerTrigger,
+          MainThreadTriggerStack.earliestInteractionTrigger
         ) // Still earliest
 
         val triggers = MainThreadTriggerStack.currentTriggers

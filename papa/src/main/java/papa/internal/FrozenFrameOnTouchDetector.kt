@@ -43,7 +43,9 @@ internal object FrozenFrameOnTouchDetector {
               } else {
                 val handledTime = SystemClock.uptimeMillis()
                 if (handledTime - motionEvent.eventTime > FrozenFrameOnTouch.FROZEN_FRAME_THRESHOLD) {
-                  val windowTitle = window.attributes.title.toString().substringAfter("/")
+                  val windowTitle = window.attributes.title.toString().substringAfter(
+                    "/"
+                  )
                   touchDownWaitingRender = MotionEvent.obtain(motionEvent)
                   // When compiling with Java11 we get AbstractMethodError at runtime when this is a lambda.
                   @Suppress("ObjectLiteralToLambda")
@@ -83,9 +85,11 @@ internal object FrozenFrameOnTouchDetector {
             val action = motionEvent.action
 
             val processedFrozenDown =
-              (touchDownWaitingRender != null &&
-                action == MotionEvent.ACTION_DOWN &&
-                repeatTouchDownCount == 0)
+              (
+                touchDownWaitingRender != null &&
+                  action == MotionEvent.ACTION_DOWN &&
+                  repeatTouchDownCount == 0
+                )
 
             val processedUpForFrozenDown = touchDownWaitingRender != null &&
               action == MotionEvent.ACTION_UP &&

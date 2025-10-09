@@ -87,7 +87,7 @@ internal class LaunchTracker(
         activityHash = activityHash,
         startUptimeMillis = SystemClock.uptimeMillis(),
         startRealtimeMillis = SystemClock.elapsedRealtime(),
-        invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis,
+        invisibleDurationRealtimeMillis = invisibleDurationRealtimeMillis
       )
     }
   }

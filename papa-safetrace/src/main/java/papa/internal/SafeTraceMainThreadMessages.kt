@@ -42,8 +42,11 @@ internal object SafeTraceMainThreadMessages {
             before &&
             // Don't add a trace section for Choreographer#doFrame, as that messes up
             // Macrobenchmark: https://issuetracker.google.com/issues/340206285
-            "android.view.Choreographer\$FrameDisplayEventReceiver" !in messageAsString) {
-            val traceSection = SafeTraceSetup.mainThreadSectionNameMapper.mapSectionName(messageAsString)
+            "android.view.Choreographer\$FrameDisplayEventReceiver" !in messageAsString
+          ) {
+            val traceSection = SafeTraceSetup.mainThreadSectionNameMapper.mapSectionName(
+              messageAsString
+            )
             SafeTrace.beginSection(traceSection)
             currentlyTracing = true
           }

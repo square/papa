@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicReference
 
 fun Point.sendTap(
-  downTime: Long = SystemClock.uptimeMillis(),
+  downTime: Long = SystemClock.uptimeMillis()
 ) {
   val instrumentation = InstrumentationRegistry.getInstrumentation()
   instrumentation.sendPointerSync(
@@ -68,12 +68,13 @@ val ViewInteraction.location: Point
     return viewCenterPoint.get()!!
   }
 
- fun dismissCheckForUpdates() {
+fun dismissCheckForUpdates() {
   val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
   val deprecationDialog = uiDevice.wait(
     Until.findObject(
       By.pkg("android").depth(0)
-    ), 500
+    ),
+    500
   )
   if (deprecationDialog != null) {
     val okButton = deprecationDialog.findObject(By.text("OK"))!!

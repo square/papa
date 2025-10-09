@@ -24,8 +24,9 @@ import androidx.annotation.RequiresApi
  */
 class WindowOverlay(
   context: Context,
-  private val overlayLayoutParamsFactory: () -> WindowManager.LayoutParams = ::newNotTouchableWindowLayoutParams,
-  private val overlayViewFactory: (Context) -> View,
+  private val overlayLayoutParamsFactory: () -> WindowManager.LayoutParams =
+    ::newNotTouchableWindowLayoutParams,
+  private val overlayViewFactory: (Context) -> View
 ) {
 
   private val appContext = context.applicationContext
@@ -75,17 +76,19 @@ class WindowOverlay(
     private val TAG = WindowOverlay::class.java.simpleName
 
     fun newNotTouchableWindowLayoutParams(): WindowManager.LayoutParams {
-      val windowType = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
+      val windowType = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
         @Suppress("DEPRECATION")
         WindowManager.LayoutParams.TYPE_PHONE
-      else
+      } else {
         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+      }
 
       return WindowManager.LayoutParams(
         WindowManager.LayoutParams.MATCH_PARENT,
         WindowManager.LayoutParams.MATCH_PARENT,
         windowType,
-        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+          WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
         PixelFormat.TRANSLUCENT
       )
     }

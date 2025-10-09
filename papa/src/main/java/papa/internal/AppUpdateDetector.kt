@@ -112,7 +112,9 @@ internal class AppUpdateDetector private constructor(
           .let { fingerprint ->
             if (fingerprint == UNKNOWN_BUILD_FINGERPRINT) {
               null
-            } else fingerprint != Build.FINGERPRINT
+            } else {
+              fingerprint != Build.FINGERPRINT
+            }
           }
 
       val previousElapsedRealtime =
@@ -256,7 +258,9 @@ internal class AppUpdateDetector private constructor(
         } catch (throwable: Throwable) {
           handler.post {
             block { appStartData ->
-              appStartData.copy(appUpdateData = ErrorRetrievingAppUpdateData(throwable))
+              appStartData.copy(
+                appUpdateData = ErrorRetrievingAppUpdateData(throwable)
+              )
             }
           }
         }

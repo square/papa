@@ -42,7 +42,7 @@ internal class PerfsActivityLifecycleCallbacks private constructor(
 
   private class OnCreateRecord(
     val sameMessage: Boolean,
-    val hasSavedState: Boolean,
+    val hasSavedState: Boolean
   )
 
   private val launchTracker = LaunchTracker(appLaunchedCallback)

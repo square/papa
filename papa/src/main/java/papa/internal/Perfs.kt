@@ -151,7 +151,10 @@ internal object Perfs {
     initialized = true
     notInitializedReason = ""
     val application: Application = context
-    ApplicationHolder.install(application, myProcessInfo.info.importance == IMPORTANCE_FOREGROUND)
+    ApplicationHolder.install(
+      application,
+      myProcessInfo.info.importance == IMPORTANCE_FOREGROUND
+    )
 
     val elapsedSinceProcessStartRealtimeMillis =
       SystemClock.elapsedRealtime() - myProcessInfo.processStartRealtimeMillis
@@ -208,11 +211,13 @@ internal object Perfs {
       val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
       val applicationExitInfos: List<ApplicationExitInfo> =
         activityManager.getHistoricalProcessExitReasons(null, 0, 0)
-      // On first run, applicationExitInfos list will be empty. Return 0 in this case.  
+      // On first run, applicationExitInfos list will be empty. Return 0 in this case.
       applicationExitInfos.firstOrNull()?.let {
         initCalledCurrentTimeMillis - it.timestamp
       } ?: 0
-    } else 0
+    } else {
+      0
+    }
 
     val processInfo = myProcessInfo.info
     appStartData = AppStartData(
@@ -282,7 +287,8 @@ internal object Perfs {
       { updateAppStartData ->
         appStartData = updateAppStartData(appStartData)
       },
-      appVisibilityStateCallback, appLaunchedCallback
+      appVisibilityStateCallback,
+      appLaunchedCallback
     )
 
     application.trackAppUpgrade { updateAppStartData ->

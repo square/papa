@@ -1,7 +1,7 @@
 package papa
 
 class EventFrameLabeler(
-  private val doFrameSectionNamePrefix: String = DO_FRAME_SECTION,
+  private val doFrameSectionNamePrefix: String = DO_FRAME_SECTION
 ) {
 
   private var frameCount = 0
