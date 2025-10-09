@@ -12,7 +12,7 @@ sealed interface InteractionTrigger {
 
   companion object {
     fun triggerNow(
-      name: String,
+      name: String
     ): InteractionTrigger {
       val nowUptimeNanos = System.nanoTime()
       val interactionTrace = InteractionTrace.startNow(name)
@@ -25,7 +25,7 @@ sealed interface InteractionTrigger {
 class SimpleInteractionTrigger(
   override val triggerUptime: Duration,
   override val name: String,
-  private var interactionTrace: InteractionTrace? = null,
+  private var interactionTrace: InteractionTrace? = null
 ) : InteractionTrigger {
 
   override fun takeOverInteractionTrace(): InteractionTrace? {

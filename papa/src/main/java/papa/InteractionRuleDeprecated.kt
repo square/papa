@@ -23,7 +23,7 @@ fun <EventType : Any> InteractionResultListener<EventType>.asInteractionUpdateLi
               interactionTrigger = update.interaction.interactionTrigger,
               // This has been removed.
               runningFrameCount = 0,
-              sentEvents = update.interaction.sentEvents,
+              sentEvents = update.interaction.sentEvents
             ),
             cancelUptime = System.nanoTime().nanoseconds,
             cancelReason = "Timeout after ${update.timeout}"
@@ -38,7 +38,7 @@ fun <EventType : Any> InteractionResultListener<EventType>.asInteractionUpdateLi
               interactionTrigger = update.interaction.interactionTrigger,
               // This has been removed.
               runningFrameCount = 0,
-              sentEvents = update.interaction.sentEvents,
+              sentEvents = update.interaction.sentEvents
             ),
             cancelUptime = update.event.uptime,
             cancelReason = update.reason
@@ -53,7 +53,7 @@ fun <EventType : Any> InteractionResultListener<EventType>.asInteractionUpdateLi
               interactionTrigger = update.interaction.interactionTrigger,
               // This has been removed.
               runningFrameCount = 0,
-              sentEvents = update.interaction.sentEvents,
+              sentEvents = update.interaction.sentEvents
             ),
             endFrameRenderedUptime = update.frameRenderedUptime
           )
@@ -98,13 +98,15 @@ sealed class InteractionResult<EventType : Any>(
       append("(")
       append(
         when (this@InteractionResult) {
-          is Canceled<*> -> "cancelReason=\"$cancelReason\", startToCancel=${
+          is Canceled<*> ->
+            "cancelReason=\"$cancelReason\", startToCancel=${
             startToCancel.toString(MILLISECONDS)
-          }, "
+            }, "
 
-          is Finished<*> -> "startToEndFrameRendered=${
+          is Finished<*> ->
+            "startToEndFrameRendered=${
             startToEndFrameRendered.toString(MILLISECONDS)
-          }, "
+            }, "
         }
       )
       append("runningFrameCount=$runningFrameCount, ")
@@ -112,9 +114,9 @@ sealed class InteractionResult<EventType : Any>(
       interactionTrigger?.let {
         append(
           "inputToStart=${
-            (sentEvents.first().uptime - it.triggerUptime).toString(
-              MILLISECONDS
-            )
+          (sentEvents.first().uptime - it.triggerUptime).toString(
+            MILLISECONDS
+          )
           }, "
         )
       }
@@ -142,5 +144,5 @@ interface InteractionResultData<EventType : Any> {
 class InteractionResultDataPayload<EventType : Any>(
   override val interactionTrigger: InteractionTrigger?,
   override val runningFrameCount: Int,
-  override val sentEvents: List<SentEvent<EventType>>,
+  override val sentEvents: List<SentEvent<EventType>>
 ) : InteractionResultData<EventType>

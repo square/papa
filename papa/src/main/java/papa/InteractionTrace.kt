@@ -5,7 +5,7 @@ fun interface InteractionTrace {
 
   companion object {
     fun startNow(
-      name: String,
+      name: String
     ): InteractionTrace {
       val cookie = System.nanoTime().rem(Int.MAX_VALUE).toInt()
       SafeTrace.beginAsyncSection(name, cookie)

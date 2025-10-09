@@ -45,7 +45,7 @@ class TouchLagActivity : AppCompatActivity() {
       .setDuration(200)
       .setStartDelay(800)
       .setListener(object : AnimatorListenerAdapter() {
-        override fun onAnimationEnd(animation: Animator?) {
+        override fun onAnimationEnd(animation: Animator) {
           cover.visibility = View.GONE
           cover.alpha = 1f
         }

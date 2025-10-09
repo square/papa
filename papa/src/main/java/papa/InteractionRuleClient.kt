@@ -3,8 +3,8 @@ package papa
 import papa.InteractionUpdated.CanceledOnEvent
 import papa.InteractionUpdated.CanceledOnRuleRemoved
 import papa.InteractionUpdated.CanceledOnTimeout
-import papa.InteractionUpdated.Finished
 import papa.InteractionUpdated.EventRecorded
+import papa.InteractionUpdated.Finished
 import papa.InteractionUpdated.FrameRendered
 import papa.InteractionUpdated.Started
 import kotlin.time.Duration
@@ -28,7 +28,7 @@ interface InteractionEventSink<EventType> {
 }
 
 class InteractionRuleClient<EventType : Any>(
-  private val updateListener: InteractionUpdateListener<EventType>,
+  private val updateListener: InteractionUpdateListener<EventType>
 ) : InteractionRuleBuilder<EventType>, InteractionEventSink<EventType> {
 
   private val interactionEngines = mutableListOf<InteractionEngine<EventType>>()
@@ -80,7 +80,9 @@ class InteractionScope<ParentEventType : Any> {
     mutableListOf<Pair<Class<out ParentEventType>, OnEventScope<ParentEventType, ParentEventType>.() -> Unit>>()
 
   @RuleMarker
-  inline fun <reified EventType : ParentEventType> onEvent(noinline block: OnEventScope<ParentEventType, EventType>.() -> Unit) {
+  inline fun <reified EventType : ParentEventType> onEvent(
+    noinline block: OnEventScope<ParentEventType, EventType>.() -> Unit
+  ) {
     @Suppress("UNCHECKED_CAST")
     onEventCallbacks.add(
       EventType::class.java to (block as OnEventScope<ParentEventType, ParentEventType>.() -> Unit)
@@ -135,7 +137,10 @@ private class InteractionEngine<ParentEventType : Any>(
     }
 
     init {
-      Handlers.mainThreadHandler.postDelayed(cancelOnTimeout, cancelTimeout.inWholeMilliseconds)
+      Handlers.mainThreadHandler.postDelayed(
+        cancelOnTimeout,
+        cancelTimeout.inWholeMilliseconds
+      )
       addRecordedEvent()
     }
 
@@ -173,7 +178,9 @@ private class InteractionEngine<ParentEventType : Any>(
           trace.endTrace()
           val interaction = this@RealRunningInteraction
           finishingInteractions -= interaction
-          updateListener.onInteractionUpdate(FrameRendered(sentEvent, interaction, frameRenderedUptime))
+          updateListener.onInteractionUpdate(
+            FrameRendered(sentEvent, interaction, frameRenderedUptime)
+          )
         }
       })
       return this
@@ -211,9 +218,8 @@ private class InteractionEngine<ParentEventType : Any>(
   }
 
   fun sendEvent(
-    sentEvent: SentEvent<ParentEventType>,
+    sentEvent: SentEvent<ParentEventType>
   ) {
-
     val realEventScope = object : OnEventScope<ParentEventType, ParentEventType> {
       override fun runningInteractions() = runningInteractions.toList()
 
@@ -222,7 +228,7 @@ private class InteractionEngine<ParentEventType : Any>(
       override fun startInteraction(
         trigger: InteractionTrigger?,
         trace: InteractionTrace,
-        cancelTimeout: Duration,
+        cancelTimeout: Duration
       ): RunningInteraction<ParentEventType> {
         SafeTrace.logSection {
           "PAPA-startInteraction:${sentEvent.event}"
@@ -271,7 +277,7 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
     trace: InteractionTrace = trigger?.takeOverInteractionTrace() ?: InteractionTrace.startNow(
       event.toString()
     ),
-    cancelTimeout: Duration = 1.minutes,
+    cancelTimeout: Duration = 1.minutes
   ): RunningInteraction<ParentEventType>
 
   /**
@@ -283,7 +289,7 @@ interface OnEventScope<ParentEventType : Any, EventType : ParentEventType> {
     trigger: InteractionTrigger? = MainThreadTriggerStack.earliestInteractionTrigger,
     trace: InteractionTrace = trigger?.takeOverInteractionTrace() ?: InteractionTrace.startNow(
       event.toString()
-    ),
+    )
   ): FinishingInteraction<ParentEventType> {
     return startInteraction(
       trigger = trigger,

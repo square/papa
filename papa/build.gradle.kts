@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-  compileSdk = 31
+  compileSdk = 36
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -33,9 +33,11 @@ android {
 }
 
 tasks.withType<KotlinCompile> {
-  kotlinOptions {
-    freeCompilerArgs = listOfNotNull(
-      "-Xopt-in=kotlin.RequiresOptIn"
+  compilerOptions {
+    freeCompilerArgs.set(
+      listOfNotNull(
+        "-opt-in=kotlin.RequiresOptIn"
+      )
     )
   }
 }

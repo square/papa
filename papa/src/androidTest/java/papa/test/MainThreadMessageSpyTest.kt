@@ -90,16 +90,18 @@ class MainThreadMessageSpyTest {
       val blockFrame = CountDownLatch(1)
       val waitForFrame = CountDownLatch(1)
       scenario.onActivity { activity ->
-        activity.setContentView(Button(activity).apply {
-          text = "Click Me"
-          setOnTouchListener { _, _ ->
-            spyEnabled = MainThreadMessageSpy.enabled
-            isInMainThreadMessage = MainThreadMessageSpy.isInMainThreadMessage
-            currentMessageAsString = MainThreadMessageSpy.currentMessageAsString
-            handledTap.countDown()
-            false
+        activity.setContentView(
+          Button(activity).apply {
+            text = "Click Me"
+            setOnTouchListener { _, _ ->
+              spyEnabled = MainThreadMessageSpy.enabled
+              isInMainThreadMessage = MainThreadMessageSpy.isInMainThreadMessage
+              currentMessageAsString = MainThreadMessageSpy.currentMessageAsString
+              handledTap.countDown()
+              false
+            }
           }
-        })
+        )
         Choreographer.getInstance().postFrameCallback {
           // unblock clicking code.
           waitForFrame.countDown()
@@ -221,26 +223,28 @@ class MainThreadMessageSpyTest {
       dismissCheckForUpdates()
       val inputEventRendered = CountDownLatch(1)
       scenario.onActivity { activity ->
-        activity.setContentView(Button(activity).apply {
-          text = "Click Me"
-          setOnTouchListener { _, motionEvent ->
-            if (motionEvent.action == MotionEvent.ACTION_UP) {
-              // Update UI, triggering a frame.
-              text = "Got ACTION_UP"
-              val tapTrigger = MainThreadTriggerStack.inputEventInteractionTriggers
-                .single()
-                .payload
-              inputTriggerFrameRenderedUptimeOnClick = tapTrigger.renderedUptime
-              tapTrigger.onInputEventFrameRendered { frameRenderedUptime ->
-                isFrameRenderedInChoreographerFrame = Choreographers.isInChoreographerFrame()
-                inputCallbackFrameRenderedUptime = frameRenderedUptime
-                inputTriggerFrameRenderedUptime = tapTrigger.renderedUptime
-                inputEventRendered.countDown()
+        activity.setContentView(
+          Button(activity).apply {
+            text = "Click Me"
+            setOnTouchListener { _, motionEvent ->
+              if (motionEvent.action == MotionEvent.ACTION_UP) {
+                // Update UI, triggering a frame.
+                text = "Got ACTION_UP"
+                val tapTrigger = MainThreadTriggerStack.inputEventInteractionTriggers
+                  .single()
+                  .payload
+                inputTriggerFrameRenderedUptimeOnClick = tapTrigger.renderedUptime
+                tapTrigger.onInputEventFrameRendered { frameRenderedUptime ->
+                  isFrameRenderedInChoreographerFrame = Choreographers.isInChoreographerFrame()
+                  inputCallbackFrameRenderedUptime = frameRenderedUptime
+                  inputTriggerFrameRenderedUptime = tapTrigger.renderedUptime
+                  inputEventRendered.countDown()
+                }
               }
+              true
             }
-            true
           }
-        })
+        )
       }
 
       onView(withText("Click Me")).location.sendTap()

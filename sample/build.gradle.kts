@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-  compileSdk = 31
+  compileSdk = 36
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -13,7 +13,7 @@ android {
 
   defaultConfig {
     minSdk = 21
-    targetSdk = 31
+    targetSdk = 36
     applicationId = "com.example.papa"
   }
   namespace = "com.example.papa"

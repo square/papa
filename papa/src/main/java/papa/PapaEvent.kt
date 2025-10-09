@@ -45,7 +45,7 @@ sealed class PapaEvent {
      */
     val invisibleDurationRealtimeMillis: Long?,
 
-    val startUptimeMillis: Long,
+    val startUptimeMillis: Long
   ) : PapaEvent() {
     /**
      * Whether this launch will be considered a slow launch by the Play Store and is likely to

@@ -76,10 +76,15 @@ internal object InputTracker {
             handler.post(setEventForPostedClick)
           }
 
-          val dispatchState = safeTrace({ MotionEvent.actionToString(motionEvent.action) }) {
+          val dispatchState = safeTrace(
+            { MotionEvent.actionToString(motionEvent.action) }
+          ) {
             if (actionUpTrigger != null) {
               // In case the action up is immediately triggering a click (e.g. Compose)
-              MainThreadTriggerStack.triggeredBy(actionUpTrigger, endTraceAfterBlock = false) {
+              MainThreadTriggerStack.triggeredBy(
+                actionUpTrigger,
+                endTraceAfterBlock = false
+              ) {
                 dispatch(motionEvent)
               }
             } else {
@@ -151,7 +156,7 @@ internal object InputTracker {
   }
 
   fun install() {
-      Curtains.onRootViewsChangedListeners += listener
+    Curtains.onRootViewsChangedListeners += listener
   }
 
   private const val INTERACTION_SUFFIX = "Interaction"

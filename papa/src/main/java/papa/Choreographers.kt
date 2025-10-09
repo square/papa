@@ -79,7 +79,8 @@ object Choreographers {
           throw RuntimeException(
             "Lambda $pendingCallback does not implement " +
               "${OnFrameRenderedListener::class.java}, try declaring it with " +
-              "${OnFrameRenderedListener::class.simpleName} { }", e
+              "${OnFrameRenderedListener::class.simpleName} { }",
+            e
           )
         }
       }
