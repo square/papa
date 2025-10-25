@@ -14,9 +14,9 @@ import papa.internal.SafeTraceMainThreadMessages
  *
  * [SafeTrace] also provides [isShellProfileable], [isCurrentlyTracing] and [MAX_LABEL_LENGTH].
  *
- * All tracing methods check that [isShellProfileable] is true before delegating to
- * [androidx.tracing.Trace] which would otherwise default to crashing if the reflection based
- * backport fail.
+ * All tracing methods check that [isCurrentlyTracing] is true before delegating to
+ * [androidx.tracing.Trace] which would otherwise default to crashing if the
+ * AndroidX reflection-based backport fails (API 28 and below).
  */
 object SafeTrace {
 
@@ -50,7 +50,7 @@ object SafeTrace {
    */
   @JvmStatic
   val isCurrentlyTracing: Boolean
-    get() = isShellProfileable && androidx.tracing.Trace.isEnabled()
+    get() = androidx.tracing.Trace.isEnabled()
 
   @Deprecated("Use forceShellProfileable instead", ReplaceWith("forceShellProfileable()"))
   @JvmStatic
