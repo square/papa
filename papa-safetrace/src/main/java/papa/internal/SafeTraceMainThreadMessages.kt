@@ -33,7 +33,7 @@ internal object SafeTraceMainThreadMessages {
   }
 
   private fun enableOnMainThread() {
-    if (!enabled && SafeTrace.isTraceable && traceMainThreadMessages) {
+    if (!enabled && SafeTrace.isShellProfileable && traceMainThreadMessages) {
       enabled = true
       var currentlyTracing = false
       MainThreadMessageSpy.addTracer { messageAsString, before ->

@@ -10,8 +10,10 @@ public final class papa/SafeTrace {
 	public static final fun endAsyncSection (Lkotlin/jvm/functions/Function0;)V
 	public static synthetic fun endAsyncSection$default (Ljava/lang/String;IILjava/lang/Object;)V
 	public static final fun endSection ()V
+	public static final fun forceShellProfileable ()V
 	public static final fun forceTraceable ()V
 	public static final fun isCurrentlyTracing ()Z
+	public static final fun isShellProfileable ()Z
 	public static final fun isTraceable ()Z
 	public static final fun logSection (Ljava/lang/String;)V
 	public static final fun logSection (Lkotlin/jvm/functions/Function0;)V
