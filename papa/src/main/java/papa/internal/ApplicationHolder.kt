@@ -1,9 +1,9 @@
 package papa.internal
 
 import android.app.Application
+import androidx.tracing.Trace
 import com.squareup.papa.R
 import papa.MainThreadMessageSpy
-import papa.SafeTrace
 import papa.SafeTraceSetup
 
 /**
@@ -21,7 +21,7 @@ internal object ApplicationHolder {
     this.application = application
     SafeTraceSetup.init(application)
     if (isForegroundImportance) {
-      SafeTrace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME)
+      Trace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME, 0)
     }
     val resources = application.resources
     if (resources.getBoolean(R.bool.papa_track_input_events)) {

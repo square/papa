@@ -3,10 +3,12 @@ package papa.internal
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import papa.SafeTrace
+import androidx.tracing.Trace
+import papa.SafeTraceSetup
 
 internal class ForceShellProfileableReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
-    SafeTrace.forceShellProfileable()
+    Trace.forceEnableAppTracing()
+    SafeTraceSetup.enableMainThreadMessageTracing()
   }
 }
