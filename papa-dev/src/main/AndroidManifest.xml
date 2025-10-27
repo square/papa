@@ -2,13 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <application>
-    <!-- A receiver that makes the build traceable on broadcast, disabled by default. -->
+    <!-- A receiver that makes the build shell profileable on broadcast, disabled by default. -->
     <receiver
-        android:name="papa.internal.ForceTraceableReceiver"
+        android:name="papa.internal.ForceShellProfileableReceiver"
         android:enabled="true"
         android:exported="true">
       <intent-filter>
+        <!-- FORCE_TRACEABLE is deprecated - use FORCE_SHELL_PROFILEABLE instead -->
         <action android:name="papa.FORCE_TRACEABLE" />
+        <action android:name="papa.FORCE_SHELL_PROFILEABLE" />
       </intent-filter>
     </receiver>
 

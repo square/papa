@@ -5,18 +5,18 @@ import android.os.Build
 import papa.SafeTrace.MAX_LABEL_LENGTH
 import papa.SafeTrace.beginSection
 import papa.SafeTrace.isCurrentlyTracing
-import papa.SafeTrace.isTraceable
+import papa.SafeTrace.isShellProfileable
 import papa.internal.SafeTraceMainThreadMessages
 
 /**
  * This is a wrapper for [androidx.tracing.Trace] that should be used instead as [beginSection] and
  * [safeTrace] automatically truncate the label at 127 characters instead of crashing.
  *
- * [SafeTrace] also provides [isTraceable], [isCurrentlyTracing] and [MAX_LABEL_LENGTH].
+ * [SafeTrace] also provides [isShellProfileable], [isCurrentlyTracing] and [MAX_LABEL_LENGTH].
  *
- * All tracing methods check that [isTraceable] is true before delegating to
- * [androidx.tracing.Trace] which would otherwise default to crashing if the reflection based
- * backport fail.
+ * All tracing methods check that [isCurrentlyTracing] is true before delegating to
+ * [androidx.tracing.Trace] which would otherwise default to crashing if the
+ * AndroidX reflection-based backport fails (API 28 and below).
  */
 object SafeTrace {
 
@@ -24,43 +24,50 @@ object SafeTrace {
   private var _isTraceable: Boolean? = null
 
   /**
-   * Whether calls to tracing functions will be forwarded to the Android tracing APIs.
    * This is true if the app manifest has the debuggable to true or if it includes the
    * `<profileable android:shell="true"/>` on API 29+, which indicate an intention for this build
    * to be a special build that you want to profile.
    *
-   * Starting with API 31, builds can be profileable without setting
-   * `<profileable android:shell="true"/>`. However, here we intentionally still return false on
-   * API 31 unless explicitly profileable as our goal is make it easy to avoid any additional
-   * workload in release builds.
+   * You can force this to be true by calling [forceShellProfileable], which
+   * will enable app tracing even on non-shell-profileable builds.
    *
-   * You can force this to be true by calling [forceTraceable], which will enable app tracing even
-   * on non profileable build.
-   *
-   * You can also trigger [forceTraceable] at runtime by sending a `papa.FORCE_TRACEABLE` broadcast.
-   * To support this, you should add a dependency to the tart-dev-receivers artifact
-   *
+   * You can also trigger [forceShellProfileable] at runtime by sending a
+   * `papa.FORCE_SHELL_PROFILEABLE` broadcast. To support this you should add a
+   * dependency on the papa-dev artifact.
    */
+  @JvmStatic
+  val isShellProfileable: Boolean
+    get() = isShellProfileableInlined()
+
+  @Deprecated("Use isShellProfileable instead", ReplaceWith("isShellProfileable"))
   @JvmStatic
   val isTraceable: Boolean
-    get() = isTraceableInlined()
-
-  @JvmStatic
-  val isCurrentlyTracing: Boolean
-    get() = isTraceableInlined() && androidx.tracing.Trace.isEnabled()
+    get() = isShellProfileableInlined()
 
   /**
-   * @see isTraceable
+   * Whether we are currently tracing, which determines whether calls to
+   * tracing functions will be forwarded to the Android tracing APIs.
    */
   @JvmStatic
-  fun forceTraceable() {
+  val isCurrentlyTracing: Boolean
+    get() = androidx.tracing.Trace.isEnabled()
+
+  @Deprecated("Use forceShellProfileable instead", ReplaceWith("forceShellProfileable()"))
+  @JvmStatic
+  fun forceTraceable() = forceShellProfileable()
+
+  /**
+   * @see isShellProfileable
+   */
+  @JvmStatic
+  fun forceShellProfileable() {
     androidx.tracing.Trace.forceEnableAppTracing()
     _isTraceable = true
     SafeTraceMainThreadMessages.enableMainThreadMessageTracing()
   }
 
   @Suppress("NOTHING_TO_INLINE")
-  private inline fun isTraceableInlined(): Boolean {
+  private inline fun isShellProfileableInlined(): Boolean {
     // Prior to SafeTraceSetup.initDone we can't determine if the app is traceable or not, so we
     // always return false, unless something called forceTraceable(). The first call after
     // SafeTraceSetup.initDone becomes true will compute the actual value based on debuggable
