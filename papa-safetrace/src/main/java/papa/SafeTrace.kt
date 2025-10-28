@@ -6,7 +6,6 @@ import papa.SafeTrace.MAX_LABEL_LENGTH
 import papa.SafeTrace.beginSection
 import papa.SafeTrace.isCurrentlyTracing
 import papa.SafeTrace.isShellProfileable
-import papa.internal.SafeTraceMainThreadMessages
 
 /**
  * This is a wrapper for [androidx.tracing.Trace] that should be used instead as [beginSection] and
