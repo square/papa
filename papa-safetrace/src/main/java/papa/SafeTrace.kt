@@ -27,13 +27,6 @@ object SafeTrace {
    * This is true if the app manifest has the debuggable to true or if it includes the
    * `<profileable android:shell="true"/>` on API 29+, which indicate an intention for this build
    * to be a special build that you want to profile.
-   *
-   * You can force this to be true by calling [forceShellProfileable], which
-   * will enable app tracing even on non-shell-profileable builds.
-   *
-   * You can also trigger [forceShellProfileable] at runtime by sending a
-   * `papa.FORCE_SHELL_PROFILEABLE` broadcast. To support this you should add a
-   * dependency on the papa-dev artifact.
    */
   @JvmStatic
   val isShellProfileable: Boolean
@@ -52,28 +45,13 @@ object SafeTrace {
   val isCurrentlyTracing: Boolean
     get() = androidx.tracing.Trace.isEnabled()
 
-  @Deprecated("Use forceShellProfileable instead", ReplaceWith("forceShellProfileable()"))
-  @JvmStatic
-  @Suppress("DEPRECATION")
-  fun forceTraceable() = forceShellProfileable()
-
-  /**
-   * @see isShellProfileable
-   */
-  @Deprecated("Call forceEnableAppTracing/enableMainThreadMessageTracing instead")
-  @JvmStatic
-  fun forceShellProfileable() {
-    androidx.tracing.Trace.forceEnableAppTracing()
-    _isTraceable = true
-    SafeTraceMainThreadMessages.enableMainThreadMessageTracing()
-  }
-
   @Suppress("NOTHING_TO_INLINE")
   private inline fun isShellProfileableInlined(): Boolean {
     // Prior to SafeTraceSetup.initDone we can't determine if the app is traceable or not, so we
-    // always return false, unless something called forceTraceable(). The first call after
-    // SafeTraceSetup.initDone becomes true will compute the actual value based on debuggable
-    // and profileable manifest flags, then cache it so that we don't need to recheck again.
+    // always return false. The first call after SafeTraceSetup.initDone
+    // becomes true will compute the actual value based on debuggable and
+    // profileable manifest flags, then cache it so that we don't need to
+    // recheck again.
     return _isTraceable
       ?: if (SafeTraceSetup.initDone) {
         val application = SafeTraceSetup.application
