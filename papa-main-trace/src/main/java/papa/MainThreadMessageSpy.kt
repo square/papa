@@ -38,7 +38,7 @@ object MainThreadMessageSpy {
 
   fun addTracer(tracer: Tracer) {
     Handlers.checkOnMainThread()
-    check(tracers.none { it === tracers }) {
+    check(tracers.none { it === tracer }) {
       "Tracer $tracer already in $tracers"
     }
     tracers.add(tracer)
