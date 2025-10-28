@@ -4,7 +4,6 @@ import android.content.pm.ApplicationInfo
 import android.os.Build
 import papa.SafeTrace.MAX_LABEL_LENGTH
 import papa.SafeTrace.beginSection
-import papa.SafeTrace.isCurrentlyTracing
 import papa.SafeTrace.isShellProfileable
 
 /**
@@ -40,6 +39,7 @@ object SafeTrace {
    * Whether we are currently tracing, which determines whether calls to
    * tracing functions will be forwarded to the Android tracing APIs.
    */
+  @Deprecated("Use androidx.tracing.Trace.isEnabled() instead", ReplaceWith("Trace.isEnabled()", "androidx.tracing.Trace"))
   @JvmStatic
   val isCurrentlyTracing: Boolean
     get() = androidx.tracing.Trace.isEnabled()
@@ -75,7 +75,7 @@ object SafeTrace {
   @Deprecated("Call androidx.tracing.Trace.beginSection instead", ReplaceWith("beginSection", "androidx.tracing.Trace.beginSection"))
   @JvmStatic
   fun beginSection(label: String) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.beginSection(label.take(MAX_LABEL_LENGTH))
@@ -84,7 +84,7 @@ object SafeTrace {
   @Deprecated("Call androidx.tracing.Trace.beginSection instead", ReplaceWith("beginSection", "androidx.tracing.Trace.beginSection"))
   @JvmStatic
   inline fun beginSection(crossinline labelLambda: () -> String) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.beginSection(labelLambda().take(MAX_LABEL_LENGTH))
@@ -96,7 +96,7 @@ object SafeTrace {
   @JvmStatic
   @Deprecated("Call androidx.tracing.Trace.beginSection/endSection instead")
   fun logSection(label: String) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.beginSection(label.take(MAX_LABEL_LENGTH))
@@ -109,7 +109,7 @@ object SafeTrace {
   @Deprecated("Call androidx.tracing.Trace.beginSection/endSection instead")
   @JvmStatic
   inline fun logSection(crossinline labelLambda: () -> String) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     val label = labelLambda().take(MAX_LABEL_LENGTH)
@@ -127,7 +127,7 @@ object SafeTrace {
   @Deprecated("Call androidx.tracing.Trace.endSection instead", ReplaceWith("endSection", "androidx.tracing.Trace.endSection"))
   @JvmStatic
   fun endSection() {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.endSection()
@@ -141,7 +141,7 @@ object SafeTrace {
   inline fun beginAsyncSection(
     crossinline labelCookiePairLambda: () -> Pair<String, Int>
   ) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     val (label, cookie) = labelCookiePairLambda()
@@ -158,7 +158,7 @@ object SafeTrace {
     label: String,
     cookie: Int = 0
   ) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.beginAsyncSection(label, cookie)
@@ -174,7 +174,7 @@ object SafeTrace {
     label: String,
     cookie: Int = 0
   ) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.endAsyncSection(label, cookie)
@@ -188,7 +188,7 @@ object SafeTrace {
   inline fun endAsyncSection(
     crossinline labelCookiePairLambda: () -> Pair<String, Int>
   ) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     val (label, cookie) = labelCookiePairLambda()
