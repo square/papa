@@ -4,9 +4,7 @@ import android.content.pm.ApplicationInfo
 import android.os.Build
 import papa.SafeTrace.MAX_LABEL_LENGTH
 import papa.SafeTrace.beginSection
-import papa.SafeTrace.isCurrentlyTracing
 import papa.SafeTrace.isShellProfileable
-import papa.internal.SafeTraceMainThreadMessages
 
 /**
  * This is a wrapper for [androidx.tracing.Trace] that should be used instead as [beginSection] and
@@ -27,13 +25,6 @@ object SafeTrace {
    * This is true if the app manifest has the debuggable to true or if it includes the
    * `<profileable android:shell="true"/>` on API 29+, which indicate an intention for this build
    * to be a special build that you want to profile.
-   *
-   * You can force this to be true by calling [forceShellProfileable], which
-   * will enable app tracing even on non-shell-profileable builds.
-   *
-   * You can also trigger [forceShellProfileable] at runtime by sending a
-   * `papa.FORCE_SHELL_PROFILEABLE` broadcast. To support this you should add a
-   * dependency on the papa-dev artifact.
    */
   @JvmStatic
   val isShellProfileable: Boolean
@@ -48,30 +39,18 @@ object SafeTrace {
    * Whether we are currently tracing, which determines whether calls to
    * tracing functions will be forwarded to the Android tracing APIs.
    */
+  @Deprecated("Use androidx.tracing.Trace.isEnabled() instead", ReplaceWith("Trace.isEnabled()", "androidx.tracing.Trace"))
   @JvmStatic
   val isCurrentlyTracing: Boolean
     get() = androidx.tracing.Trace.isEnabled()
 
-  @Deprecated("Use forceShellProfileable instead", ReplaceWith("forceShellProfileable()"))
-  @JvmStatic
-  fun forceTraceable() = forceShellProfileable()
-
-  /**
-   * @see isShellProfileable
-   */
-  @JvmStatic
-  fun forceShellProfileable() {
-    androidx.tracing.Trace.forceEnableAppTracing()
-    _isTraceable = true
-    SafeTraceMainThreadMessages.enableMainThreadMessageTracing()
-  }
-
   @Suppress("NOTHING_TO_INLINE")
   private inline fun isShellProfileableInlined(): Boolean {
     // Prior to SafeTraceSetup.initDone we can't determine if the app is traceable or not, so we
-    // always return false, unless something called forceTraceable(). The first call after
-    // SafeTraceSetup.initDone becomes true will compute the actual value based on debuggable
-    // and profileable manifest flags, then cache it so that we don't need to recheck again.
+    // always return false. The first call after SafeTraceSetup.initDone
+    // becomes true will compute the actual value based on debuggable and
+    // profileable manifest flags, then cache it so that we don't need to
+    // recheck again.
     return _isTraceable
       ?: if (SafeTraceSetup.initDone) {
         val application = SafeTraceSetup.application
@@ -93,17 +72,19 @@ object SafeTrace {
    * Writes a trace message to indicate that a given section of code has begun. This call must
    * be followed by a corresponding call to {@link #endSection()} on the same thread.
    */
+  @Deprecated("Call androidx.tracing.Trace.beginSection instead", ReplaceWith("beginSection", "androidx.tracing.Trace.beginSection"))
   @JvmStatic
   fun beginSection(label: String) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.beginSection(label.take(MAX_LABEL_LENGTH))
   }
 
+  @Deprecated("Call androidx.tracing.Trace.beginSection instead", ReplaceWith("beginSection", "androidx.tracing.Trace.beginSection"))
   @JvmStatic
   inline fun beginSection(crossinline labelLambda: () -> String) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.beginSection(labelLambda().take(MAX_LABEL_LENGTH))
@@ -113,8 +94,9 @@ object SafeTrace {
    * Begins and ends a section immediately. Useful for reporting information in the trace.
    */
   @JvmStatic
+  @Deprecated("Call androidx.tracing.Trace.beginSection/endSection instead")
   fun logSection(label: String) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.beginSection(label.take(MAX_LABEL_LENGTH))
@@ -124,9 +106,10 @@ object SafeTrace {
   /**
    * @see [logSection]
    */
+  @Deprecated("Call androidx.tracing.Trace.beginSection/endSection instead")
   @JvmStatic
   inline fun logSection(crossinline labelLambda: () -> String) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     val label = labelLambda().take(MAX_LABEL_LENGTH)
@@ -141,9 +124,10 @@ object SafeTrace {
    * ensure that beginSection / endSection pairs are properly nested and called from the same
    * thread.
    */
+  @Deprecated("Call androidx.tracing.Trace.endSection instead", ReplaceWith("endSection", "androidx.tracing.Trace.endSection"))
   @JvmStatic
   fun endSection() {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.endSection()
@@ -152,11 +136,12 @@ object SafeTrace {
   /**
    * @see androidx.tracing.Trace.beginAsyncSection
    */
+  @Deprecated("Call androidx.tracing.Trace.beginAsyncSection instead", ReplaceWith("beginAsyncSection", "androidx.tracing.Trace.beginAsyncSection"))
   @JvmStatic
   inline fun beginAsyncSection(
     crossinline labelCookiePairLambda: () -> Pair<String, Int>
   ) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     val (label, cookie) = labelCookiePairLambda()
@@ -167,12 +152,13 @@ object SafeTrace {
    * [cookie] defaults to 0 (cookie is used for async traces that overlap)
    * @see androidx.tracing.Trace.beginAsyncSection
    */
+  @Deprecated("Call androidx.tracing.Trace.beginAsyncSection instead", ReplaceWith("beginAsyncSection", "androidx.tracing.Trace.beginAsyncSection"))
   @JvmStatic
   fun beginAsyncSection(
     label: String,
     cookie: Int = 0
   ) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.beginAsyncSection(label, cookie)
@@ -182,12 +168,13 @@ object SafeTrace {
    * [cookie] defaults to 0 (cookie is used for async traces that overlap)
    * @see androidx.tracing.Trace.endAsyncSection
    */
+  @Deprecated("Call androidx.tracing.Trace.endAsyncSection instead", ReplaceWith("endAsyncSection", "androidx.tracing.Trace.endAsyncSection"))
   @JvmStatic
   fun endAsyncSection(
     label: String,
     cookie: Int = 0
   ) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     androidx.tracing.Trace.endAsyncSection(label, cookie)
@@ -196,11 +183,12 @@ object SafeTrace {
   /**
    * @see androidx.tracing.Trace.beginAsyncSection
    */
+  @Deprecated("Call androidx.tracing.Trace.endAsyncSection instead", ReplaceWith("endAsyncSection", "androidx.tracing.Trace.endAsyncSection"))
   @JvmStatic
   inline fun endAsyncSection(
     crossinline labelCookiePairLambda: () -> Pair<String, Int>
   ) {
-    if (!isCurrentlyTracing) {
+    if (!androidx.tracing.Trace.isEnabled()) {
       return
     }
     val (label, cookie) = labelCookiePairLambda()

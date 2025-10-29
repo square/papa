@@ -1,5 +1,6 @@
 package papa
 
+import androidx.tracing.Trace
 import papa.InteractionUpdated.CanceledOnEvent
 import papa.InteractionUpdated.CanceledOnRuleRemoved
 import papa.InteractionUpdated.CanceledOnTimeout
@@ -119,18 +120,16 @@ private class InteractionEngine<ParentEventType : Any>(
      * called with an unknown [Runnable].
      */
     private val cancelOnTimeout: Runnable = Runnable {
-      SafeTrace.logSection {
-        "PAPA-cancel:timeout"
-      }
+      Trace.beginSection("PAPA-cancel:timeout")
+      Trace.endSection()
       stopRunning()
       trace.endTrace()
       updateListener.onInteractionUpdate(CanceledOnTimeout(cancelTimeout, this))
     }
 
     fun cancelOnRuleRemoved() {
-      SafeTrace.logSection {
-        "PAPA-cancel:ruleRemoved"
-      }
+      Trace.beginSection("PAPA-cancel:ruleRemoved")
+      Trace.endSection()
       stopRunning()
       trace.endTrace()
       updateListener.onInteractionUpdate(CanceledOnRuleRemoved(this))
@@ -153,9 +152,8 @@ private class InteractionEngine<ParentEventType : Any>(
 
     override fun cancel(reason: String) {
       val sentEvent = eventInScope!!
-      SafeTrace.logSection {
-        "PAPA-cancel:${sentEvent.event}:$reason"
-      }
+      Trace.beginSection("PAPA-cancel:${sentEvent.event}:$reason")
+      Trace.endSection()
       stopRunning()
       trace.endTrace()
       updateListener.onInteractionUpdate(CanceledOnEvent(sentEvent, this, reason))
@@ -163,9 +161,8 @@ private class InteractionEngine<ParentEventType : Any>(
 
     override fun finish(): FinishingInteraction<ParentEventType> {
       val sentEvent = eventInScope!!
-      SafeTrace.logSection {
-        "PAPA-finishInteraction:${sentEvent.event}"
-      }
+      Trace.beginSection("PAPA-finishInteraction:${sentEvent.event}")
+      Trace.endSection()
       stopRunning()
       finishingInteractions += this
       addRecordedEvent()
@@ -188,9 +185,8 @@ private class InteractionEngine<ParentEventType : Any>(
 
     override fun recordEvent() {
       val sentEvent = eventInScope!!
-      SafeTrace.logSection {
-        "PAPA-recordEvent:${sentEvent.event}"
-      }
+      Trace.beginSection("PAPA-recordEvent:${sentEvent.event}")
+      Trace.endSection()
       addRecordedEvent()
       updateListener.onInteractionUpdate(EventRecorded(sentEvent, this))
     }
@@ -230,9 +226,8 @@ private class InteractionEngine<ParentEventType : Any>(
         trace: InteractionTrace,
         cancelTimeout: Duration
       ): RunningInteraction<ParentEventType> {
-        SafeTrace.logSection {
-          "PAPA-startInteraction:${sentEvent.event}"
-        }
+        Trace.beginSection("PAPA-startInteraction:${sentEvent.event}")
+        Trace.endSection()
         val runningInteraction = RealRunningInteraction(
           interactionTrigger = trigger,
           trace = trace,

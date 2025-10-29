@@ -11,6 +11,7 @@ import android.os.Looper
 import android.os.Process
 import android.os.StrictMode
 import android.os.SystemClock
+import androidx.tracing.Trace
 import papa.AndroidComponentEvent
 import papa.AppLaunchType.COLD
 import papa.AppStart
@@ -38,7 +39,6 @@ import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_CLEAR_DATA
 import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_INSTALL
 import papa.PreLaunchState.NO_PROCESS_FIRST_LAUNCH_AFTER_UPGRADE
 import papa.PreLaunchState.PROCESS_WAS_LAUNCHING_IN_BACKGROUND
-import papa.SafeTrace
 import papa.internal.AppUpdateDetector.Companion.trackAppUpgrade
 import papa.internal.LaunchTracker.Launch
 import papa.internal.LaunchedActivityStartingTransition.CREATED_NO_STATE
@@ -270,7 +270,7 @@ internal object Perfs {
         initCalledRealtimeMillis
       )
       if (isTracingLaunch) {
-        SafeTrace.endAsyncSection(LAUNCH_TRACE_NAME)
+        Trace.endAsyncSection(LAUNCH_TRACE_NAME, 0)
         isTracingLaunch = false
       }
       PapaEventListener.sendEvent(
