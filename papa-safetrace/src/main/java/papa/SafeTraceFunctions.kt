@@ -8,6 +8,8 @@ import papa.SafeTrace.isTraceable
  * [label] a string producing lambda if the label is computed dynamically. If the label isn't
  * dynamic, use the [safeTrace] which directly takes a string instead.
  */
+@Deprecated("Call androidx.tracing.trace instead", ReplaceWith("trace", "androidx.tracing.trace"))
+@Suppress("DEPRECATION")
 inline fun <T> safeTrace(
   crossinline label: () -> String,
   crossinline block: () -> T
@@ -26,6 +28,8 @@ inline fun <T> safeTrace(
 /**
  * Allows tracing of a block of code
  */
+@Deprecated("Call androidx.tracing.trace instead", ReplaceWith("trace", "androidx.tracing.trace"))
+@Suppress("DEPRECATION")
 inline fun <T> safeTrace(
   label: String,
   crossinline block: () -> T

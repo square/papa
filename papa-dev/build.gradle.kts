@@ -40,4 +40,5 @@ dependencies {
   compileOnly(Dependencies.Build.AndroidXAnnotation)
 
   implementation(project(":papa"))
+  implementation(Dependencies.AndroidXTracing)
 }

@@ -10,8 +10,6 @@ public final class papa/SafeTrace {
 	public static final fun endAsyncSection (Lkotlin/jvm/functions/Function0;)V
 	public static synthetic fun endAsyncSection$default (Ljava/lang/String;IILjava/lang/Object;)V
 	public static final fun endSection ()V
-	public static final fun forceShellProfileable ()V
-	public static final fun forceTraceable ()V
 	public static final fun isCurrentlyTracing ()Z
 	public static final fun isShellProfileable ()Z
 	public static final fun isTraceable ()Z
@@ -27,6 +25,7 @@ public final class papa/SafeTraceFunctionsKt {
 public final class papa/SafeTraceSetup {
 	public static final field INSTANCE Lpapa/SafeTraceSetup;
 	public final fun cleanUpMainThreadSectionName (Ljava/lang/String;)Ljava/lang/String;
+	public final fun enableMainThreadMessageTracing ()V
 	public final fun getMainThreadSectionNameMapper ()Lpapa/SectionNameMapper;
 	public final fun init (Landroid/app/Application;)V
 	public final fun setMainThreadSectionNameMapper (Lpapa/SectionNameMapper;)V

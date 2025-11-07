@@ -2,10 +2,10 @@ package papa.internal
 
 import android.app.Activity
 import android.os.SystemClock
+import androidx.tracing.Trace
 import papa.Choreographers
 import papa.Handlers
 import papa.OnFrameRenderedListener
-import papa.SafeTrace
 import kotlin.time.Duration
 
 internal class LaunchTracker(
@@ -58,7 +58,7 @@ internal class LaunchTracker(
     launchInProgress?.let { launch ->
       if (launch.isStale) {
         if (Perfs.isTracingLaunch) {
-          SafeTrace.endAsyncSection(Perfs.LAUNCH_TRACE_NAME)
+          Trace.endAsyncSection(Perfs.LAUNCH_TRACE_NAME, 0)
           Perfs.isTracingLaunch = false
         }
         launchInProgress = null
@@ -76,7 +76,7 @@ internal class LaunchTracker(
     if (launchInProgress == null) {
       // Check to handle the cold start case where we're already tracing a launch.
       if (!Perfs.isTracingLaunch) {
-        SafeTrace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME)
+        Trace.beginAsyncSection(Perfs.LAUNCH_TRACE_NAME, 0)
         Perfs.isTracingLaunch = true
       }
 
