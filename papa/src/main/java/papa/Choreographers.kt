@@ -72,19 +72,22 @@ object Choreographers {
     }
     val runPendingCallbacks = {
       val frameRenderedUptime = System.nanoTime().nanoseconds
-      for (pendingCallback in pendingRenderedCallbacks) {
-        try {
-          pendingCallback.onFrameRendered(frameRenderedUptime)
-        } catch (e: AbstractMethodError) {
-          throw RuntimeException(
-            "Lambda $pendingCallback does not implement " +
-              "${OnFrameRenderedListener::class.java}, try declaring it with " +
-              "${OnFrameRenderedListener::class.simpleName} { }",
-            e
-          )
+      try {
+        for (pendingCallback in pendingRenderedCallbacks) {
+          try {
+            pendingCallback.onFrameRendered(frameRenderedUptime)
+          } catch (e: AbstractMethodError) {
+            throw RuntimeException(
+              "Lambda $pendingCallback does not implement " +
+                "${OnFrameRenderedListener::class.java}, try declaring it with " +
+                "${OnFrameRenderedListener::class.simpleName} { }",
+              e
+            )
+          }
         }
+      } finally {
+        pendingRenderedCallbacks.clear()
       }
-      pendingRenderedCallbacks.clear()
     }
     // The frame callback runs somewhat in the middle of rendering, so by posting at the front
     // of the queue from there we get the timestamp for right when the next frame is done
