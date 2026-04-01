@@ -92,7 +92,7 @@ class InteractionTriggerTest {
   }
 
   @Test
-  fun `SimpleInteractionTrigger equals compares name and triggerUptime`() {
+  fun `SimpleInteractionTrigger uses reference equality for distinct instances`() {
     val triggerUptime = 1000.nanoseconds
     val name = "test-trigger"
 
@@ -100,8 +100,8 @@ class InteractionTriggerTest {
     val trigger2 = SimpleInteractionTrigger(triggerUptime, name)
     val trigger3 = SimpleInteractionTrigger(triggerUptime, name, FakeInteractionTrace())
 
-    assertEquals(trigger1, trigger2)
-    assertEquals(trigger2, trigger3)
+    assertNotEquals(trigger1, trigger2)
+    assertNotEquals(trigger2, trigger3)
   }
 
   @Test
@@ -174,7 +174,7 @@ class InteractionTriggerTest {
   }
 
   @Test
-  fun `InteractionTriggerWithPayload equals works correctly`() {
+  fun `InteractionTriggerWithPayload uses reference equality for distinct instances`() {
     val triggerUptime = 1000.nanoseconds
     val name = "test-trigger"
     val payload = "test-payload"
@@ -185,9 +185,9 @@ class InteractionTriggerTest {
       InteractionTriggerWithPayload(triggerUptime, name, FakeInteractionTrace(), payload)
     val trigger4 = InteractionTriggerWithPayload(triggerUptime, name, null, "other-payload")
 
-    assertEquals(trigger1, trigger2)
-    assertEquals(trigger1, trigger3) // Should equal based on name and triggerUptime
-    assertEquals(trigger1, trigger4) // Should equal based on name and triggerUptime
+    assertNotEquals(trigger1, trigger2)
+    assertNotEquals(trigger1, trigger3)
+    assertNotEquals(trigger1, trigger4)
   }
 
   @Test

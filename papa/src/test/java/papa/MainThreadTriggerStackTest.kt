@@ -68,7 +68,7 @@ class MainThreadTriggerStackTest {
     MainThreadTriggerStack.triggeredBy(trigger, endTraceAfterBlock = false) {
       val currentTriggers = MainThreadTriggerStack.currentTriggers
       assertEquals(1, currentTriggers.size)
-      assertEquals(trigger, currentTriggers[0])
+      assertSame(trigger, currentTriggers[0])
     }
   }
 
@@ -235,7 +235,7 @@ class MainThreadTriggerStackTest {
       MainThreadTriggerStack.triggeredBy(trigger2, endTraceAfterBlock = false) {
         MainThreadTriggerStack.triggeredBy(trigger3, endTraceAfterBlock = false) {
           val earliest = MainThreadTriggerStack.earliestInteractionTrigger
-          assertEquals(trigger2, earliest)
+          assertSame(trigger2, earliest)
         }
       }
     }
@@ -251,7 +251,7 @@ class MainThreadTriggerStackTest {
 
     val triggers = MainThreadTriggerStack.currentTriggers
     assertEquals(1, triggers.size)
-    assertEquals(trigger, triggers[0])
+    assertSame(trigger, triggers[0])
 
     // Clean up
     MainThreadTriggerStack.popTriggeredBy(trigger)
@@ -390,14 +390,14 @@ class MainThreadTriggerStackTest {
 
     MainThreadTriggerStack.triggeredBy(outerTrigger, endTraceAfterBlock = false) {
       assertEquals(1, MainThreadTriggerStack.currentTriggers.size)
-      assertEquals(outerTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
+      assertSame(outerTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
 
       MainThreadTriggerStack.triggeredBy(
         innerTrigger,
         endTraceAfterBlock = false
       ) {
         assertEquals(2, MainThreadTriggerStack.currentTriggers.size)
-        assertEquals(
+        assertSame(
           outerTrigger,
           MainThreadTriggerStack.earliestInteractionTrigger
         ) // Still earliest
@@ -409,7 +409,7 @@ class MainThreadTriggerStackTest {
 
       // Inner trigger should be removed
       assertEquals(1, MainThreadTriggerStack.currentTriggers.size)
-      assertEquals(outerTrigger, MainThreadTriggerStack.currentTriggers[0])
+      assertSame(outerTrigger, MainThreadTriggerStack.currentTriggers[0])
     }
 
     // All triggers should be removed
