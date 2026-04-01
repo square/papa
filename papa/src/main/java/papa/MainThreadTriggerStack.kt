@@ -35,39 +35,11 @@ object MainThreadTriggerStack {
    * This is a filtered view of [interactionTriggerStack], not a deduplicated projection. If
    * forwarding temporarily places equal-but-distinct copies of the same logical input trigger on
    * the stack, both copies are returned here in their current stack order.
-   *
-   * Performance: O(n) single pass over [interactionTriggerStack], with tiered allocation to
-   * avoid object creation in the common cases:
-   * - **0 input triggers**: returns [emptyList], no allocations.
-   * - **1 input trigger**: returns a single-element list, no intermediate collection.
-   * - **2+ input triggers**: allocates an [ArrayList] and appends matches in a single pass.
    */
   val inputEventInteractionTriggers: List<InteractionTriggerWithPayload<InputEventTrigger>>
     get() {
       Handlers.checkOnMainThread()
-      var firstInputEventTrigger: InteractionTriggerWithPayload<InputEventTrigger>? = null
-      var inputEventTriggers: ArrayList<InteractionTriggerWithPayload<InputEventTrigger>>? = null
-
-      interactionTriggerStack.forEach { trigger ->
-        val inputEventTrigger = trigger.toInputEventTriggerOrNull() ?: return@forEach
-        when {
-          // First input trigger found: track it without allocating a list.
-          firstInputEventTrigger == null -> firstInputEventTrigger = inputEventTrigger
-          // Second input trigger found, promote to ArrayList.
-          inputEventTriggers == null -> {
-            val firstTrigger = requireNotNull(firstInputEventTrigger)
-            inputEventTriggers = arrayListOf(firstTrigger, inputEventTrigger)
-          }
-          // 2+ triggers already in the list: append in stack order.
-          else -> inputEventTriggers.add(inputEventTrigger)
-        }
-      }
-
-      return when {
-        inputEventTriggers != null -> inputEventTriggers
-        firstInputEventTrigger != null -> listOf(firstInputEventTrigger)
-        else -> emptyList()
-      }
+      return interactionTriggerStack.mapNotNull { it.toInputEventTriggerOrNull() }
     }
 
   private val interactionTriggerStack = mutableListOf<InteractionTrigger>()
