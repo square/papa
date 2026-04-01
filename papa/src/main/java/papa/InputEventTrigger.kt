@@ -49,6 +49,13 @@ class InputEventTrigger private constructor(
       })
       return trigger
     }
+
+    internal fun createForTest(
+      inputEvent: InputEvent,
+      deliveryUptime: Duration
+    ): InputEventTrigger {
+      return InputEventTrigger(inputEvent, deliveryUptime)
+    }
   }
 }
 

@@ -1,6 +1,5 @@
 package papa
 
-import android.view.InputEvent
 import android.view.MotionEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -12,7 +11,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 
 @RunWith(RobolectricTestRunner::class)
@@ -29,18 +27,7 @@ class MainThreadTriggerStackTest {
 
   private fun createInputEventPayload(): InputEventTrigger {
     val motionEvent = MotionEvent.obtain(0L, 1L, MotionEvent.ACTION_UP, 0f, 0f, 0)
-    val constructor = InputEventTrigger::class.java.getDeclaredConstructor(
-      InputEvent::class.java,
-      Long::class.javaPrimitiveType,
-      Class.forName("kotlin.jvm.internal.DefaultConstructorMarker")
-    )
-    constructor.isAccessible = true
-    return constructor.newInstance(motionEvent, durationRawValue(1000.nanoseconds), null)
-  }
-
-  private fun durationRawValue(duration: Duration): Long {
-    val unboxMethod = Duration::class.java.getDeclaredMethod("unbox-impl")
-    return unboxMethod.invoke(duration) as Long
+    return InputEventTrigger.createForTest(motionEvent, 1000.nanoseconds)
   }
 
   @Test
