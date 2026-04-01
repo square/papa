@@ -30,17 +30,17 @@ object MainThreadTriggerStack {
     }
 
   /**
-   * Returns the distinct effective input-event triggers currently visible on the stack,
-   * deduplicated by (name, triggerUptime).
+   * Returns the input-event triggers currently visible on the stack, deduplicated by
+   * (name, triggerUptime).
    *
-   * This is intentionally not a raw stack dump. Forwarding can temporarily place multiple
-   * equal-but-distinct copies of the same logical input trigger on the stack at once so cleanup
-   * can remain instance-based. Callers of this property care about distinct user inputs, not every
-   * forwarded stack entry, so equal copies are collapsed back to a single logical trigger here.
+   * This is intentionally not a raw stack dump. Forwarding can temporarily place equal-but-
+   * distinct copies of the same logical input trigger on the stack at once because stack cleanup
+   * remains instance-based.
    *
-   * When forwarded copies with the same key coexist, the most recently pushed copy is kept so
-   * callers see the active forwarded trace while it is in scope. Once that forwarded scope exits,
-   * the original copy remains on the stack and becomes visible again.
+   * This view collapses those equal copies back to a single representative trigger. When forwarded
+   * copies with the same key coexist, the most recently pushed copy is kept so the active
+   * forwarded trigger is the one readers observe while it is in scope. Once that forwarded scope
+   * exits, the original copy remains on the stack and becomes visible again.
    *
    * Performance: O(n) single pass over [interactionTriggerStack], with tiered allocation to
    * avoid object creation in the common cases:
