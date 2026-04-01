@@ -119,6 +119,8 @@ class MainThreadTriggerStackTest {
     val forwardedTrigger =
       SimpleInteractionTrigger(1000.nanoseconds, "test-trigger") // Same properties
 
+    // Forwarding creates a distinct trigger instance with the same logical key. While both are on
+    // the stack, readers should resolve to the newer forwarded copy so the active trace wins.
     MainThreadTriggerStack.pushTriggeredBy(originalTrigger)
     try {
       MainThreadTriggerStack.triggeredBy(forwardedTrigger, endTraceAfterBlock = false) {
@@ -145,6 +147,8 @@ class MainThreadTriggerStackTest {
     val forwardedTrigger =
       SimpleInteractionTrigger(1000.nanoseconds, "test-trigger") // Same properties
 
+    // The forwarded copy should be scoped to the nested block only. Once it exits, the original
+    // trigger must still be present so later work can continue attributing to the original source.
     MainThreadTriggerStack.pushTriggeredBy(originalTrigger)
     try {
       MainThreadTriggerStack.triggeredBy(forwardedTrigger, endTraceAfterBlock = false) {
