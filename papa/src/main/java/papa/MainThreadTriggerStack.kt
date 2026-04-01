@@ -5,15 +5,27 @@ object MainThreadTriggerStack {
   val earliestInteractionTrigger: InteractionTrigger?
     get() {
       Handlers.checkOnMainThread()
-      return interactionTriggerStack.minByOrNull { it.triggerUptime }
+      return interactionTriggerStack.reduceOrNull { earliestTrigger, trigger ->
+        when {
+          trigger.triggerUptime < earliestTrigger.triggerUptime -> trigger
+          trigger.triggerUptime == earliestTrigger.triggerUptime &&
+            trigger.name == earliestTrigger.name -> trigger
+          else -> earliestTrigger
+        }
+      }
     }
 
   val inputEventInteractionTriggers: List<InteractionTriggerWithPayload<InputEventTrigger>>
     get() {
       Handlers.checkOnMainThread()
-      return interactionTriggerStack.mapNotNull {
-        it.toInputEventTriggerOrNull()
+      val inputEventTriggersByKey =
+        linkedMapOf<Pair<String, kotlin.time.Duration>, InteractionTriggerWithPayload<InputEventTrigger>>()
+      interactionTriggerStack.forEach { trigger ->
+        trigger.toInputEventTriggerOrNull()?.let {
+          inputEventTriggersByKey[it.name to it.triggerUptime] = it
+        }
       }
+      return inputEventTriggersByKey.values.toList()
     }
 
   private val interactionTriggerStack = mutableListOf<InteractionTrigger>()
@@ -31,8 +43,9 @@ object MainThreadTriggerStack {
 
   /**
    * Must be called from the main thread.
-   * Adds [trigger] to the [interactionTriggerStack], it will replace any existing trigger with
-   * the same [InteractionTrigger.name] and [InteractionTrigger.triggerUptime].
+   * Adds [trigger] to the [interactionTriggerStack] for the duration of [block]. Equal-but-
+   * distinct triggers intentionally coexist on the stack so callers can forward a copied trigger
+   * without evicting the original trigger instance that is still responsible for later cleanup.
    *
    * @param endTraceAfterBlock Finish the interaction trace after [block] runs.
    * @param block The code to run, during whose call stack the trigger added will be available
@@ -44,15 +57,11 @@ object MainThreadTriggerStack {
     block: () -> T
   ): T {
     Handlers.checkOnMainThread()
-    // First, remove based on object equality (which uses name/triggerUptime). This has the effect
-    // of replacing any existing same-named, same-timed triggers.
-    // After the block() we remove just this instance from the stack.
-    interactionTriggerStack.removeAll { it == trigger }
-    interactionTriggerStack.add(trigger)
+    pushTriggeredBy(trigger)
     try {
       return block()
     } finally {
-      interactionTriggerStack.removeAll { it === trigger }
+      popTriggeredBy(trigger)
       if (endTraceAfterBlock) {
         trigger.takeOverInteractionTrace()?.endTrace()
       }

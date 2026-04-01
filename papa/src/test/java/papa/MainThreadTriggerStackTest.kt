@@ -1,14 +1,18 @@
 package papa
 
+import android.view.InputEvent
+import android.view.MotionEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 
 @RunWith(RobolectricTestRunner::class)
@@ -21,6 +25,22 @@ class MainThreadTriggerStackTest {
     override fun endTrace() {
       endTraceCalled = true
     }
+  }
+
+  private fun createInputEventPayload(): InputEventTrigger {
+    val motionEvent = MotionEvent.obtain(0L, 1L, MotionEvent.ACTION_UP, 0f, 0f, 0)
+    val constructor = InputEventTrigger::class.java.getDeclaredConstructor(
+      InputEvent::class.java,
+      Long::class.javaPrimitiveType,
+      Class.forName("kotlin.jvm.internal.DefaultConstructorMarker")
+    )
+    constructor.isAccessible = true
+    return constructor.newInstance(motionEvent, durationRawValue(1000.nanoseconds), null)
+  }
+
+  private fun durationRawValue(duration: Duration): Long {
+    val unboxMethod = Duration::class.java.getDeclaredMethod("unbox-impl")
+    return unboxMethod.invoke(duration) as Long
   }
 
   @Test
@@ -107,21 +127,49 @@ class MainThreadTriggerStackTest {
   }
 
   @Test
-  fun `triggeredBy removes existing trigger with same properties`() {
-    val trigger1 = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
-    val trigger2 = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger") // Same properties
+  fun `earliestInteractionTrigger prefers most recent trigger with same properties`() {
+    val originalTrigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
+    val forwardedTrigger =
+      SimpleInteractionTrigger(1000.nanoseconds, "test-trigger") // Same properties
 
-    MainThreadTriggerStack.triggeredBy(trigger1, endTraceAfterBlock = false) {
-      // First trigger should be in stack
-      assertEquals(1, MainThreadTriggerStack.currentTriggers.size)
-      assertEquals(trigger1, MainThreadTriggerStack.currentTriggers[0])
-
-      MainThreadTriggerStack.triggeredBy(trigger2, endTraceAfterBlock = false) {
-        // Second trigger should replace first (only one trigger in stack)
+    MainThreadTriggerStack.pushTriggeredBy(originalTrigger)
+    try {
+      MainThreadTriggerStack.triggeredBy(forwardedTrigger, endTraceAfterBlock = false) {
         val triggers = MainThreadTriggerStack.currentTriggers
-        assertEquals(1, triggers.size)
-        assertEquals(trigger2, triggers[0])
+        assertEquals(2, triggers.size)
+        assertSame(originalTrigger, triggers[0])
+        assertSame(forwardedTrigger, triggers[1])
+        assertSame(forwardedTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
       }
+
+      assertSame(originalTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
+
+      val triggersAfterBlock = MainThreadTriggerStack.currentTriggers
+      assertEquals(1, triggersAfterBlock.size)
+      assertSame(originalTrigger, triggersAfterBlock[0])
+    } finally {
+      MainThreadTriggerStack.popTriggeredBy(originalTrigger)
+    }
+  }
+
+  @Test
+  fun `triggeredBy leaves original trigger on stack after equal forwarded copy exits`() {
+    val originalTrigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
+    val forwardedTrigger =
+      SimpleInteractionTrigger(1000.nanoseconds, "test-trigger") // Same properties
+
+    MainThreadTriggerStack.pushTriggeredBy(originalTrigger)
+    try {
+      MainThreadTriggerStack.triggeredBy(forwardedTrigger, endTraceAfterBlock = false) {
+        assertSame(forwardedTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
+      }
+
+      val triggersAfterBlock = MainThreadTriggerStack.currentTriggers
+      assertEquals(1, triggersAfterBlock.size)
+      assertSame(originalTrigger, triggersAfterBlock[0])
+      assertSame(originalTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
+    } finally {
+      MainThreadTriggerStack.popTriggeredBy(originalTrigger)
     }
   }
 
@@ -294,6 +342,28 @@ class MainThreadTriggerStackTest {
         // Both triggers should be filtered out since neither has InputEventTrigger payload
         assertTrue(inputTriggers.isEmpty())
       }
+    }
+  }
+
+  @Test
+  fun `inputEventInteractionTriggers prefers most recent trigger with same properties`() {
+    val payload = createInputEventPayload()
+    val originalTrigger = InteractionTriggerWithPayload(1000.nanoseconds, "tap", null, payload)
+    val forwardedTrigger = InteractionTriggerWithPayload(1000.nanoseconds, "tap", null, payload)
+
+    MainThreadTriggerStack.pushTriggeredBy(originalTrigger)
+    try {
+      MainThreadTriggerStack.triggeredBy(forwardedTrigger, endTraceAfterBlock = false) {
+        val inputTriggers = MainThreadTriggerStack.inputEventInteractionTriggers
+        assertEquals(1, inputTriggers.size)
+        assertSame(forwardedTrigger, inputTriggers.single())
+      }
+
+      val inputTriggersAfterBlock = MainThreadTriggerStack.inputEventInteractionTriggers
+      assertEquals(1, inputTriggersAfterBlock.size)
+      assertSame(originalTrigger, inputTriggersAfterBlock.single())
+    } finally {
+      MainThreadTriggerStack.popTriggeredBy(originalTrigger)
     }
   }
 
