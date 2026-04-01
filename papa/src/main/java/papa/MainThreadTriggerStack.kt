@@ -1,71 +1,74 @@
 package papa
 
-import kotlin.time.Duration
-
 object MainThreadTriggerStack {
 
+  /**
+   * Returns the trigger with the earliest (minimum) [InteractionTrigger.triggerUptime], or `null`
+   * if the stack is empty.
+   *
+   * When forwarded trigger copies coexist on the stack (same name + triggerUptime), the most
+   * recently pushed copy is preferred so that the active forwarded trace wins while it is in
+   * scope.
+   *
+   * Uses [reduceOrNull] for a single O(n) pass with zero allocations. On a strictly smaller
+   * uptime the new trigger wins outright; on an equal name + uptime tie the later element wins
+   * (most recently pushed). This is optimal — finding a minimum in an unsorted collection
+   * requires examining every element at least once.
+   */
   val earliestInteractionTrigger: InteractionTrigger?
     get() {
       Handlers.checkOnMainThread()
-      var earliestTrigger: InteractionTrigger? = null
-      var hasOtherTriggerAtEarliestUptime = false
-      interactionTriggerStack.forEach { trigger ->
-        when {
-          earliestTrigger == null -> earliestTrigger = trigger
-          trigger.triggerUptime < earliestTrigger.triggerUptime -> {
-            earliestTrigger = trigger
-            hasOtherTriggerAtEarliestUptime = false
-          }
-          trigger.triggerUptime == earliestTrigger.triggerUptime -> {
-            hasOtherTriggerAtEarliestUptime = true
-          }
-        }
-      }
-
-      if (earliestTrigger == null || !hasOtherTriggerAtEarliestUptime) {
-        return earliestTrigger
-      }
-
-      for (index in interactionTriggerStack.lastIndex downTo 0) {
-        val trigger = interactionTriggerStack[index]
-        if (trigger.triggerUptime == earliestTrigger.triggerUptime &&
-          trigger.name == earliestTrigger.name
+      return interactionTriggerStack.reduceOrNull { acc, trigger ->
+        if (trigger.triggerUptime < acc.triggerUptime ||
+          (trigger.triggerUptime == acc.triggerUptime && trigger.name == acc.name)
         ) {
-          return trigger
+          trigger
+        } else {
+          acc
         }
       }
-
-      return earliestTrigger
     }
 
+  /**
+   * Returns the distinct input-event triggers currently on the stack, deduplicated by
+   * (name, triggerUptime). When forwarded copies with the same key coexist, the most recently
+   * pushed copy is kept so callers see the active forwarded trace.
+   *
+   * Performance: O(n) single pass over [interactionTriggerStack], with tiered allocation to
+   * avoid object creation in the common cases:
+   * - **0 input triggers**: returns [emptyList], no allocations.
+   * - **1 input trigger** (no duplicates): returns a single-element list, no intermediate
+   *   collection.
+   * - **2+ distinct input triggers**: allocates an [ArrayList] and deduplicates in-place via
+   *   [ArrayList.indexOfFirst]. This is faster than a [LinkedHashMap] for the small stack sizes
+   *   seen in practice (typically 1–3 triggers) because it avoids hashing, Pair-key allocation,
+   *   and Map.Entry overhead.
+   */
   val inputEventInteractionTriggers: List<InteractionTriggerWithPayload<InputEventTrigger>>
     get() {
       Handlers.checkOnMainThread()
       var firstInputEventTrigger: InteractionTriggerWithPayload<InputEventTrigger>? = null
       var inputEventTriggers: ArrayList<InteractionTriggerWithPayload<InputEventTrigger>>? = null
-      var inputEventTriggersByKey:
-        LinkedHashMap<Pair<String, Duration>, InteractionTriggerWithPayload<InputEventTrigger>>? = null
 
       interactionTriggerStack.forEach { trigger ->
         val inputEventTrigger = trigger.toInputEventTriggerOrNull() ?: return@forEach
         when {
+          // First input trigger found: track it without allocating a list.
           firstInputEventTrigger == null -> firstInputEventTrigger = inputEventTrigger
-          inputEventTriggersByKey != null -> {
-            inputEventTriggersByKey[inputEventTrigger.name to inputEventTrigger.triggerUptime] =
-              inputEventTrigger
-          }
+          // Second input trigger found, still in the single-element fast path.
           inputEventTriggers == null -> {
             val firstTrigger = requireNotNull(firstInputEventTrigger)
             if (inputEventTrigger.name == firstTrigger.name &&
               inputEventTrigger.triggerUptime == firstTrigger.triggerUptime
             ) {
-              val triggerKey = firstTrigger.name to firstTrigger.triggerUptime
-              inputEventTriggersByKey = linkedMapOf(triggerKey to firstTrigger)
-              inputEventTriggersByKey[triggerKey] = inputEventTrigger
+              // Duplicate of first: replace in-place, stay in single-element path.
+              firstInputEventTrigger = inputEventTrigger
             } else {
+              // Distinct: promote to ArrayList.
               inputEventTriggers = arrayListOf(firstTrigger, inputEventTrigger)
             }
           }
+          // 2+ triggers already in the list: deduplicate by in-place replacement.
           else -> {
             val duplicateIndex = inputEventTriggers.indexOfFirst {
               it.name == inputEventTrigger.name && it.triggerUptime == inputEventTrigger.triggerUptime
@@ -73,21 +76,13 @@ object MainThreadTriggerStack {
             if (duplicateIndex == -1) {
               inputEventTriggers.add(inputEventTrigger)
             } else {
-              inputEventTriggersByKey = LinkedHashMap(inputEventTriggers.size + 1)
-              inputEventTriggers.forEach { existingTrigger ->
-                inputEventTriggersByKey[existingTrigger.name to existingTrigger.triggerUptime] =
-                  existingTrigger
-              }
-              inputEventTriggersByKey[inputEventTrigger.name to inputEventTrigger.triggerUptime] =
-                inputEventTrigger
-              inputEventTriggers = null
+              inputEventTriggers[duplicateIndex] = inputEventTrigger
             }
           }
         }
       }
 
       return when {
-        inputEventTriggersByKey != null -> inputEventTriggersByKey.values.toList()
         inputEventTriggers != null -> inputEventTriggers
         firstInputEventTrigger != null -> listOf(firstInputEventTrigger)
         else -> emptyList()
