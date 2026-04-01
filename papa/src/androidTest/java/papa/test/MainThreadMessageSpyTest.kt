@@ -31,10 +31,7 @@ class MainThreadMessageSpyTest {
 
   @get:Rule
   val skipTestRule = SkipTestIf {
-    // API 28: known message dispatching timing issue.
-    // API 23: Choreographer FrameDisplayEventReceiver timing makes
-    // inputEventDispatching_not_in_MainThread_Message flaky.
-    VERSION.SDK_INT == 28 || VERSION.SDK_INT == 23
+    VERSION.SDK_INT == 28
   }
 
   @Test fun current_message_set_to_runnable_to_string() {
