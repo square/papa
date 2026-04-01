@@ -337,7 +337,7 @@ class MainThreadTriggerStackTest {
   }
 
   @Test
-  fun `inputEventInteractionTriggers prefers most recent trigger with same properties`() {
+  fun `inputEventInteractionTriggers keeps equal forwarded copies in stack order`() {
     val payload = createInputEventPayload()
     val originalTrigger = InteractionTriggerWithPayload(1000.nanoseconds, "tap", null, payload)
     val forwardedTrigger = InteractionTriggerWithPayload(1000.nanoseconds, "tap", null, payload)
@@ -346,8 +346,9 @@ class MainThreadTriggerStackTest {
     try {
       MainThreadTriggerStack.triggeredBy(forwardedTrigger, endTraceAfterBlock = false) {
         val inputTriggers = MainThreadTriggerStack.inputEventInteractionTriggers
-        assertEquals(1, inputTriggers.size)
-        assertSame(forwardedTrigger, inputTriggers.single())
+        assertEquals(2, inputTriggers.size)
+        assertSame(originalTrigger, inputTriggers[0])
+        assertSame(forwardedTrigger, inputTriggers[1])
       }
 
       val inputTriggersAfterBlock = MainThreadTriggerStack.inputEventInteractionTriggers

@@ -30,27 +30,17 @@ object MainThreadTriggerStack {
     }
 
   /**
-   * Returns the input-event triggers currently visible on the stack, deduplicated by
-   * (name, triggerUptime).
+   * Returns the input-event triggers currently visible on the stack in stack order.
    *
-   * This is intentionally not a raw stack dump. Forwarding can temporarily place equal-but-
-   * distinct copies of the same logical input trigger on the stack at once because stack cleanup
-   * remains instance-based.
-   *
-   * This view collapses those equal copies back to a single representative trigger. When forwarded
-   * copies with the same key coexist, the most recently pushed copy is kept so the active
-   * forwarded trigger is the one readers observe while it is in scope. Once that forwarded scope
-   * exits, the original copy remains on the stack and becomes visible again.
+   * This is a filtered view of [interactionTriggerStack], not a deduplicated projection. If
+   * forwarding temporarily places equal-but-distinct copies of the same logical input trigger on
+   * the stack, both copies are returned here in their current stack order.
    *
    * Performance: O(n) single pass over [interactionTriggerStack], with tiered allocation to
    * avoid object creation in the common cases:
    * - **0 input triggers**: returns [emptyList], no allocations.
-   * - **1 input trigger** (no duplicates): returns a single-element list, no intermediate
-   *   collection.
-   * - **2+ distinct input triggers**: allocates an [ArrayList] and deduplicates in-place via
-   *   [ArrayList.indexOfFirst]. This is faster than a [LinkedHashMap] for the small stack sizes
-   *   seen in practice (typically 1–3 triggers) because it avoids hashing, Pair-key allocation,
-   *   and Map.Entry overhead.
+   * - **1 input trigger**: returns a single-element list, no intermediate collection.
+   * - **2+ input triggers**: allocates an [ArrayList] and appends matches in a single pass.
    */
   val inputEventInteractionTriggers: List<InteractionTriggerWithPayload<InputEventTrigger>>
     get() {
@@ -63,30 +53,13 @@ object MainThreadTriggerStack {
         when {
           // First input trigger found: track it without allocating a list.
           firstInputEventTrigger == null -> firstInputEventTrigger = inputEventTrigger
-          // Second input trigger found, still in the single-element fast path.
+          // Second input trigger found, promote to ArrayList.
           inputEventTriggers == null -> {
             val firstTrigger = requireNotNull(firstInputEventTrigger)
-            if (inputEventTrigger.name == firstTrigger.name &&
-              inputEventTrigger.triggerUptime == firstTrigger.triggerUptime
-            ) {
-              // Duplicate of first: replace in-place, stay in single-element path.
-              firstInputEventTrigger = inputEventTrigger
-            } else {
-              // Distinct: promote to ArrayList.
-              inputEventTriggers = arrayListOf(firstTrigger, inputEventTrigger)
-            }
+            inputEventTriggers = arrayListOf(firstTrigger, inputEventTrigger)
           }
-          // 2+ triggers already in the list: deduplicate by in-place replacement.
-          else -> {
-            val duplicateIndex = inputEventTriggers.indexOfFirst {
-              it.name == inputEventTrigger.name && it.triggerUptime == inputEventTrigger.triggerUptime
-            }
-            if (duplicateIndex == -1) {
-              inputEventTriggers.add(inputEventTrigger)
-            } else {
-              inputEventTriggers[duplicateIndex] = inputEventTrigger
-            }
-          }
+          // 2+ triggers already in the list: append in stack order.
+          else -> inputEventTriggers.add(inputEventTrigger)
         }
       }
 
