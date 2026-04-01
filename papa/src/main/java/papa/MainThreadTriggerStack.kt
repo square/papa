@@ -1,31 +1,97 @@
 package papa
 
+import kotlin.time.Duration
+
 object MainThreadTriggerStack {
 
   val earliestInteractionTrigger: InteractionTrigger?
     get() {
       Handlers.checkOnMainThread()
-      return interactionTriggerStack.reduceOrNull { earliestTrigger, trigger ->
+      var earliestTrigger: InteractionTrigger? = null
+      var hasOtherTriggerAtEarliestUptime = false
+      interactionTriggerStack.forEach { trigger ->
         when {
-          trigger.triggerUptime < earliestTrigger.triggerUptime -> trigger
-          trigger.triggerUptime == earliestTrigger.triggerUptime &&
-            trigger.name == earliestTrigger.name -> trigger
-          else -> earliestTrigger
+          earliestTrigger == null -> earliestTrigger = trigger
+          trigger.triggerUptime < earliestTrigger.triggerUptime -> {
+            earliestTrigger = trigger
+            hasOtherTriggerAtEarliestUptime = false
+          }
+          trigger.triggerUptime == earliestTrigger.triggerUptime -> {
+            hasOtherTriggerAtEarliestUptime = true
+          }
         }
       }
+
+      if (earliestTrigger == null || !hasOtherTriggerAtEarliestUptime) {
+        return earliestTrigger
+      }
+
+      for (index in interactionTriggerStack.lastIndex downTo 0) {
+        val trigger = interactionTriggerStack[index]
+        if (trigger.triggerUptime == earliestTrigger.triggerUptime &&
+          trigger.name == earliestTrigger.name
+        ) {
+          return trigger
+        }
+      }
+
+      return earliestTrigger
     }
 
   val inputEventInteractionTriggers: List<InteractionTriggerWithPayload<InputEventTrigger>>
     get() {
       Handlers.checkOnMainThread()
-      val inputEventTriggersByKey =
-        linkedMapOf<Pair<String, kotlin.time.Duration>, InteractionTriggerWithPayload<InputEventTrigger>>()
+      var firstInputEventTrigger: InteractionTriggerWithPayload<InputEventTrigger>? = null
+      var inputEventTriggers: ArrayList<InteractionTriggerWithPayload<InputEventTrigger>>? = null
+      var inputEventTriggersByKey:
+        LinkedHashMap<Pair<String, Duration>, InteractionTriggerWithPayload<InputEventTrigger>>? = null
+
       interactionTriggerStack.forEach { trigger ->
-        trigger.toInputEventTriggerOrNull()?.let {
-          inputEventTriggersByKey[it.name to it.triggerUptime] = it
+        val inputEventTrigger = trigger.toInputEventTriggerOrNull() ?: return@forEach
+        when {
+          firstInputEventTrigger == null -> firstInputEventTrigger = inputEventTrigger
+          inputEventTriggersByKey != null -> {
+            inputEventTriggersByKey[inputEventTrigger.name to inputEventTrigger.triggerUptime] =
+              inputEventTrigger
+          }
+          inputEventTriggers == null -> {
+            val firstTrigger = requireNotNull(firstInputEventTrigger)
+            if (inputEventTrigger.name == firstTrigger.name &&
+              inputEventTrigger.triggerUptime == firstTrigger.triggerUptime
+            ) {
+              val triggerKey = firstTrigger.name to firstTrigger.triggerUptime
+              inputEventTriggersByKey = linkedMapOf(triggerKey to firstTrigger)
+              inputEventTriggersByKey[triggerKey] = inputEventTrigger
+            } else {
+              inputEventTriggers = arrayListOf(firstTrigger, inputEventTrigger)
+            }
+          }
+          else -> {
+            val duplicateIndex = inputEventTriggers.indexOfFirst {
+              it.name == inputEventTrigger.name && it.triggerUptime == inputEventTrigger.triggerUptime
+            }
+            if (duplicateIndex == -1) {
+              inputEventTriggers.add(inputEventTrigger)
+            } else {
+              inputEventTriggersByKey = LinkedHashMap(inputEventTriggers.size + 1)
+              inputEventTriggers.forEach { existingTrigger ->
+                inputEventTriggersByKey[existingTrigger.name to existingTrigger.triggerUptime] =
+                  existingTrigger
+              }
+              inputEventTriggersByKey[inputEventTrigger.name to inputEventTrigger.triggerUptime] =
+                inputEventTrigger
+              inputEventTriggers = null
+            }
+          }
         }
       }
-      return inputEventTriggersByKey.values.toList()
+
+      return when {
+        inputEventTriggersByKey != null -> inputEventTriggersByKey.values.toList()
+        inputEventTriggers != null -> inputEventTriggers
+        firstInputEventTrigger != null -> listOf(firstInputEventTrigger)
+        else -> emptyList()
+      }
     }
 
   private val interactionTriggerStack = mutableListOf<InteractionTrigger>()
