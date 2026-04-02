@@ -8,8 +8,6 @@ sealed interface InteractionTrigger {
   val name: String
   fun takeOverInteractionTrace(): InteractionTrace?
 
-  override fun equals(other: Any?): Boolean
-
   companion object {
     fun triggerNow(
       name: String
@@ -37,12 +35,6 @@ class SimpleInteractionTrigger(
     }
   }
 
-  override fun equals(other: Any?): Boolean {
-    if (other == null) return false
-    if (other !is SimpleInteractionTrigger) return false
-    return other.name == name && other.triggerUptime == triggerUptime
-  }
-
   override fun toString(): String {
     return "InteractionTrigger(name='$name', triggerUptime=$triggerUptime)"
   }
@@ -56,11 +48,5 @@ class InteractionTriggerWithPayload<T>(
 ) : InteractionTrigger by SimpleInteractionTrigger(triggerUptime, name, interactionTrace) {
   override fun toString(): String {
     return "InteractionTrigger(name='$name', triggerUptime=$triggerUptime, payload=$payload)"
-  }
-
-  override fun equals(other: Any?): Boolean {
-    if (other == null) return false
-    if (other !is InteractionTriggerWithPayload<*>) return false
-    return other.name == name && other.triggerUptime == triggerUptime
   }
 }

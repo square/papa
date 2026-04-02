@@ -49,6 +49,18 @@ class InputEventTrigger private constructor(
       })
       return trigger
     }
+
+    /**
+     * Test-only helper for callers that need an [InputEventTrigger] payload without also wiring
+     * frame-render tracking through a real [Window]. This keeps unit tests focused on stack and
+     * payload behavior instead of Kotlin/JVM constructor details or Android frame callbacks.
+     */
+    internal fun createForTest(
+      inputEvent: InputEvent,
+      deliveryUptime: Duration
+    ): InputEventTrigger {
+      return InputEventTrigger(inputEvent, deliveryUptime)
+    }
   }
 }
 
