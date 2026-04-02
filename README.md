@@ -21,7 +21,7 @@ Add the `papa` dependency to your library or app's `build.gradle` file:
 
 ```gradle
 dependencies {
-  implementation 'com.squareup.papa:papa:0.34'
+  implementation 'com.squareup.papa:papa:0.35'
 }
 ```
 

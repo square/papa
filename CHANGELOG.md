@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+## Version 0.35
+_2026-04-02_
+
+* Fix a memory leak when a frame-rendered callback throws.
+* Preserve duplicate triggers on the main-thread stack while preferring the most recently pushed trigger when duplicate triggers have identical uptime.
+
 ## Version 0.34
 
 * Change `MainThreadTriggerStack.triggeredBy` to replace any triggers in the stack with the same `name` and `triggerUptime`. Add tests to verify this.
