@@ -1,13 +1,8 @@
 package papa
 
 import android.view.MotionEvent
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotSame
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -33,19 +28,19 @@ class MainThreadTriggerStackTest {
   @Test
   fun `currentTriggers returns empty list initially`() {
     val triggers = MainThreadTriggerStack.currentTriggers
-    assertTrue(triggers.isEmpty())
+    assertThat(triggers).isEmpty()
   }
 
   @Test
   fun `earliestInteractionTrigger returns null when stack is empty`() {
     val earliest = MainThreadTriggerStack.earliestInteractionTrigger
-    assertNull(earliest)
+    assertThat(earliest).isNull()
   }
 
   @Test
   fun `inputEventInteractionTriggers returns empty list when stack is empty`() {
     val triggers = MainThreadTriggerStack.inputEventInteractionTriggers
-    assertTrue(triggers.isEmpty())
+    assertThat(triggers).isEmpty()
   }
 
   @Test
@@ -54,8 +49,7 @@ class MainThreadTriggerStackTest {
 
     MainThreadTriggerStack.triggeredBy(trigger, endTraceAfterBlock = false) {
       val currentTriggers = MainThreadTriggerStack.currentTriggers
-      assertEquals(1, currentTriggers.size)
-      assertSame(trigger, currentTriggers[0])
+      assertThat(currentTriggers).containsExactly(trigger)
     }
   }
 
@@ -64,12 +58,10 @@ class MainThreadTriggerStackTest {
     val trigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
 
     MainThreadTriggerStack.triggeredBy(trigger, endTraceAfterBlock = false) {
-      // Trigger should be present during execution
-      assertFalse(MainThreadTriggerStack.currentTriggers.isEmpty())
+      assertThat(MainThreadTriggerStack.currentTriggers).isNotEmpty()
     }
 
-    // Trigger should be removed after execution
-    assertTrue(MainThreadTriggerStack.currentTriggers.isEmpty())
+    assertThat(MainThreadTriggerStack.currentTriggers).isEmpty()
   }
 
   @Test
@@ -81,7 +73,7 @@ class MainThreadTriggerStackTest {
       expectedResult
     }
 
-    assertEquals(expectedResult, result)
+    assertThat(result).isEqualTo(expectedResult)
   }
 
   @Test
@@ -89,15 +81,13 @@ class MainThreadTriggerStackTest {
     val trace = FakeInteractionTrace()
     val trigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger", trace)
 
-    assertFalse(trace.endTraceCalled)
+    assertThat(trace.endTraceCalled).isFalse()
 
     MainThreadTriggerStack.triggeredBy(trigger, endTraceAfterBlock = true) {
-      // Trace should not be ended yet during block execution
-      assertFalse(trace.endTraceCalled)
+      assertThat(trace.endTraceCalled).isFalse()
     }
 
-    // Trace should be ended after block execution
-    assertTrue(trace.endTraceCalled)
+    assertThat(trace.endTraceCalled).isTrue()
   }
 
   @Test
@@ -109,56 +99,55 @@ class MainThreadTriggerStackTest {
       // Do nothing
     }
 
-    // Trace should not be ended
-    assertFalse(trace.endTraceCalled)
+    assertThat(trace.endTraceCalled).isFalse()
   }
 
   @Test
-  fun `earliestInteractionTrigger prefers most recent trigger with same properties`() {
+  fun `earliestInteractionTrigger prefers most recent duplicate trigger with same uptime`() {
     val originalTrigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
-    val forwardedTrigger =
-      SimpleInteractionTrigger(1000.nanoseconds, "test-trigger") // Same properties
+    val duplicateTrigger =
+      SimpleInteractionTrigger(1000.nanoseconds, "test-trigger") // Same uptime
 
-    // Forwarding creates a distinct trigger instance with the same logical key. While both are on
-    // the stack, readers should resolve to the newer forwarded copy so the active trace wins.
     MainThreadTriggerStack.pushTriggeredBy(originalTrigger)
     try {
-      MainThreadTriggerStack.triggeredBy(forwardedTrigger, endTraceAfterBlock = false) {
+      MainThreadTriggerStack.triggeredBy(duplicateTrigger, endTraceAfterBlock = false) {
         val triggers = MainThreadTriggerStack.currentTriggers
-        assertEquals(2, triggers.size)
-        assertSame(originalTrigger, triggers[0])
-        assertSame(forwardedTrigger, triggers[1])
-        assertSame(forwardedTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
+        assertThat(triggers).containsExactly(originalTrigger, duplicateTrigger).inOrder()
+        assertThat(MainThreadTriggerStack.earliestInteractionTrigger).isSameInstanceAs(
+          duplicateTrigger
+        )
       }
 
-      assertSame(originalTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
+      assertThat(MainThreadTriggerStack.earliestInteractionTrigger).isSameInstanceAs(
+        originalTrigger
+      )
 
       val triggersAfterBlock = MainThreadTriggerStack.currentTriggers
-      assertEquals(1, triggersAfterBlock.size)
-      assertSame(originalTrigger, triggersAfterBlock[0])
+      assertThat(triggersAfterBlock).containsExactly(originalTrigger)
     } finally {
       MainThreadTriggerStack.popTriggeredBy(originalTrigger)
     }
   }
 
   @Test
-  fun `triggeredBy leaves original trigger on stack after equal forwarded copy exits`() {
+  fun `triggeredBy leaves original trigger on stack after duplicate exits`() {
     val originalTrigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
-    val forwardedTrigger =
-      SimpleInteractionTrigger(1000.nanoseconds, "test-trigger") // Same properties
+    val duplicateTrigger =
+      SimpleInteractionTrigger(1000.nanoseconds, "test-trigger") // Same uptime
 
-    // The forwarded copy should be scoped to the nested block only. Once it exits, the original
-    // trigger must still be present so later work can continue attributing to the original source.
     MainThreadTriggerStack.pushTriggeredBy(originalTrigger)
     try {
-      MainThreadTriggerStack.triggeredBy(forwardedTrigger, endTraceAfterBlock = false) {
-        assertSame(forwardedTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
+      MainThreadTriggerStack.triggeredBy(duplicateTrigger, endTraceAfterBlock = false) {
+        assertThat(MainThreadTriggerStack.earliestInteractionTrigger).isSameInstanceAs(
+          duplicateTrigger
+        )
       }
 
       val triggersAfterBlock = MainThreadTriggerStack.currentTriggers
-      assertEquals(1, triggersAfterBlock.size)
-      assertSame(originalTrigger, triggersAfterBlock[0])
-      assertSame(originalTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
+      assertThat(triggersAfterBlock).containsExactly(originalTrigger)
+      assertThat(MainThreadTriggerStack.earliestInteractionTrigger).isSameInstanceAs(
+        originalTrigger
+      )
     } finally {
       MainThreadTriggerStack.popTriggeredBy(originalTrigger)
     }
@@ -171,12 +160,9 @@ class MainThreadTriggerStackTest {
       SimpleInteractionTrigger(2000.nanoseconds, "test-trigger-2") // Different properties
 
     MainThreadTriggerStack.triggeredBy(trigger1, endTraceAfterBlock = false) {
-      // Should not throw since triggers are different
       MainThreadTriggerStack.triggeredBy(trigger2, endTraceAfterBlock = false) {
         val triggers = MainThreadTriggerStack.currentTriggers
-        assertEquals(2, triggers.size)
-        assertTrue(triggers.contains(trigger1))
-        assertTrue(triggers.contains(trigger2))
+        assertThat(triggers).containsExactly(trigger1, trigger2).inOrder()
       }
     }
   }
@@ -185,18 +171,14 @@ class MainThreadTriggerStackTest {
   fun `triggeredBy removes trigger even when exception is thrown`() {
     val trigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
 
-    try {
+    assertThrows(RuntimeException::class.java) {
       MainThreadTriggerStack.triggeredBy(trigger, endTraceAfterBlock = false) {
-        // Verify trigger is in stack
-        assertEquals(1, MainThreadTriggerStack.currentTriggers.size)
+        assertThat(MainThreadTriggerStack.currentTriggers).containsExactly(trigger)
         throw RuntimeException("Test exception")
       }
-    } catch (_: RuntimeException) {
-      // Expected exception
     }
 
-    // Trigger should still be removed from stack despite exception
-    assertTrue(MainThreadTriggerStack.currentTriggers.isEmpty())
+    assertThat(MainThreadTriggerStack.currentTriggers).isEmpty()
   }
 
   @Test
@@ -204,16 +186,13 @@ class MainThreadTriggerStackTest {
     val trace = FakeInteractionTrace()
     val trigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger", trace)
 
-    try {
+    assertThrows(RuntimeException::class.java) {
       MainThreadTriggerStack.triggeredBy(trigger, endTraceAfterBlock = true) {
         throw RuntimeException("Test exception")
       }
-    } catch (_: RuntimeException) {
-      // Expected exception
     }
 
-    // Trace should still be ended despite exception
-    assertTrue(trace.endTraceCalled)
+    assertThat(trace.endTraceCalled).isTrue()
   }
 
   @Test
@@ -225,8 +204,7 @@ class MainThreadTriggerStackTest {
     MainThreadTriggerStack.triggeredBy(trigger1, endTraceAfterBlock = false) {
       MainThreadTriggerStack.triggeredBy(trigger2, endTraceAfterBlock = false) {
         MainThreadTriggerStack.triggeredBy(trigger3, endTraceAfterBlock = false) {
-          val earliest = MainThreadTriggerStack.earliestInteractionTrigger
-          assertSame(trigger2, earliest)
+          assertThat(MainThreadTriggerStack.earliestInteractionTrigger).isSameInstanceAs(trigger2)
         }
       }
     }
@@ -236,15 +214,13 @@ class MainThreadTriggerStackTest {
   fun `pushTriggeredBy adds trigger to stack`() {
     val trigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
 
-    assertTrue(MainThreadTriggerStack.currentTriggers.isEmpty())
+    assertThat(MainThreadTriggerStack.currentTriggers).isEmpty()
 
     MainThreadTriggerStack.pushTriggeredBy(trigger)
 
     val triggers = MainThreadTriggerStack.currentTriggers
-    assertEquals(1, triggers.size)
-    assertSame(trigger, triggers[0])
+    assertThat(triggers).containsExactly(trigger)
 
-    // Clean up
     MainThreadTriggerStack.popTriggeredBy(trigger)
   }
 
@@ -258,27 +234,24 @@ class MainThreadTriggerStackTest {
       MainThreadTriggerStack.pushTriggeredBy(trigger) // Same instance
     }
 
-    // Clean up
     MainThreadTriggerStack.popTriggeredBy(trigger)
   }
 
   @Test
-  fun `pushTriggeredBy allows different trigger instances with same properties`() {
+  fun `pushTriggeredBy allows different trigger instances with same uptime`() {
     val trigger1 = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
     val trigger2 = SimpleInteractionTrigger(
       1000.nanoseconds,
       "test-trigger"
-    ) // Same properties, different instance
+    ) // Same uptime, different instance
 
     MainThreadTriggerStack.pushTriggeredBy(trigger1)
 
-    // Should not throw since it's a different instance
     MainThreadTriggerStack.pushTriggeredBy(trigger2)
 
     val triggers = MainThreadTriggerStack.currentTriggers
-    assertEquals(2, triggers.size)
+    assertThat(triggers).containsExactly(trigger1, trigger2).inOrder()
 
-    // Clean up
     MainThreadTriggerStack.popTriggeredBy(trigger1)
     MainThreadTriggerStack.popTriggeredBy(trigger2)
   }
@@ -288,10 +261,10 @@ class MainThreadTriggerStackTest {
     val trigger = SimpleInteractionTrigger(1000.nanoseconds, "test-trigger")
 
     MainThreadTriggerStack.pushTriggeredBy(trigger)
-    assertEquals(1, MainThreadTriggerStack.currentTriggers.size)
+    assertThat(MainThreadTriggerStack.currentTriggers).containsExactly(trigger)
 
     MainThreadTriggerStack.popTriggeredBy(trigger)
-    assertTrue(MainThreadTriggerStack.currentTriggers.isEmpty())
+    assertThat(MainThreadTriggerStack.currentTriggers).isEmpty()
   }
 
   @Test
@@ -300,15 +273,13 @@ class MainThreadTriggerStackTest {
     val otherTrigger = SimpleInteractionTrigger(2000.nanoseconds, "other-trigger")
 
     MainThreadTriggerStack.pushTriggeredBy(trigger)
-    assertEquals(1, MainThreadTriggerStack.currentTriggers.size)
+    assertThat(MainThreadTriggerStack.currentTriggers).containsExactly(trigger)
 
-    // Popping a different trigger should not affect the stack
     MainThreadTriggerStack.popTriggeredBy(otherTrigger)
-    assertEquals(1, MainThreadTriggerStack.currentTriggers.size)
+    assertThat(MainThreadTriggerStack.currentTriggers).containsExactly(trigger)
 
-    // Clean up
     MainThreadTriggerStack.popTriggeredBy(trigger)
-    assertTrue(MainThreadTriggerStack.currentTriggers.isEmpty())
+    assertThat(MainThreadTriggerStack.currentTriggers).isEmpty()
   }
 
   @Test
@@ -329,31 +300,26 @@ class MainThreadTriggerStackTest {
         inputEventTrigger,
         endTraceAfterBlock = false
       ) {
-        val inputTriggers = MainThreadTriggerStack.inputEventInteractionTriggers
-        // Both triggers should be filtered out since neither has InputEventTrigger payload
-        assertTrue(inputTriggers.isEmpty())
+        assertThat(MainThreadTriggerStack.inputEventInteractionTriggers).isEmpty()
       }
     }
   }
 
   @Test
-  fun `inputEventInteractionTriggers keeps equal forwarded copies in stack order`() {
+  fun `inputEventInteractionTriggers keeps duplicate triggers in stack order`() {
     val payload = createInputEventPayload()
     val originalTrigger = InteractionTriggerWithPayload(1000.nanoseconds, "tap", null, payload)
-    val forwardedTrigger = InteractionTriggerWithPayload(1000.nanoseconds, "tap", null, payload)
+    val duplicateTrigger = InteractionTriggerWithPayload(1000.nanoseconds, "tap", null, payload)
 
     MainThreadTriggerStack.pushTriggeredBy(originalTrigger)
     try {
-      MainThreadTriggerStack.triggeredBy(forwardedTrigger, endTraceAfterBlock = false) {
+      MainThreadTriggerStack.triggeredBy(duplicateTrigger, endTraceAfterBlock = false) {
         val inputTriggers = MainThreadTriggerStack.inputEventInteractionTriggers
-        assertEquals(2, inputTriggers.size)
-        assertSame(originalTrigger, inputTriggers[0])
-        assertSame(forwardedTrigger, inputTriggers[1])
+        assertThat(inputTriggers).containsExactly(originalTrigger, duplicateTrigger).inOrder()
       }
 
       val inputTriggersAfterBlock = MainThreadTriggerStack.inputEventInteractionTriggers
-      assertEquals(1, inputTriggersAfterBlock.size)
-      assertSame(originalTrigger, inputTriggersAfterBlock.single())
+      assertThat(inputTriggersAfterBlock).containsExactly(originalTrigger)
     } finally {
       MainThreadTriggerStack.popTriggeredBy(originalTrigger)
     }
@@ -367,11 +333,8 @@ class MainThreadTriggerStackTest {
       val triggers1 = MainThreadTriggerStack.currentTriggers
       val triggers2 = MainThreadTriggerStack.currentTriggers
 
-      // Should return different instances (copies)
-      assertNotSame(triggers1, triggers2)
-
-      // But with same content
-      assertEquals(triggers1, triggers2)
+      assertThat(triggers1).isNotSameInstanceAs(triggers2)
+      assertThat(triggers1).containsExactlyElementsIn(triggers2).inOrder()
     }
   }
 
@@ -381,30 +344,25 @@ class MainThreadTriggerStackTest {
     val innerTrigger = SimpleInteractionTrigger(2000.nanoseconds, "inner")
 
     MainThreadTriggerStack.triggeredBy(outerTrigger, endTraceAfterBlock = false) {
-      assertEquals(1, MainThreadTriggerStack.currentTriggers.size)
-      assertSame(outerTrigger, MainThreadTriggerStack.earliestInteractionTrigger)
+      assertThat(MainThreadTriggerStack.currentTriggers).containsExactly(outerTrigger)
+      assertThat(MainThreadTriggerStack.earliestInteractionTrigger).isSameInstanceAs(outerTrigger)
 
       MainThreadTriggerStack.triggeredBy(
         innerTrigger,
         endTraceAfterBlock = false
       ) {
-        assertEquals(2, MainThreadTriggerStack.currentTriggers.size)
-        assertSame(
+        assertThat(MainThreadTriggerStack.currentTriggers).containsExactly(
           outerTrigger,
+          innerTrigger
+        ).inOrder()
+        assertThat(
           MainThreadTriggerStack.earliestInteractionTrigger
-        ) // Still earliest
-
-        val triggers = MainThreadTriggerStack.currentTriggers
-        assertTrue(triggers.contains(outerTrigger))
-        assertTrue(triggers.contains(innerTrigger))
+        ).isSameInstanceAs(outerTrigger)
       }
 
-      // Inner trigger should be removed
-      assertEquals(1, MainThreadTriggerStack.currentTriggers.size)
-      assertSame(outerTrigger, MainThreadTriggerStack.currentTriggers[0])
+      assertThat(MainThreadTriggerStack.currentTriggers).containsExactly(outerTrigger)
     }
 
-    // All triggers should be removed
-    assertTrue(MainThreadTriggerStack.currentTriggers.isEmpty())
+    assertThat(MainThreadTriggerStack.currentTriggers).isEmpty()
   }
 }

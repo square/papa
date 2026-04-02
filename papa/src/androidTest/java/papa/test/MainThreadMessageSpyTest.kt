@@ -231,7 +231,7 @@ class MainThreadMessageSpyTest {
                 // Update UI, triggering a frame.
                 text = "Got ACTION_UP"
                 val tapTrigger = MainThreadTriggerStack.inputEventInteractionTriggers
-                  .last()
+                  .single()
                   .payload
                 inputTriggerFrameRenderedUptimeOnClick = tapTrigger.renderedUptime
                 tapTrigger.onInputEventFrameRendered { frameRenderedUptime ->
