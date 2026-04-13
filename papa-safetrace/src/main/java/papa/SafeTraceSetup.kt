@@ -13,6 +13,10 @@ object SafeTraceSetup {
 
   fun init(application: Application) {
     this.application = application
+    enableMainThreadMessageTracing()
+  }
+
+  fun enableMainThreadMessageTracing() {
     SafeTraceMainThreadMessages.enableMainThreadMessageTracing()
   }
 

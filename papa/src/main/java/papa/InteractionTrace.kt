@@ -1,5 +1,7 @@
 package papa
 
+import androidx.tracing.Trace
+
 fun interface InteractionTrace {
   fun endTrace()
 
@@ -8,9 +10,9 @@ fun interface InteractionTrace {
       name: String
     ): InteractionTrace {
       val cookie = System.nanoTime().rem(Int.MAX_VALUE).toInt()
-      SafeTrace.beginAsyncSection(name, cookie)
+      Trace.beginAsyncSection(name, cookie)
       return InteractionTrace {
-        SafeTrace.endAsyncSection(name, cookie)
+        Trace.endAsyncSection(name, cookie)
       }
     }
   }

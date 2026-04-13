@@ -32,6 +32,7 @@ internal object SafeTraceMainThreadMessages {
     }
   }
 
+  @Suppress("DEPRECATION")
   private fun enableOnMainThread() {
     if (!enabled && SafeTrace.isShellProfileable && traceMainThreadMessages) {
       enabled = true

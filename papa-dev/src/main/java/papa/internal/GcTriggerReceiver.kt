@@ -4,14 +4,14 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import papa.safeTrace
+import androidx.tracing.trace
 
 internal class GcTriggerReceiver : BroadcastReceiver() {
   override fun onReceive(
     context: Context,
     intent: Intent
   ) {
-    safeTrace("force gc") {
+    trace("force gc") {
       Log.d("GcTriggerReceiver", "Triggering GC")
       gc()
       context.sendBroadcast(Intent("papa.GC_TRIGGERED"))

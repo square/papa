@@ -8,6 +8,8 @@ import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.AbsListView
+import androidx.tracing.Trace
+import androidx.tracing.trace
 import curtains.Curtains
 import curtains.KeyEventInterceptor
 import curtains.OnRootViewAddedListener
@@ -19,9 +21,7 @@ import curtains.windowAttachCount
 import papa.InputEventTrigger
 import papa.InteractionTriggerWithPayload
 import papa.MainThreadTriggerStack
-import papa.SafeTrace
 import papa.internal.FrozenFrameOnTouchDetector.findPressedView
-import papa.safeTrace
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 
@@ -46,7 +46,7 @@ internal object InputTracker {
           //  the code that captured the event at time N.
           val actionUpTrigger = if (isActionUp) {
             val cookie = deliveryUptimeNanos.rem(Int.MAX_VALUE).toInt()
-            SafeTrace.beginAsyncSection(TAP_INTERACTION_SECTION, cookie)
+            Trace.beginAsyncSection(TAP_INTERACTION_SECTION, cookie)
             val eventUptime = motionEvent.eventTime.milliseconds
             // Event bugfix: if event time is after delivery time, use delivery time as trigger time.
             val triggerUptime = if (eventUptime > deliveryUptime) deliveryUptime else eventUptime
@@ -55,7 +55,7 @@ internal object InputTracker {
               triggerUptime = triggerUptime,
               name = "tap",
               interactionTrace = {
-                SafeTrace.endAsyncSection(TAP_INTERACTION_SECTION, cookie)
+                Trace.endAsyncSection(TAP_INTERACTION_SECTION, cookie)
               },
               payload = InputEventTrigger.createTrackingWhenFrameRendered(
                 inputEventWindow = window,
@@ -76,9 +76,7 @@ internal object InputTracker {
             handler.post(setEventForPostedClick)
           }
 
-          val dispatchState = safeTrace(
-            { MotionEvent.actionToString(motionEvent.action) }
-          ) {
+          val dispatchState = trace(MotionEvent.actionToString(motionEvent.action)) {
             if (actionUpTrigger != null) {
               // In case the action up is immediately triggering a click (e.g. Compose)
               MainThreadTriggerStack.triggeredBy(
@@ -102,7 +100,7 @@ internal object InputTracker {
             }
 
             val dispatchEnd = SystemClock.uptimeMillis()
-            val viewPressedAfterDispatch = safeTrace("findPressedView()") {
+            val viewPressedAfterDispatch = trace("findPressedView()") {
               (window.decorView as? ViewGroup)?.findPressedView()
             }
             // AbsListView subclasses post clicks with a delay.
@@ -128,7 +126,7 @@ internal object InputTracker {
           val deliveryUptimeNanos = System.nanoTime()
           val traceSectionName = keyEvent.traceSectionName
           val cookie = deliveryUptimeNanos.rem(Int.MAX_VALUE).toInt()
-          SafeTrace.beginAsyncSection(traceSectionName, cookie)
+          Trace.beginAsyncSection(traceSectionName, cookie)
           val deliveryUptime = deliveryUptimeNanos.nanoseconds
           val eventUptime = keyEvent.eventTime.milliseconds
 
@@ -139,7 +137,7 @@ internal object InputTracker {
             triggerUptime = triggerUptime,
             name = "key ${keyEvent.name}",
             interactionTrace = {
-              SafeTrace.endAsyncSection(traceSectionName, cookie)
+              Trace.endAsyncSection(traceSectionName, cookie)
             },
             payload = InputEventTrigger.createTrackingWhenFrameRendered(
               inputEventWindow = window,
