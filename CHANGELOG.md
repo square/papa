@@ -1,7 +1,8 @@
 Change Log
 ==========
 
-## Next version
+## Version 0.36
+_2026-10-23_
 
 * Fix an unbounded memory growth when a window receives input events without drawing, e.g. a key held down on a static screen: input events waiting for the same frame now share one pre draw listener, and the window no longer holds on to them until it draws.
 
